@@ -1,0 +1,61 @@
+# Build output
+build/
+dist/
+*.deb
+*.ddeb
+*.udeb
+*.buildinfo
+*.changes
+*.dsc
+*.tar.gz
+*.tar.xz
+*.tar.zst
+*.orig.tar.*
+*.debian.tar.*
+*.upload
+
+# debhelper and dpkg-buildpackage artifacts
+.debhelper/
+debian/files
+debian/tmp/
+debian/*.substvars
+debian/*.debhelper
+debian/*.debhelper.log
+debian/debhelper-build-stamp
+debian/*/
+!debian/source/
+!debian/patches/
+
+# Per-package build artifacts
+packages/*/debian/files
+packages/*/debian/tmp/
+packages/*/debian/.debhelper/
+packages/*/debian/*.substvars
+packages/*/debian/*.debhelper
+packages/*/debian/*.debhelper.log
+packages/*/debian/debhelper-build-stamp
+
+# Local tooling and caches
+.cache/
+.venv/
+node_modules/
+__pycache__/
+*.py[cod]
+
+# Editor and OS noise
+*.swp
+*.swo
+*~
+.DS_Store
+.idea/
+.vscode/
+
+# Logs and scratch
+*.log
+tmp/
+scratch/
+
+# Local secrets and machine-specific overrides
+.env
+.env.*
+*.local
