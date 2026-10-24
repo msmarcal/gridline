@@ -60,7 +60,7 @@ Every requirement specified in this change is the responsibility of exactly one 
 | `define-supported-ubuntu-integration` | Component ownership matrix and package availability on the supported baseline, covering NetworkManager, PipeWire and WirePlumber, and BlueZ; AppArmor posture; security update path |
 | `add-gdm-wayland-session` | Session registration at GDM, session launcher and teardown, desktop identity, opt-in behavior, and the fallback guarantee that a failed Gridline session is recoverable without Gridline |
 | `add-hyprland-session-baseline` | Compositor adapter contract, the Hyprland adapter, capability discovery, and the mechanical adapter isolation check |
-| `add-desktop-portal-integration` | Portal backend mapping, deterministic backend selection, XWayland support, Snap application compatibility |
+| `add-desktop-portal-integration` | Portal backend mapping, the Gridline-owned portal configuration file that makes backend selection apply under Gridline's desktop identity, deterministic backend selection, XWayland support, Snap application compatibility |
 | `add-session-lifecycle-integration` | Power management and suspend, lid handling, battery observability, session locking across suspend with fail-safe behavior, and the polkit authentication agent |
 | `add-gridline-configuration-defaults` | Shipped defaults, keybindings and themes; session-scoped configuration precedence; and the compositor-neutral user-facing configuration surface |
 | `add-session-health-check` | The diagnostic command surface, capability gap reporting, and the compositor-neutral command surface |
@@ -73,6 +73,8 @@ Two attributions are deliberately split along a boundary that is not a gap. The 
 The requirement that the stock GNOME session remains installed and supported is owned by `define-debian-package-architecture` rather than by a session change, because its two scenarios are install-time and removal-time behavior. What protects GNOME is the packaging: file ownership rules that prevent a Gridline package from claiming a file another package owns, and clean removal that returns the system to a stock desktop. No behavior in the Gridline session itself can provide that guarantee.
 
 The adapter isolation check is assigned to `add-hyprland-session-baseline`, where the adapter is created, and re-run in CI by `add-ci-vm-smoke-tests`.
+
+One requirement was added to `platform-integration` after the baseline was inspected against the archive rather than assumed. The portal frontend selects backends by the first entry of `XDG_CURRENT_DESKTOP`, which for Gridline is `Gridline`, and nothing shipped by the compositor package matches that name. Without a Gridline-owned portal configuration file, a session with every required component installed still fails the existing `Screen sharing works` scenario, and fails it silently. The requirement is owned by `add-desktop-portal-integration`, alongside the backend mapping it extends.
 
 ### Deferred requirements
 

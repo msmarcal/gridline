@@ -4,7 +4,12 @@ context: |
   Project Gridline is an optional Wayland tiling desktop session for Ubuntu.
   It is not a distribution fork and not a replacement for Ubuntu Desktop.
 
-  Supported baseline: Ubuntu 26.04 LTS, x86_64.
+  Supported baseline: Ubuntu 26.04 LTS (resolute), x86_64. The baseline is a
+  released series, so package availability, version and archive component are
+  facts to verify against the archive rather than assumptions to carry.
+
+  Canonical project URL: https://gridline-desktop.org. Packaging metadata and
+  documentation use this host; no other domain is the project's address.
 
   Delivery is exclusively through Debian packages. No capability may depend on
   an install script, a post-install download, or a manual file copy.
@@ -39,6 +44,17 @@ context: |
   Where Ubuntu already provides a component, the work is to keep it working and
   prove it, not to reimplement it.
 
+  Most of the Hyprland ecosystem is in the universe component, which carries no
+  Canonical security-update commitment. Every component decision records whether
+  the package is in main or universe, because that distinction is a support fact,
+  not packaging trivia, and it is the central obstacle to any future flavor
+  candidacy.
+
+  Archive packages own their own files. Where Gridline must influence a
+  third-party component's behavior, it does so with a Gridline-named drop-in file
+  in a directory that supports one, never by modifying or overwriting a file
+  another package owns.
+
 rules:
   proposal:
     - Always state what is out of scope
@@ -52,6 +68,8 @@ rules:
       fallback behavior
     - Every requirement whose failure has a security consequence must state the
       fail-safe behavior
+    - A requirement that depends on a third-party component honoring Gridline's
+      desktop identity must name the file or mechanism that makes it do so
   tasks:
     - A foundation or definition change produces documentation and specs only,
       never package builds, implementation, or hardware validation tasks

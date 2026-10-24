@@ -9,7 +9,7 @@ The authoritative form of these boundaries is `openspec/specs/package-delivery/s
 | Package | Owns | Required by capability | Status |
 |---|---|---|---|
 | `gridline-session` | The GDM session entry, the session launcher, the core integration glue, and the compositor adapter layer | `desktop-session` (the session exists and starts), `platform-integration` (the session reaches the desktop stack), `compositor-abstraction` (the adapter lives here) | Planned |
-| `gridline-config` | Shipped defaults under `/etc/xdg`, default keybindings, default themes, and the portal interface-to-backend mapping | `desktop-session` (session-scoped configuration), `platform-integration` (deterministic portal backend selection) | Planned |
+| `gridline-config` | Shipped defaults under `/etc/xdg`, default keybindings, default themes, the portal interface-to-backend mapping, and `gridline-portals.conf` | `desktop-session` (session-scoped configuration), `platform-integration` (deterministic portal backend selection) | Planned |
 | `gridline-tools` | The `gridline` command, `gridline doctor`, and the theme and diagnostic commands | `platform-integration` (capability gaps are diagnosable), `compositor-abstraction` (the command surface stays compositor-neutral) | Planned |
 | `gridline-desktop` | Nothing. A metapackage that pulls in the packages making up a complete Gridline desktop | `package-delivery` (the name is reserved) | **Reserved, not delivered** |
 
@@ -23,7 +23,7 @@ Three boundaries sit close enough together to be worth stating explicitly, becau
 
 **The adapter is integration glue, not a tool.** The compositor adapter ships in `gridline-session` because that package owns integration. Putting it in `gridline-tools` would force the diagnostic commands to carry compositor knowledge, which `specs/compositor-abstraction/spec.md` forbids.
 
-**The portal mapping is configuration, not session logic.** The interface-to-backend mapping is a shipped default, so `gridline-config` owns it, even though the session is what consumes it.
+**The portal mapping is configuration, not session logic.** The interface-to-backend mapping is a shipped default, so `gridline-config` owns it, even though the session is what consumes it. `gridline-portals.conf` follows the mapping into `gridline-config` for the same reason, and it installs to `/usr/share/xdg-desktop-portal/` rather than `/etc/xdg`, because that is the directory the portal frontend reads. It is a new file under a Gridline-specific name, so it owns no path another package claims.
 
 ## What no package does
 
@@ -39,6 +39,29 @@ These apply to every package above, and come straight from `specs/package-delive
 The name is reserved by the `establish-gridline-vision` change and **no `gridline-desktop` package is produced by it**. The metapackage is delivered later, when the component set it would depend on is stable, which no currently scheduled change reaches. It is listed in the deferred requirements table in that change's `proposal.md` for exactly this reason.
 
 When it does ship, it carries no executable, configuration or data files of its own beyond packaging metadata. A metapackage that acquires content has stopped being a metapackage.
+
+## Archive packages Gridline depends on
+
+Gridline ships almost no code of its own: the binaries that make a Gridline session work come from the Ubuntu archive unmodified. The versions published for the Ubuntu 26.04 LTS (`resolute`) baseline are below, with the archive component, because `main` carries a Canonical security-update commitment and `universe` does not.
+
+| Source package | Version on the baseline | Component | Role |
+|---|---|---|---|
+| `hyprland` | 0.53.3+ds-4 | **universe** | Compositor |
+| `hyprlock` | 0.9.2-1build4 | **universe** | Screen locker candidate |
+| `hypridle` | 0.1.7-2 | **universe** | Idle daemon candidate |
+| `hyprpaper` | 0.8.3-1 | **universe** | Wallpaper candidate |
+| `hyprpolkitagent` | 0.1.3-1 | **universe** | polkit agent candidate |
+| `xdg-desktop-portal-hyprland` | 1.3.11-1build2 | **universe** | Compositor portal backend |
+| `xdg-desktop-portal` | 1.21.1+ds-1ubuntu3.1 | main | Portal frontend |
+| `xdg-desktop-portal-gtk` | 1.15.3-2ubuntu1 | main | GTK portal backend |
+| `xwayland` | 2:24.1.10-1 | main | X11 application support |
+| `gdm3` | 50.1-0ubuntu0.1 | main | Display manager |
+
+Confirming these against the archive is owned by `define-supported-ubuntu-integration`, which also owns re-checking them, since they move with the archive.
+
+**Every Hypr-ecosystem package is in universe.** Two consequences follow and neither is a packaging detail. A security issue in the compositor has no Canonical update commitment behind it, which is a fact users of this session are entitled to know rather than discover. And `gridline-desktop`, once it ships, depends on universe packages and therefore cannot itself live in main — which makes this the central obstacle to any future official-flavor candidacy, not a footnote to it.
+
+The archive also tracks upstream at a distance: `hyprland` 0.53.3 against upstream 0.56.2 released 2026-08-05, three minor releases back. For an audience that follows the Hyprland changelog this is the most visible gap in the project, and Gridline has no mechanism to close it without abandoning the archive-only delivery rule. Stating the baseline version plainly is the honest option.
 
 ## Source packages
 

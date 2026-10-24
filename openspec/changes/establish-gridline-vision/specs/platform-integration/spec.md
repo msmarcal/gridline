@@ -62,6 +62,25 @@ A Gridline session SHALL provide XDG Desktop Portals with a compatible Hyprland 
 - **WHEN** more than one installed backend implements the same portal interface
 - **THEN** the session resolves a documented, deterministic choice of backend rather than depending on start order
 
+### Requirement: Portal backend selection is driven by a Gridline-owned configuration file
+
+The portal frontend selects backends by desktop name, taken from the first entry of `XDG_CURRENT_DESKTOP`. Because Gridline's identity is `Gridline:Hyprland`, no configuration shipped by a compositor package applies to it. Gridline SHALL ship its own portal configuration file naming the backend preference for each required interface, SHALL NOT rely on the deprecated `UseIn` matching in a third-party `.portal` file, and SHALL NOT modify or replace a configuration file owned by another package.
+
+#### Scenario: Gridline's own portal configuration is the one that applies
+
+- **WHEN** a Gridline session starts with the compositor portal backend and the GTK backend installed
+- **THEN** the portal frontend resolves backends from the Gridline-owned configuration file selected by Gridline's desktop identity, and not from a file shipped by the compositor package
+
+#### Scenario: Screen capture does not depend on fallback matching
+
+- **WHEN** an application requests screen capture in a Gridline session
+- **THEN** the compositor backend serves the request because the Gridline-owned configuration names it, without the frontend resorting to deprecated-key matching or last-resort fallback behavior
+
+#### Scenario: A missing portal configuration is detected rather than silent
+
+- **WHEN** Gridline's portal configuration file is absent or does not name a backend for a required interface
+- **THEN** the condition is reported by the diagnostic commands as a configuration fault, rather than surfacing later as a portal request that fails with every component installed
+
 ### Requirement: Snap applications run correctly
 
 A Gridline session SHALL support Snap applications, including those relying on confinement interfaces for display, audio, and portal access.

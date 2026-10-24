@@ -90,6 +90,8 @@ XWayland is the case that sits closest to the line. A session without it cannot 
 
 Note that the portal entries are split rather than listed together. The portal frontend and the GTK backend degrade: without them, portal-mediated features fail and the session is still usable. The compositor's own portal backend does not degrade, because it is the only thing that can serve screen capture on Wayland, and the capability that depends on it is required. Listing "portals" as a single non-blocking row would hide that difference.
 
+The backend being installed is necessary but not sufficient. `xdg-desktop-portal` resolves backends through `<desktop>-portals.conf`, keyed on the first entry of `XDG_CURRENT_DESKTOP`, which for Gridline is `Gridline`. Neither the `hyprland-portals.conf` shipped by the compositor package nor the `UseIn=` list in `hyprland.portal` matches that identity. Gridline must ship `gridline-portals.conf` itself, or `screencast` fails at runtime with every component present and the startup check satisfied. That makes it the one required capability whose failure the component table cannot predict, and it is why the file is listed as a Gridline-owned component in [component-ownership.md](component-ownership.md).
+
 ### Where the blocking rule comes from
 
 The locker and the polkit agent block startup because this project decided they should. `specs/platform-integration/spec.md` requires that the session be lockable, that a lock failure not leave the session exposed, and that a missing polkit agent be reported rather than left to fail silently. None of those requirements say the session must refuse to start.
@@ -97,6 +99,8 @@ The locker and the polkit agent block startup because this project decided they 
 Refusing to start is this document's reading of how to satisfy them at launch time, and it is a stronger guarantee than the specifications currently demand. An implementation that starts the session and reports the missing component would satisfy every written scenario while contradicting this page.
 
 That gap is deliberate to record and not deliberate to keep. `add-session-lifecycle-integration` owns both components, and it is the change that should either add the startup-refusal scenarios to the specification or revise this rule. Until then, treat the blocking behavior here as a design commitment with no verifying scenario behind it.
+
+There is also a mechanical obstacle, which is new information and narrows the options. The archive ships `hyprpolkitagent`, `hypridle` and `xdg-desktop-portal-hyprland` as systemd user units with `PartOf=graphical-session.target`, `ConditionEnvironment=WAYLAND_DISPLAY` and `Restart=on-failure`. Under those units a failed component restarts quietly and the session starts anyway: systemd offers no hook that turns a unit failure into a refusal to start the session. Enforcing this rule therefore requires a Gridline-owned startup check in the launcher, which is a deliverable, not a configuration choice. `add-session-lifecycle-integration` inherits that too: either it builds the check, or the rule stays aspirational no matter what the specification says.
 
 ## Downstream changes
 
@@ -108,7 +112,7 @@ This architecture is delivered by the changes below. The authoritative attributi
 | `define-supported-ubuntu-integration` | Component ownership matrix and package availability on the baseline, covering NetworkManager, PipeWire and WirePlumber, and BlueZ; AppArmor posture; security update path | Session layer |
 | `add-gdm-wayland-session` | Session registration at GDM, launcher and teardown, desktop identity, opt-in behavior, and the recoverability guarantee | Session layer |
 | `add-hyprland-session-baseline` | The adapter contract, the Hyprland adapter, capability discovery, and the mechanical adapter isolation check | Compositor adapter layer |
-| `add-desktop-portal-integration` | Portal backend mapping, deterministic backend selection, XWayland support, Snap compatibility | Session and configuration layers |
+| `add-desktop-portal-integration` | Portal backend mapping, `gridline-portals.conf` and deterministic backend selection under Gridline's desktop identity, XWayland support, Snap compatibility | Session and configuration layers |
 | `add-session-lifecycle-integration` | Power management and suspend, lid handling, battery observability, session locking across suspend with fail-safe behavior, and the polkit authentication agent | Session layer |
 | `add-gridline-configuration-defaults` | Shipped defaults, keybindings and themes; session-scoped configuration precedence; the compositor-neutral configuration surface | Configuration layer |
 | `add-session-health-check` | The diagnostic command surface, capability gap reporting, and the compositor-neutral command surface | Tools layer |
