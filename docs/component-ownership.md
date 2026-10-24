@@ -34,10 +34,12 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 
 ## Portals
 
+The compositor's own backend is the exception on this page: it is the only portal component whose absence blocks startup, because screen capture on Wayland cannot be served by any other backend. The frontend and the GTK backend degrade in the ordinary way.
+
 | Component | Upstream | Ubuntu source | Gridline ownership | Fallback |
 |---|---|---|---|---|
 | xdg-desktop-portal | freedesktop | `xdg-desktop-portal` | Integration only; Gridline owns the interface-to-backend mapping | Session starts, portal-mediated features fail. Reported as a capability gap. Sandboxed applications are affected most |
-| xdg-desktop-portal-hyprland | Hyprland | `xdg-desktop-portal-hyprland` (confirm) | Integration only | Screen capture and compositor-dependent portal interfaces unavailable. The GTK backend continues to serve the interfaces it implements |
+| xdg-desktop-portal-hyprland | Hyprland | `xdg-desktop-portal-hyprland` (confirm) | Integration only | **Session does not start.** Without it the adapter cannot report the `screencast` capability, and `screencast` is required: see [compositor-adapter.md](compositor-adapter.md). The GTK backend cannot substitute, because it does not implement screen capture on Wayland |
 | xdg-desktop-portal-gtk | GNOME | `xdg-desktop-portal-gtk` | Integration only | File chooser and the interfaces it backs become unavailable. Reported as a capability gap |
 | Backend mapping | Gridline | `gridline-config` | **Owned by Gridline** | Backend selection falls back to whatever the portal frontend resolves on its own, which is the non-deterministic behavior the mapping exists to prevent. Treated as a configuration bug |
 

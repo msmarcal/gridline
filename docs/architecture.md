@@ -69,13 +69,24 @@ Most components degrade the session when absent. Two do not: their absence **blo
 
 | Component | Blocks startup | Why |
 |---|---|---|
-| Screen locker | **Yes** | A desktop that cannot lock must not run. The failure mode is an unlocked unattended machine, which is worse than no session at all. `specs/platform-integration/spec.md` requires that a lock component failure not leave the session exposed, and the only way to guarantee that at startup is to refuse to start |
-| polkit authentication agent | **Yes** | Without an agent, privileged actions fail with no prompt and no explanation. `specs/platform-integration/spec.md` requires a missing agent to be reported rather than left to fail silently |
+| Screen locker | **Yes** | A desktop that cannot lock must not run. The failure mode is an unlocked unattended machine, which is worse than no session at all. This is a project decision rather than a specified requirement: see the note below |
+| polkit authentication agent | **Yes** | Without an agent, privileged actions fail with no prompt and no explanation. Also a project decision rather than a specified requirement: see the note below |
 | Compositor, via the adapter | **Yes** | There is no session without it. Reported with the compositor named |
-| Required adapter capabilities | **Yes** | The capability set in [compositor-adapter.md](compositor-adapter.md). A missing required capability is reported by name |
-| NetworkManager, PipeWire, WirePlumber, BlueZ, UPower, XWayland, portals, snapd | No | Each absence is reported as a named capability gap. The session remains usable, with the corresponding feature unavailable. See [component-ownership.md](component-ownership.md) |
+| Required adapter capabilities | **Yes** | The capability set in [compositor-adapter.md](compositor-adapter.md). A missing required capability is reported by name. This includes `screencast`, which depends on the compositor's portal backend being present |
+| Compositor portal backend | **Yes**, indirectly | Not a component the launcher checks directly. Without it the adapter cannot report `screencast`, and `screencast` is required, so its absence blocks startup through the capability check. See [component-ownership.md](component-ownership.md) |
+| NetworkManager, PipeWire, WirePlumber, BlueZ, UPower, XWayland, snapd, the portal frontend, the GTK portal backend | No | Each absence is reported as a named capability gap. The session remains usable, with the corresponding feature unavailable. See [component-ownership.md](component-ownership.md) |
 
 The rule behind the split: **block startup when running anyway would create a security exposure; degrade and report when running anyway merely loses a feature.** A blocked startup returns the user to GDM with the cause in the journal, where GNOME is still selectable, so the cost of refusing to start is one session selection rather than an unusable machine. See [recovery.md](recovery.md).
+
+Note that the portal entries are split rather than listed together. The portal frontend and the GTK backend degrade: without them, portal-mediated features fail and the session is still usable. The compositor's own portal backend does not degrade, because it is the only thing that can serve screen capture on Wayland, and the capability that depends on it is required. Listing "portals" as a single non-blocking row would hide that difference.
+
+### Where the blocking rule comes from
+
+The locker and the polkit agent block startup because this project decided they should. `specs/platform-integration/spec.md` requires that the session be lockable, that a lock failure not leave the session exposed, and that a missing polkit agent be reported rather than left to fail silently. None of those requirements say the session must refuse to start.
+
+Refusing to start is this document's reading of how to satisfy them at launch time, and it is a stronger guarantee than the specifications currently demand. An implementation that starts the session and reports the missing component would satisfy every written scenario while contradicting this page.
+
+That gap is deliberate to record and not deliberate to keep. `add-session-lifecycle-integration` owns both components, and it is the change that should either add the startup-refusal scenarios to the specification or revise this rule. Until then, treat the blocking behavior here as a design commitment with no verifying scenario behind it.
 
 ## Downstream changes
 
