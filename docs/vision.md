@@ -56,6 +56,27 @@ Project-wide, for the foreseeable future:
 
 Two further exclusions are matters of sequence rather than principle: a status bar or launcher choice, and ISO or Remix work. Both may happen later; neither is in scope now.
 
+## The name
+
+The project is **Project Gridline**, and its address is `https://gridline-desktop.org`. Packaging metadata and documentation use that host; no other domain is the project's address.
+
+"Gridline" is a common word in software, and the name was checked rather than assumed. The findings are recorded here so that the decision does not have to be re-argued from scratch.
+
+**What exists.** `GRIDLINE` is a registered US trademark (reg. 5057814, registered 2016-10-11) held by Redwing Technology Corporation, covering international classes 035, 042 and 045. Class 042 includes "design and development of computer hardware and software". Two further applications are pending under the same word mark. At least six unrelated companies and projects use the name in software: fleet telematics, private-market investment infrastructure, document billing, an AEC intelligence layer, an open-source database GUI, and a spreadsheet application.
+
+**Why the name is kept anyway.** Three reasons, in order of weight:
+
+1. The package names are available. `gridline`, `gridline-desktop` and `gridline-session` are unused as source package names in both the Ubuntu archive and Debian, so there is no technical packaging conflict to resolve.
+2. None of the existing users is a Linux desktop environment. Market confusion between a Wayland tiling session and fleet telematics or an investment platform is implausible, which is the question a trademark dispute actually turns on.
+3. A non-commercial open-source project is a weak target for an infringement claim, though not an immune one.
+
+**What this costs.** The risk is not zero: a registered mark in class 042 covers software, so a claim is possible if the project becomes visible under the bare word. Two precautions follow from that, and both are cheap:
+
+- Public communication uses **"Project Gridline"** or **"Gridline Desktop"**, never "Gridline" alone. A compound name sits further from a registered word mark than the word by itself.
+- No attempt is made to register "Gridline" as a trademark for this project. With one registration and two pending applications on the same word, the likely outcome is refusal.
+
+`gridline` is already taken on PyPI, npm and crates.io; `gridline-desktop` is free on all three. If the project ever publishes to a language registry, it uses the compound form there too.
+
 ## Where the constraints live
 
 This document records intent. The binding form of each constraint is a requirement in `openspec/specs/`, written so a later change can be checked against it rather than against a reading of this page. Where the two ever disagree, the specs are authoritative.
