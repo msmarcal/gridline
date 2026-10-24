@@ -48,7 +48,30 @@ context: |
   Canonical security-update commitment. Every component decision records whether
   the package is in main or universe, because that distinction is a support fact,
   not packaging trivia, and it is the central obstacle to any future flavor
-  candidacy.
+  candidacy. The project's declared position is that this gap is documented
+  rather than hidden: patching responsibility for universe components rests with
+  the operator, and a Gridline-maintained CVE-tracking PPA is a future goal, not
+  a current commitment. Material claiming enterprise or regulated suitability
+  without reproducing this gap is defective.
+
+  Gridline's differentiator is enterprise deployability, not tiling. The
+  compliance target is the CIS Benchmark for Ubuntu Linux, Level 1 Workstation,
+  plus screen-lock policy and disk encryption. FIPS, STIG and PCI are explicitly
+  not targets.
+
+  Central manageability is a foundation concern. An administrator must be able to
+  set session policy that a user cannot silently override, and the absence of a
+  policy in effect must be detectable. The Hypr tools do not use dconf: they
+  resolve configuration through Hyprutils findConfig, which returns the first
+  matching file and stops, so a user file replaces an administrator file wholesale
+  and no lock mechanism exists. Any requirement about enforced policy must name
+  the Gridline-owned mechanism that enforces it, because configuration layering
+  alone cannot.
+
+  Platform security mechanisms are out of scope but must not break: full-disk
+  encryption, Secure Boot, TPM, enterprise identity including SSSD, Kerberos,
+  Active Directory and smartcard login, AppArmor, and audit logging. Gridline's
+  obligation is to not interfere and to prove it.
 
   Archive packages own their own files. Where Gridline must influence a
   third-party component's behavior, it does so with a Gridline-named drop-in file

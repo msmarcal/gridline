@@ -1,0 +1,81 @@
+# Security posture and enterprise manageability
+
+Gridline's reason to exist is not tiling. Tiling sessions for Linux already exist, and Omarchy delivers one with a stronger aesthetic and a faster release cadence than Gridline will have. Gridline's claim is narrower and harder: **a tiling session that an Ubuntu estate can actually deploy** — centrally configured, auditable, and reversible, on an LTS base with a known support story.
+
+That claim creates obligations the rest of this project does not yet carry. This document records them, along with the facts that constrain them. It is a project record; the requirements it implies belong to named changes.
+
+## The target is CIS Benchmark Ubuntu, Level 1 Workstation
+
+The compliance target is deliberately generic: the CIS Benchmark for Ubuntu Linux, Level 1 Workstation, plus screen-lock policy and disk encryption. Not FIPS, not STIG, not PCI. Those regimes demand hardening work and formal validation that a session project cannot deliver on its own, and naming them would promise more than Gridline can test.
+
+Level 1 is the right floor because it is what a mainstream corporate Ubuntu estate is actually measured against, and because its desktop controls are concrete enough to test.
+
+## The security-update gap, stated plainly
+
+Every Hypr-ecosystem package Gridline depends on is in Ubuntu's **universe** component. Universe carries **no Canonical security-update commitment**. Main does.
+
+This is the single largest gap between what Gridline promises and what the archive provides, and it is not closable by packaging work:
+
+- A Gridline installation inherits no CVE-response SLA for its compositor, locker, idle manager or portal backend.
+- `gridline-desktop` cannot live in main while it depends on universe, which is the central obstacle to official flavor candidacy.
+- The archive also lags upstream: Hyprland 0.53.3 in the baseline against 0.56.2 upstream.
+
+**Gridline's declared position:** the gap is documented, not hidden. Patching responsibility for universe components rests with the operator, and Gridline's documentation must state this where a deploying administrator will read it, not only here. A Gridline-maintained PPA tracking upstream CVEs is recorded as a **future goal**, not a current commitment; promising a patch stream the project cannot yet staff would be worse than naming the gap.
+
+Any Gridline material that claims suitability for a regulated environment without reproducing this gap is wrong, and reviewers should treat it as a defect.
+
+## Central configuration: the mechanism does not exist yet
+
+An enterprise desktop must let an administrator set a policy the user cannot override. On GNOME this is dconf: system databases under `/etc/dconf/db/`, a profile naming their precedence, and a `locks/` subdirectory that makes specific keys unwritable by the user. CIS controls 1.7.4 and 1.7.5 are written directly against that mechanism — 1.7.4 sets `idle-delay` and `lock-delay`, and 1.7.5 locks both so a user cannot change them.
+
+**The Hypr tools do not use dconf.** Verified against the baseline binaries: `hypridle` and `hyprlock` link `libhyprlang` and resolve configuration through `Hyprutils::Path::findConfig`, with no dconf or GSettings symbols at all. The search order that function implements, read from `hyprutils` source, is:
+
+1. `$XDG_CONFIG_HOME/hypr/<program>.conf`
+2. `$HOME/.config/hypr/<program>.conf`
+3. each directory in `$XDG_CONFIG_DIRS`, as `<dir>/hypr/<program>.conf`
+4. `/etc/xdg/hypr/<program>.conf`
+
+It returns the **first** file it finds and stops. There is no merge, no layering, and no lock concept.
+
+Two consequences follow, and both are structural rather than cosmetic:
+
+- **A user file wins outright.** A `~/.config/hypr/hyprlock.conf` does not override individual keys from an administrator file; it replaces the administrator file entirely. A lock timeout set in `/etc/xdg` disappears the moment a user writes their own config, and nothing reports that it happened.
+- **CIS 1.7.5 has no counterpart.** "Ensure screen locks cannot be overridden" cannot be satisfied by configuration alone, because the mechanism the control audits is absent from these tools.
+
+This is the same class of problem as the portal configuration file, and it has the same shape: the archive provides the component but not the policy surface, so enforcement has to come from something Gridline owns. It is a **deliverable**, not a default.
+
+**What Gridline therefore owes a manageability capability**, as a foundation concern rather than later work:
+
+| Need | Why configuration alone cannot deliver it |
+|---|---|
+| Vendor, administrator and user precedence | `findConfig` returns the first match and stops; later layers are never read |
+| An administrator-locked setting | No lock mechanism exists in `hyprlang`; a user file supersedes wholesale |
+| Detection of policy that is not in effect | A superseding user file is indistinguishable from policy being applied |
+| A single place an administrator sets policy | Policy for the session, locker, idle manager and portal lives in unrelated files with unrelated formats |
+
+The last row is why this cannot be deferred to the package that ships defaults: deciding where policy lives is an architecture decision, and changing it later invalidates every default already shipped.
+
+## Lock screen and idle policy
+
+`hyprlock` ships `/etc/pam.d/hyprlock` containing `auth include login`, so authentication works with no packaging effort. Two notes for whichever change adopts it:
+
+- `include login` is broader than a locker requires. GDM uses a narrower stack. This is a security-review item, not a defect.
+- Screen-lock policy spans two components: `hypridle` decides when to lock, `hyprlock` decides what unlocking requires. A policy claim about lock timeout is a claim about both, and the diagnostic must check both.
+
+## Screen capture cuts both ways
+
+Gridline already requires deterministic portal backend selection so screen sharing works. An enterprise target adds the opposite requirement: an administrator may need to **restrict** capture. The portal mechanism serves both, which is an argument for routing capture through portals rather than letting applications reach the compositor directly — a restriction expressed in portal configuration is auditable, one enforced by a compositor flag is not.
+
+## What stays out of scope
+
+Gridline must not require anything outside the supported Ubuntu stack, and must not interfere with mechanisms a corporate estate depends on:
+
+- Full-disk encryption, Secure Boot and TPM behavior are the platform's, not the session's. Gridline neither requires disabling them nor claims to configure them.
+- Enterprise identity — SSSD, Kerberos, Active Directory, smartcard login — is a platform concern. Gridline's obligation is to not break it, and to verify that it does not.
+- Audit and logging continue to work: the session does not bypass `auditd`, and its components log to the journal.
+
+These are verification obligations, not features. A tiling session that quietly breaks smartcard login is useless to the audience this project is for, and the failure would surface during a pilot rather than during development unless something checks it.
+
+## Reversibility is a compliance argument
+
+GNOME remaining installed, selectable and supported is already a constraint. In an enterprise framing it is also the strongest risk argument Gridline has: a session that can be removed, leaving a supported desktop behind, is a reversible change. That property is worth stating in those terms when the audience is a platform team rather than an enthusiast.
