@@ -22,7 +22,7 @@ Every user-visible Gridline capability SHALL be delivered by a Debian package. N
 
 ### Requirement: Package boundaries are fixed and non-overlapping
 
-Gridline SHALL be delivered as `gridline-session`, `gridline-config`, `gridline-tools`, and the `gridline-desktop` metapackage, with each file owned by exactly one package.
+Gridline SHALL be delivered as `gridline-session`, `gridline-config`, and `gridline-tools`, with each file owned by exactly one package. The name `gridline-desktop` SHALL be reserved for a metapackage delivered by a later change.
 
 #### Scenario: No file is claimed twice
 
@@ -66,13 +66,18 @@ Gridline SHALL be delivered as `gridline-session`, `gridline-config`, `gridline-
 - **WHEN** `gridline-tools` is installed without a Gridline session running
 - **THEN** its commands run and report on the system rather than failing to start
 
-### Requirement: gridline-desktop is a metapackage only
+### Requirement: gridline-desktop is reserved as a metapackage boundary
 
-`gridline-desktop` SHALL contain no functionality of its own and exist only to pull in the packages that make up a complete Gridline desktop.
+The name `gridline-desktop` SHALL be reserved for a future metapackage that pulls in the packages making up a complete Gridline desktop, and SHALL NOT be delivered by this change. When delivered, it SHALL contain no functionality of its own.
 
-#### Scenario: Metapackage ships no implementation
+#### Scenario: Reserved name is not delivered prematurely
 
-- **WHEN** `gridline-desktop` is inspected
+- **WHEN** the output of this change is inspected
+- **THEN** no `gridline-desktop` package is produced, and the reserved boundary is recorded in the project documentation
+
+#### Scenario: Metapackage ships no implementation when delivered
+
+- **WHEN** a future change delivers `gridline-desktop` and it is inspected
 - **THEN** it ships no executable, configuration, or data files beyond its own packaging metadata
 
 ### Requirement: Images consume packages and add no core functionality

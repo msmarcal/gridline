@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Gridline's existence as a selectable Wayland desktop session on Ubuntu: how it registers with the display manager, how it starts and stops, and how it coexists with the stock GNOME session that remains the user's supported fallback.
+Gridline's existence as a selectable Wayland desktop session on Ubuntu: how it registers with the display manager, how it starts and stops, how it coexists with the stock GNOME session that remains the user's supported fallback, and how a user recovers when a Gridline session fails.
 
 ## ADDED Requirements
 
@@ -22,12 +22,17 @@ Gridline SHALL register a Wayland session entry that GDM presents as a selectabl
 
 ### Requirement: Session is opt-in, never the default
 
-Installing Gridline SHALL NOT change which session GDM selects by default for any existing user.
+Installing Gridline SHALL NOT change which session GDM selects by default, for existing users or for users created after installation.
 
 #### Scenario: Existing user's default is preserved
 
 - **WHEN** a user whose last session was Ubuntu GNOME installs `gridline-session` and returns to the login screen
 - **THEN** GDM still preselects Ubuntu GNOME, and Gridline is chosen only by explicit selection
+
+#### Scenario: New user does not receive Gridline by default
+
+- **WHEN** a user account is created on a system with Gridline already installed and that user reaches the login screen for the first time
+- **THEN** GDM preselects the system's stock Ubuntu session rather than Gridline
 
 ### Requirement: GNOME session remains installed and supported
 
@@ -56,6 +61,20 @@ Selecting the Gridline session SHALL either reach a usable tiling desktop or ret
 
 - **WHEN** a required component of the session fails to start
 - **THEN** the session exits, the user is returned to GDM, and the cause is written to the journal under an identifiable Gridline unit or process name
+
+### Requirement: A failed Gridline session is recoverable without Gridline
+
+A user whose Gridline session cannot start SHALL be able to reach a working desktop and locate the failure record without needing a functioning Gridline session.
+
+#### Scenario: Recovery to a working desktop
+
+- **WHEN** the Gridline session fails to start and the user is returned to GDM
+- **THEN** the Ubuntu GNOME session remains selectable from the same login screen and starts normally
+
+#### Scenario: Failure is discoverable from the fallback session
+
+- **WHEN** a user logs into the fallback session after a Gridline launch failure
+- **THEN** the documented recovery procedure locates the Gridline failure record in the system journal using only tools present on a stock Ubuntu system
 
 ### Requirement: Session teardown releases the seat
 
