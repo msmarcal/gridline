@@ -65,7 +65,7 @@ The configuration and tools layers own no capability outright. They serve requir
 
 ## Required session components
 
-Most components degrade the session when absent. Two do not: their absence **blocks session startup**, because a session that runs without them fails in a way that has a security consequence rather than a missing feature.
+Most components degrade the session when absent. Five do not: their absence **blocks session startup**.
 
 | Component | Blocks startup | Why |
 |---|---|---|
@@ -76,7 +76,17 @@ Most components degrade the session when absent. Two do not: their absence **blo
 | Compositor portal backend | **Yes**, indirectly | Not a component the launcher checks directly. Without it the adapter cannot report `screencast`, and `screencast` is required, so its absence blocks startup through the capability check. See [component-ownership.md](component-ownership.md) |
 | NetworkManager, PipeWire, WirePlumber, BlueZ, UPower, XWayland, snapd, the portal frontend, the GTK portal backend | No | Each absence is reported as a named capability gap. The session remains usable, with the corresponding feature unavailable. See [component-ownership.md](component-ownership.md) |
 
-The rule behind the split: **block startup when running anyway would create a security exposure; degrade and report when running anyway merely loses a feature.** A blocked startup returns the user to GDM with the cause in the journal, where GNOME is still selectable, so the cost of refusing to start is one session selection rather than an unusable machine. See [recovery.md](recovery.md).
+The table uses two distinct reasons to block, and they are worth keeping apart because they are argued differently.
+
+**Security exposure.** Running anyway would leave the machine in a state a user would not accept if they understood it. The screen locker and the polkit agent block for this reason, and only this reason.
+
+**Functional impossibility.** Running anyway would produce a session that cannot satisfy an active requirement in `openspec/specs/`. The compositor, the required adapter capabilities, and the compositor portal backend block for this reason. Nothing is exposed; the session simply cannot be what it claims to be.
+
+Everything else degrades: the component is absent, the corresponding feature is unavailable, and the condition is reported as a named capability gap.
+
+A blocked startup returns the user to GDM with the cause in the journal, where GNOME is still selectable, so the cost of refusing to start is one session selection rather than an unusable machine. See [recovery.md](recovery.md).
+
+XWayland is the case that sits closest to the line. A session without it cannot run X11 applications, and `specs/platform-integration/spec.md` has an active scenario for exactly that. It degrades rather than blocks because the functional-impossibility reason is scoped to what the session itself must be able to do, not to every requirement a missing package can affect: a Gridline session without XWayland is still a working Wayland desktop, and the applications that break are the ones that were never Wayland applications. The boundary is arguable, and it is written down here so that a later change arguing the other way has something specific to argue against.
 
 Note that the portal entries are split rather than listed together. The portal frontend and the GTK backend degrade: without them, portal-mediated features fail and the session is still usable. The compositor's own portal backend does not degrade, because it is the only thing that can serve screen capture on Wayland, and the capability that depends on it is required. Listing "portals" as a single non-blocking row would hide that difference.
 

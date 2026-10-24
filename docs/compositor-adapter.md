@@ -55,7 +55,9 @@ Absence degrades the session but does not block startup. Each must be reported a
 | `output-scaling` | Fractional or per-output scaling is unavailable; outputs run at integer scale |
 | `touch-and-gestures` | Touch and gesture input is unavailable |
 
-The test for membership in this table is whether a session missing the capability still satisfies every active requirement in `openspec/specs/`. A capability whose absence breaks a specified scenario belongs in the required table, however convenient it would be to degrade instead.
+The test for membership in this table is whether the session can still do what it claims to do without the capability. A capability the session itself must exercise to be a working Gridline desktop belongs in the required table, however convenient it would be to degrade instead.
+
+The test is scoped to adapter capabilities and does not generalise to every component a session depends on. `screencast` is required because the session cannot serve a portal interface it advertises without it, not merely because a requirement mentions screen sharing. Components outside the adapter are classified in [architecture.md](architecture.md), under a rule that distinguishes security exposure from functional impossibility.
 
 ### Reporting rules
 
