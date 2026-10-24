@@ -23,7 +23,7 @@ Three boundaries sit close enough together to be worth stating explicitly, becau
 
 **The adapter is integration glue, not a tool.** The compositor adapter ships in `gridline-session` because that package owns integration. Putting it in `gridline-tools` would force the diagnostic commands to carry compositor knowledge, which `specs/compositor-abstraction/spec.md` forbids.
 
-**The portal mapping is configuration, not session logic.** The interface-to-backend mapping is a shipped default, so `gridline-config` owns it, even though the session is what consumes it. `gridline-portals.conf` follows the mapping into `gridline-config` for the same reason, and it installs to `/usr/share/xdg-desktop-portal/` rather than `/etc/xdg`, because that is the directory the portal frontend reads. It is a new file under a Gridline-specific name, so it owns no path another package claims.
+**The portal mapping is configuration, not session logic.** The interface-to-backend mapping is a shipped default, so `gridline-config` owns it, even though the session is what consumes it. `gridline-portals.conf` follows the mapping into `gridline-config` for the same reason, and it installs to `/usr/share/xdg-desktop-portal/gridline-portals.conf`, lower-cased, because the frontend appends `xdg-desktop-portal/` to each base directory it searches and case-folds the desktop name before building the filename. `/etc/xdg` without that subdirectory is not a search path; `/etc/xdg-desktop-portal/` is, and it is reserved for administrator overrides rather than package content. It is a new file under a Gridline-specific name, so it owns no path another package claims.
 
 ## What no package does
 

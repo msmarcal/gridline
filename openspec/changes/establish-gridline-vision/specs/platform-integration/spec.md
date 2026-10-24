@@ -64,7 +64,7 @@ A Gridline session SHALL provide XDG Desktop Portals with a compatible Hyprland 
 
 ### Requirement: Portal backend selection is driven by a Gridline-owned configuration file
 
-The portal frontend selects backends by desktop name, taken from the first entry of `XDG_CURRENT_DESKTOP`. Because Gridline's identity is `Gridline:Hyprland`, no configuration shipped by a compositor package applies to it. Gridline SHALL ship its own portal configuration file naming the backend preference for each required interface, SHALL NOT rely on the deprecated `UseIn` matching in a third-party `.portal` file, and SHALL NOT modify or replace a configuration file owned by another package.
+The portal frontend selects backends by desktop name, trying each entry of `XDG_CURRENT_DESKTOP` in order and case-folding it to build the configuration filename it looks for, under a portal-specific subdirectory of each search path. Because Gridline's identity is `Gridline:Hyprland`, no configuration shipped by a compositor package applies to it. Gridline SHALL ship its own portal configuration file naming the backend preference for each required interface, SHALL NOT rely on the deprecated `UseIn` matching in a third-party `.portal` file, and SHALL NOT modify or replace a configuration file owned by another package.
 
 #### Scenario: Gridline's own portal configuration is the one that applies
 
@@ -80,6 +80,11 @@ The portal frontend selects backends by desktop name, taken from the first entry
 
 - **WHEN** Gridline's portal configuration file is absent or does not name a backend for a required interface
 - **THEN** the condition is reported by the diagnostic commands as a configuration fault, rather than surfacing later as a portal request that fails with every component installed
+
+#### Scenario: A missing Gridline configuration is not masked by a compositor default
+
+- **WHEN** Gridline's portal configuration file is absent and the compositor package's own desktop name appears later in Gridline's desktop identity
+- **THEN** the diagnostic commands still report the missing Gridline configuration as a fault, even though the portal frontend would resolve a working backend from the compositor package's configuration file
 
 ### Requirement: Snap applications run correctly
 

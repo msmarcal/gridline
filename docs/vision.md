@@ -75,6 +75,10 @@ The project is **Project Gridline**, and its address is `https://gridline-deskto
 - Public communication uses **"Project Gridline"** or **"Gridline Desktop"**, never "Gridline" alone. A compound name sits further from a registered word mark than the word by itself.
 - No attempt is made to register "Gridline" as a trademark for this project. With one registration and two pending applications on the same word, the likely outcome is refusal.
 
+**The compound form governs prose, not identifiers.** It applies to the project name, documentation, the website and public communication. Technical identifiers keep the bare word and do not change: the `gridline` command users type, the `gridline` source package, the `gridline-` binary package prefix the tooling globs on, and the domain. Renaming those would be a misreading of this precaution. That `gridline-desktop` is both the public compound form and the reserved metapackage name is a convenience, not a conflict.
+
+This section is a project record rather than the output of a task in this change. No task or requirement covers the name search, and none should be invented to cover it retroactively; it is written here because the next change would otherwise re-derive it.
+
 `gridline` is already taken on PyPI, npm and crates.io; `gridline-desktop` is free on all three. If the project ever publishes to a language registry, it uses the compound form there too.
 
 ## Where the constraints live

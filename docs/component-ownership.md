@@ -39,6 +39,13 @@ The compositor's own backend is the exception on this page: it is the only porta
 
 There is a second, less obvious failure here, and it is a Gridline problem rather than a missing component. `xdg-desktop-portal` selects backends by looking for `<desktop>-portals.conf`, taking the desktop name from the first entry in `XDG_CURRENT_DESKTOP`. Gridline's identity is `Gridline:Hyprland`, so the frontend looks for `gridline-portals.conf`. The `hyprland` package ships `/usr/share/xdg-desktop-portal/hyprland-portals.conf`, which is never consulted under that identity, and `hyprland.portal` lists `UseIn=wlroots;Hyprland;sway;Wayfire;river;` without `Gridline` — so the deprecated `UseIn` fallback does not match either. **Gridline must ship its own `gridline-portals.conf`**; without it, backend selection falls to a last-resort fallback and screen capture fails while the session appears healthy. The file is a Gridline-named drop-in, not a modification of a file another package owns.
 
+Two mechanical details decide whether that file is ever read, and both are verified against `xdg-desktop-portal 1.21.1+ds-1ubuntu3.1`:
+
+- **The filename is lower-cased.** The frontend case-folds each desktop name with `g_ascii_strdown` before building the filename, so the identity `Gridline` yields `gridline-portals.conf`. A file named `Gridline-portals.conf` is never found.
+- **The search directory is a portal directory, not a generic config root.** The frontend appends `xdg-desktop-portal/` to each base directory it searches, so the vendor default belongs at `/usr/share/xdg-desktop-portal/gridline-portals.conf` and an administrator override at `/etc/xdg-desktop-portal/gridline-portals.conf`. A file placed at the root of a Gridline-owned directory, or in `/etc/xdg` without the `xdg-desktop-portal/` component, is not on any search path.
+
+The frontend also tries **every** name in `XDG_CURRENT_DESKTOP` in order before falling back, so with `Gridline:Hyprland` a missing `gridline-portals.conf` means the `hyprland-portals.conf` shipped by the compositor package is consulted next. That is a working screen-capture path by accident, which is worse than a clean failure: it hides the missing file until someone changes the identity or the compositor package drops its default.
+
 | Component | Upstream | Ubuntu source | Component | Gridline ownership | Fallback |
 |---|---|---|---|---|---|
 | xdg-desktop-portal | freedesktop | `xdg-desktop-portal` 1.21.1+ds-1ubuntu3.1 | main | Integration only; Gridline owns the interface-to-backend mapping | Session starts, portal-mediated features fail. Reported as a capability gap. Sandboxed applications are affected most |

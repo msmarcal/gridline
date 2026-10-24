@@ -74,7 +74,7 @@ The requirement that the stock GNOME session remains installed and supported is 
 
 The adapter isolation check is assigned to `add-hyprland-session-baseline`, where the adapter is created, and re-run in CI by `add-ci-vm-smoke-tests`.
 
-One requirement was added to `platform-integration` after the baseline was inspected against the archive rather than assumed. The portal frontend selects backends by the first entry of `XDG_CURRENT_DESKTOP`, which for Gridline is `Gridline`, and nothing shipped by the compositor package matches that name. Without a Gridline-owned portal configuration file, a session with every required component installed still fails the existing `Screen sharing works` scenario, and fails it silently. The requirement is owned by `add-desktop-portal-integration`, alongside the backend mapping it extends.
+One requirement was added to `platform-integration` after the baseline was inspected against the archive rather than assumed. The portal frontend builds a configuration filename from each entry of `XDG_CURRENT_DESKTOP` in turn, case-folded, and nothing shipped by the compositor package matches Gridline's own name. Without a Gridline-owned portal configuration file, backend selection is decided by whatever the compositor package happens to ship, which is why the requirement carries a scenario for the masked case as well as the missing one: the existing `Screen sharing works` scenario can pass for the wrong reason, which is harder to catch than a clean failure. The requirement is owned by `add-desktop-portal-integration`, alongside the backend mapping it extends.
 
 ### Deferred requirements
 
