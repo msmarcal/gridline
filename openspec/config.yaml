@@ -11,15 +11,23 @@ context: |
 
   The stock Ubuntu GNOME session must remain installed, selectable and
   supported as a fallback at all times. Gridline is additive and removable.
+  A user whose Gridline session fails must be able to recover without a
+  working Gridline desktop.
 
   Mandatory integrations that must keep working: GDM, NetworkManager, PipeWire
   and WirePlumber, BlueZ, XDG Desktop Portals including a compatible Hyprland
-  backend plus the GTK backend, Snap applications, AppArmor, and Ubuntu
-  security updates.
+  backend plus the GTK backend, Snap applications, power management covering
+  suspend, resume and lid handling, session locking that survives suspend, a
+  polkit authentication agent, XWayland for X11 applications, AppArmor, and
+  Ubuntu security updates.
+
+  Session locking and the polkit agent are fail-safe components: a lock failure
+  must never leave an unlocked unattended session, and a missing polkit agent
+  must be reported rather than left to fail privileged actions silently.
 
   Hyprland is the initial compositor. Compositor-specific logic stays behind an
-  internal adapter boundary and must not rely on undocumented Hyprland
-  internals.
+  internal adapter boundary at a single documented path and must not rely on
+  undocumented Hyprland internals.
 
   A future community Ubuntu Remix or ISO consumes the same packages and must
   never be the only place a core capability exists.
@@ -42,6 +50,8 @@ rules:
       deliver; mark it reserved or defer it to the change that delivers it
     - Every requirement that can leave the desktop unusable must state the
       fallback behavior
+    - Every requirement whose failure has a security consequence must state the
+      fail-safe behavior
   tasks:
     - A foundation or definition change produces documentation and specs only,
       never package builds, implementation, or hardware validation tasks

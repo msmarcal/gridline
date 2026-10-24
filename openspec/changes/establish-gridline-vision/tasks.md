@@ -13,7 +13,7 @@ Scope note: this change produces documentation and specifications only. No packa
 
 - [ ] 2.1 Document the repository layout and the one-source-package decision in `packages/gridline/README.md`, including room for future source packages, and verify the documented layout matches what `.gitignore` already anticipates
 - [ ] 2.2 Record in `packages/gridline/README.md` that `gridline-desktop` is a reserved metapackage boundary with no implementation in this change, and verify the statement matches the reserved requirement in `specs/package-delivery/spec.md`
-- [ ] 2.3 Document the compositor adapter contract in `docs/compositor-adapter.md`, including the capability set an adapter must report and the rule that only documented compositor interfaces may be used, and verify the document defines the contract without specifying a Hyprland implementation
+- [ ] 2.3 Document the compositor adapter contract in `docs/compositor-adapter.md`, including the capability set an adapter must report, the single documented adapter path that serves as the isolation boundary, and the rule that only documented compositor interfaces may be used, and verify the document defines the contract without specifying a Hyprland implementation
 - [ ] 2.4 Document the adapter extraction path for a future second compositor in `docs/compositor-adapter.md`, and verify it identifies which parts of the desktop would and would not need to change
 - [ ] 2.5 Document configuration precedence and the session-scoped `XDG_CONFIG_DIRS` rule in `docs/configuration.md`, and verify it states that Gridline defaults never alter configuration resolution for a GNOME session
 
@@ -21,6 +21,7 @@ Scope note: this change produces documentation and specifications only. No packa
 
 - [ ] 3.1 Document the user recovery path for a failed Gridline session in `docs/vision.md` or a dedicated `docs/recovery.md`, covering session selection at GDM and where the failure is recorded, and verify the path requires no working Gridline desktop to follow
 - [ ] 3.2 Verify the documented recovery path matches the fallback requirements in `specs/desktop-session/spec.md` with no contradiction
+- [ ] 3.3 Document the required session components whose absence must block session startup, including the lock component and the polkit agent, in `docs/architecture.md`, and verify the list matches the fail-safe requirements in `specs/platform-integration/spec.md`
 
 ## 4. Change sequencing
 

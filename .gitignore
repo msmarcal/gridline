@@ -14,19 +14,11 @@ dist/
 *.debian.tar.*
 *.upload
 
-# debhelper and dpkg-buildpackage artifacts
-.debhelper/
-debian/files
-debian/tmp/
-debian/*.substvars
-debian/*.debhelper
-debian/*.debhelper.log
-debian/debhelper-build-stamp
-debian/*/
-!debian/source/
-!debian/patches/
-
-# Per-package build artifacts
+# Per-source-package build artifacts
+# Gridline keeps every source package under packages/<name>/, so debian/ never
+# appears at the repository root. Staging trees created by dpkg-buildpackage are
+# ignored by the gridline-* glob, which covers future binary packages without
+# touching debian/source/ or debian/patches/, since neither matches the prefix.
 packages/*/debian/files
 packages/*/debian/tmp/
 packages/*/debian/.debhelper/
@@ -34,6 +26,7 @@ packages/*/debian/*.substvars
 packages/*/debian/*.debhelper
 packages/*/debian/*.debhelper.log
 packages/*/debian/debhelper-build-stamp
+packages/*/debian/gridline-*/
 
 # Local tooling and caches
 .cache/

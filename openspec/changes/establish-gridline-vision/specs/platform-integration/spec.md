@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The integration surface a Gridline session must satisfy to count as a usable Ubuntu desktop rather than a bare compositor: networking, audio, Bluetooth, desktop portals, Snap applications, and the Ubuntu security model.
+The integration surface a Gridline session must satisfy to count as a usable Ubuntu desktop rather than a bare compositor: networking, audio, Bluetooth, desktop portals, Snap applications, power management, session locking, privileged action authorization, X11 compatibility, and the Ubuntu security model.
 
 ## ADDED Requirements
 
@@ -70,6 +70,72 @@ A Gridline session SHALL support Snap applications, including those relying on c
 
 - **WHEN** a user launches a strictly confined graphical Snap application in a Gridline session
 - **THEN** the application displays, accepts input, and reaches audio and portal services through its confinement interfaces
+
+### Requirement: Power management and suspend behave as on a stock Ubuntu desktop
+
+A Gridline session SHALL support the system's power management behavior, including suspend, resume, and lid handling, without requiring configuration outside the session.
+
+#### Scenario: Suspend and resume
+
+- **WHEN** a machine running a Gridline session suspends, whether by user request, idle timeout, or lid close
+- **THEN** the system suspends, and on resume the session is still running with display, input, audio, and network restored
+
+#### Scenario: Lid close on a laptop
+
+- **WHEN** the lid is closed on a laptop running a Gridline session
+- **THEN** the configured system behavior is honored, and an attached external display is handled without leaving the session without any usable output
+
+#### Scenario: Battery state is observable
+
+- **WHEN** a Gridline session runs on a machine with a battery
+- **THEN** charge state and power source are observable from within the session
+
+#### Scenario: Power events are attributable on failure
+
+- **WHEN** suspend or resume fails
+- **THEN** the failure is recorded in the system journal in a form the diagnostic commands can surface, and the session either remains usable or returns the user to GDM
+
+### Requirement: The session is lockable and the lock survives suspend
+
+A Gridline session SHALL provide screen locking, and a locked session SHALL require authentication before access is restored, including after suspend and resume.
+
+#### Scenario: Manual lock requires authentication
+
+- **WHEN** a user locks a running Gridline session
+- **THEN** the session contents are no longer accessible, and authentication is required to return to the desktop
+
+#### Scenario: Lock holds across suspend
+
+- **WHEN** a locked Gridline session suspends and later resumes
+- **THEN** the session is still locked and authentication is required
+
+#### Scenario: Lock failure does not expose the session
+
+- **WHEN** the lock component fails to start or crashes while the session is locked
+- **THEN** the session is not left unlocked and unattended, and the failure is recorded in the system journal
+
+### Requirement: Privileged actions can be authorized from within the session
+
+A Gridline session SHALL provide a polkit authentication agent so that actions requiring authorization can be completed without leaving the session.
+
+#### Scenario: Authorization prompt is answerable
+
+- **WHEN** an application or system action requires polkit authorization during a Gridline session
+- **THEN** the session presents a prompt that accepts credentials and completes or denies the action
+
+#### Scenario: Missing agent is diagnosable
+
+- **WHEN** no polkit authentication agent is available in the session
+- **THEN** the condition is reported in a form the diagnostic commands can surface, rather than privileged actions failing without explanation
+
+### Requirement: X11 applications run through XWayland
+
+A Gridline session SHALL support X11 applications through XWayland, so that applications without native Wayland support remain usable.
+
+#### Scenario: X11 application runs
+
+- **WHEN** a user launches an application that supports only X11 in a Gridline session
+- **THEN** the application displays, accepts keyboard and pointer input, and can use the clipboard with native Wayland applications
 
 ### Requirement: AppArmor confinement is preserved
 
