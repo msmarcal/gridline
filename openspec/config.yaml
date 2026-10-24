@@ -1,32 +1,56 @@
 schema: spec-driven
 
-# Project context (optional)
-# Add only constraints that should guide OpenSpec artifacts and workflows.
-# Include constraints an agent cannot infer by reading the code.
-# Keep general project documentation and discoverable codebase facts out.
-# Example:
-#   context: |
-#     Designs and tasks must cover Windows, macOS, and Linux
-#     Write all artifacts in Spanish
+context: |
+  Project Gridline is an optional Wayland tiling desktop session for Ubuntu.
+  It is not a distribution fork and not a replacement for Ubuntu Desktop.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always state what is out of scope
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Supported baseline: Ubuntu 26.04 LTS, x86_64.
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+  Delivery is exclusively through Debian packages. No capability may depend on
+  an install script, a post-install download, or a manual file copy.
+
+  The stock Ubuntu GNOME session must remain installed, selectable and
+  supported as a fallback at all times. Gridline is additive and removable.
+
+  Mandatory integrations that must keep working: GDM, NetworkManager, PipeWire
+  and WirePlumber, BlueZ, XDG Desktop Portals including a compatible Hyprland
+  backend plus the GTK backend, Snap applications, AppArmor, and Ubuntu
+  security updates.
+
+  Hyprland is the initial compositor. Compositor-specific logic stays behind an
+  internal adapter boundary and must not rely on undocumented Hyprland
+  internals.
+
+  A future community Ubuntu Remix or ISO consumes the same packages and must
+  never be the only place a core capability exists.
+
+  Project-wide non-goals for now: Omarchy visual parity, a custom Quickshell
+  shell, per-device hardware automation, an application catalogue, AI features,
+  and any change that replaces or removes GNOME.
+
+  Where Ubuntu already provides a component, the work is to keep it working and
+  prove it, not to reimplement it.
+
+rules:
+  proposal:
+    - Always state what is out of scope
+    - State explicitly whether the change ships implementation or only
+      documentation and specs
+  specs:
+    - Every requirement must be verifiable on the supported baseline
+    - Do not write an active requirement for something this change does not
+      deliver; mark it reserved or defer it to the change that delivers it
+    - Every requirement that can leave the desktop unusable must state the
+      fallback behavior
+  tasks:
+    - A foundation or definition change produces documentation and specs only,
+      never package builds, implementation, or hardware validation tasks
+    - Every task must name how it is verified
+    - Do not duplicate work that belongs to a later planned change
+
+operations:
+  apply:
+    guidance:
+      - Never modify GDM, PAM, NetworkManager, PipeWire, or polkit system
+        configuration outside of Gridline-owned paths
+      - Prefer Ubuntu archive packages over third-party sources
