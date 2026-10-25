@@ -10,7 +10,7 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 - **Ubuntu source** is the archive source package that provides it, with the version published for the Ubuntu 26.04 LTS (`resolute`) baseline.
 - **Component** is the archive component the package sits in. `main` carries a Canonical security-update commitment; `universe` does not. Every Hypr-ecosystem package Gridline depends on is in `universe`, which is recorded here because it is a support fact rather than packaging trivia.
 - **Gridline ownership** names what Gridline itself owns. "Integration only" means Gridline owns how the session reaches the component and nothing about the component.
-- **Fallback** is the behavior when the component is absent or fails.
+- **Fallback** is the behavior when the component is absent or fails. **"Not applicable"** is a deliberate category, not a missing entry: it marks a component that cannot be absent without the baseline itself being broken, so there is no Gridline-side degradation path to describe. A component whose absence Gridline could survive always names what happens instead.
 
 ## Session and compositor
 
