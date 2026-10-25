@@ -33,8 +33,8 @@ Scope note: this change produces documentation and specifications only. No `debi
 
 ## 6. Sequence and consistency
 
-- [ ] 6.1 Add `add-debian-package-skeleton` to the recorded downstream sequence in `docs/architecture.md`, with what it delivers, and verify the change set named there matches the downstream table in this change's `proposal.md`
-- [ ] 6.2 Verify every requirement added in `specs/package-delivery/spec.md` appears in this change's downstream table with exactly one owning change, and that the set of changes named in the table is the set named in the sequence recorded in `docs/architecture.md`
+- [x] 6.1 Add `add-debian-package-skeleton` to the recorded downstream sequence in `docs/architecture.md`, with what it delivers, and verify every change named in this change's attribution table appears in that sequence
+- [ ] 6.2 Verify every requirement added in `specs/package-delivery/spec.md` appears in this change's attribution table with exactly one owning change, and that no requirement is listed twice or omitted
 - [ ] 6.3 Verify no file under `packages/gridline/debian/` was created by this change, and that `docs/packaging.md` states the skeleton is delivered elsewhere
 
 ## Workflow follow-up

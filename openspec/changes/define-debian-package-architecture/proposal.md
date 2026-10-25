@@ -44,12 +44,22 @@ None. The packaging rules this change adds belong to the capability that already
 
 ## Downstream changes
 
-Every requirement added here is delivered by one of the changes below.
+Every requirement added here is the responsibility of exactly one of the changes below.
 
-| Change | Delivers |
-|---|---|
-| `add-debian-package-skeleton` | The buildable source package: `debian/control` with the declared dependencies, `debian/rules`, `debian/changelog`, per-binary `.install` files, the `gridline-` prefixed binary packages, and the build-time ownership gate |
-| `add-gridline-configuration-defaults` | The shipped defaults registered as conffiles, the policy input content, and the generated configuration the generator produces |
-| `add-ci-vm-smoke-tests` | Automated verification of upgrade, downgrade and clean removal on the supported baseline |
+| Requirement | Owned by | Why there |
+|---|---|---|
+| Binary package names carry the gridline- prefix | `add-debian-package-skeleton` | Binary package names are declared in `debian/control`, which that change creates |
+| Dependencies are declared and satisfiable from the supported archive | `add-debian-package-skeleton` | Dependency fields live in `debian/control`. The list accretes as later changes use components, but the declarations and their archive-component annotations are that change's structure |
+| Upgrade and downgrade leave a working session and keep local configuration | `add-debian-package-skeleton` | Conffile registration and maintainer scripts are what preserve an administrator's edit across an upgrade. `add-ci-vm-smoke-tests` verifies the behavior but does not deliver it |
+| Generated configuration is distinguishable from shipped editable defaults | `add-gridline-configuration-defaults` | The requirement is about files that do not exist until that change ships policy input and generated output. All three of its scenarios are vacuous in the skeleton, which registers a destination and generates nothing |
+| Policy input, generated configuration and lock declarations have named owning packages | `add-debian-package-skeleton` | Path ownership is asserted by `.install` manifests, so the boundary becomes real when they are written |
+
+Two attributions are worth their reasoning, because each could plausibly sit elsewhere.
+
+**Upgrade and downgrade** is owned by the change that delivers the guarantee rather than the change that proves it, following the precedent already set for recoverability in `desktop-session`: that requirement is owned by `add-gdm-wayland-session`, which delivers the fallback, while `add-session-health-check` only makes the failure diagnosable. `add-ci-vm-smoke-tests` stands in the same relation here.
+
+**Generated configuration** is owned by `add-gridline-configuration-defaults` rather than by the skeleton, because a requirement about generated files cannot be satisfied before generated files exist. The skeleton carries a precondition instead: it must not register the generated destination as a conffile, so that the later change inherits a registration that can express the distinction.
+
+`add-ci-vm-smoke-tests` owns no requirement added here, so it does not appear in the table. Its role is verification: upgrade, downgrade and clean removal on the supported baseline are behaviors it exercises rather than delivers.
 
 `add-debian-package-skeleton` is new, and it exists because the foundation's sequence named no owner for the buildable tree. Every `add-*` change in that sequence assumes a package to ship into, and none of them creates one. Splitting it out keeps this change inside the project's rule that a definition change produces documentation and specifications only.
