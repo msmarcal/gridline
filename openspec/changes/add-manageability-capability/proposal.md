@@ -50,4 +50,6 @@ No requirement in this change is deferred. A deferred requirement would have to 
 
 `define-debian-package-architecture` must place policy input, generated configuration and lock declarations in packages whose boundaries do not change later. Generated configuration is not a conffile, which is a distinction that change has to make explicitly.
 
+`define-supported-ubuntu-integration` gains a narrower subject than it had. Non-interference with the supported Ubuntu session was already its concern, but that was stated at the level of the session: GNOME stays installed, selectable and supported. Enforced policy makes the claim sharper, because a policy mechanism that writes configuration can reach a file that the GNOME session also reads, and a lock intended for the Gridline session can change what another session resolves. That change must therefore verify non-interference with configuration resolution for other sessions, not only that the GNOME session still starts and is selectable.
+
 No requirement in `establish-gridline-vision` is withdrawn or modified. The 32 requirements there remain as specified; this change adds to them.

@@ -23,7 +23,7 @@ Completion note: the artifacts for these tasks were written in `c5f5195bf1`, in 
 ## 4. Attribution and sequence
 
 - [x] 4.1 Assign every requirement in `specs/session-manageability/spec.md` to a downstream change in `proposal.md`, and verify the attribution table leaves no requirement in neither the assigned nor the deferred table
-- [x] 4.2 Record in `proposal.md` the preconditions this change imposes on `add-gridline-configuration-defaults`, `add-session-health-check` and `define-debian-package-architecture`, and verify each named change is one that exists in the documented sequence
+- [x] 4.2 Record in `proposal.md` the preconditions this change imposes on every downstream change that appears in the attribution table, and verify that the set of changes named in the preconditions is exactly the set named in the attribution table, and that each exists in the documented sequence
 
 ## 5. Compliance traceability
 
