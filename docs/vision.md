@@ -51,8 +51,8 @@ See [package-matrix.md](package-matrix.md) for the packages and what each owns.
 
 Project-wide, for the foreseeable future:
 
-- **Omarchy visual parity.** Gridline is not a reimplementation of another project's look.
-- **A custom shell.** No bespoke Quickshell-based shell is planned.
+- **Omarchy visual parity.** Gridline is not a reimplementation of another project's look. It adopts the usability of the Omarchy 3.x experience, built from archive packages; see [user-experience.md](user-experience.md) for the inventory and the exclusions.
+- **A custom shell.** No bespoke Quickshell-based shell is planned. Omarchy 4.0 moved to one, and it is not in the Ubuntu archive; chasing it would mean maintaining a desktop shell outside the archive.
 - **Per-device hardware automation.** Gridline does not detect and configure individual hardware models.
 - **An application catalogue.** Gridline ships a session, not a curated set of applications.
 - **AI features.**
