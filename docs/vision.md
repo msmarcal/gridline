@@ -6,9 +6,15 @@ Gridline is an optional Wayland tiling desktop session for Ubuntu, delivered as 
 
 It is not a distribution fork, not a replacement for Ubuntu Desktop, and not a configuration framework that rearranges a machine to suit itself. It is one more entry in the login screen's session list: select it to get a tiling desktop, select Ubuntu to get GNOME, and remove the packages to get the machine back exactly as it was.
 
-**What distinguishes Gridline is not tiling.** Tiling sessions for Linux already exist, and projects built on rolling bases ship them with a faster cadence and a stronger aesthetic than Gridline will have. Gridline's claim is narrower: a tiling session that an Ubuntu estate can deploy — centrally configurable, auditable against a named benchmark, reversible, and sitting on an LTS base whose support story is written down rather than assumed. The target user is someone who wants a tiling desktop and also has to answer to a platform team.
+**What distinguishes Gridline is not tiling, and not polish.** Tiling sessions for Linux already exist, and projects built on rolling bases ship them with a faster cadence and a stronger aesthetic than Gridline will have.
 
-That claim carries obligations, and the gaps between the claim and what the archive provides are recorded in [security-and-manageability.md](security-and-manageability.md). The largest is that the compositor stack lives in `universe` and carries no Canonical security-update commitment. Gridline documents that gap rather than hiding it.
+Gridline is a third option for a specific person: someone who already uses Ubuntu and likes using it, works in the terminal, saw Omarchy and wanted that. Their choices today are to leave Ubuntu for a rolling base, or to assemble the stack by hand and maintain it alone indefinitely. Gridline is that experience delivered as Debian packages on the Ubuntu they already run, with the Ubuntu session intact beside it.
+
+The audience is small, the way Omarchy's is. That is the nature of the project rather than a problem for it to solve, and it is why the project optimizes for being trustworthy on one working machine rather than for reach.
+
+Everything demanding in this project follows from that, and not from a compliance requirement. Packages instead of install scripts, GNOME always present, clean removal and a single compositor boundary exist because this runs on the machine its user works on, where a failed experiment must cost one session selection and not a working day.
+
+The gaps between what Gridline can promise and what the archive provides are recorded in [security-and-manageability.md](security-and-manageability.md). The largest is that the compositor stack lives in `universe` and carries no Canonical security-update commitment. Gridline documents that gap rather than hiding it.
 
 ## Supported baseline
 

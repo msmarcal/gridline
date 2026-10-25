@@ -1,8 +1,10 @@
-# Security posture and enterprise manageability
+# Security posture and manageability
 
-Gridline's reason to exist is not tiling. Tiling sessions for Linux already exist, and Omarchy delivers one with a stronger aesthetic and a faster release cadence than Gridline will have. Gridline's claim is narrower and harder: **a tiling session that an Ubuntu estate can actually deploy** — centrally configured, auditable, and reversible, on an LTS base with a known support story.
+This document records what Gridline's security and manageability cost, and where the project cannot promise what a reader might assume. It is not a statement of purpose. Gridline exists to give an Ubuntu user an Omarchy-like tiling session on the machine they already work on; see [vision.md](vision.md).
 
-That claim creates obligations the rest of this project does not yet carry. This document records them, along with the facts that constrain them. It is a project record; the requirements it implies belong to named changes.
+Reading it as a pitch would be a mistake in both directions. It is not an argument that Gridline is enterprise software, and it is not an argument that security does not matter here. It is the list of facts that constrain the project, written down so that a later change does not have to rediscover them, and so that nobody claims more than the archive can support.
+
+It is a project record; the requirements it implies belong to named changes.
 
 ## The target is CIS Benchmark Ubuntu, Level 1 Workstation
 

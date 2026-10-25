@@ -13,20 +13,30 @@ get GNOME. Remove the packages and the machine is exactly as it was.
 
 ## What makes it different
 
-Not tiling. Tiling sessions for Linux already exist, and projects on rolling
-bases ship them with a faster cadence and a stronger aesthetic than Gridline
-will have.
+Not tiling, and not polish. Tiling sessions for Linux already exist, and
+projects on rolling bases ship them with a faster cadence and a stronger
+aesthetic than Gridline will have.
 
-Gridline's claim is narrower: **a tiling session an Ubuntu estate can deploy.**
-Centrally configurable, auditable against a named benchmark, reversible, and
-sitting on an LTS base whose support story is written down rather than assumed.
-The target user is someone who wants a tiling desktop and also has to answer to
-a platform team.
+**Gridline is a third option.** You use Ubuntu and you like using it. You work
+in the terminal. You saw Omarchy and wanted that. Today your choices are to
+leave Ubuntu for a rolling base, or to assemble the stack by hand and maintain
+it yourself forever. Gridline is the Omarchy-like experience delivered as apt
+packages on the Ubuntu you already run, with the Ubuntu session sitting intact
+beside it in case you want out.
 
-That claim comes with obligations. The compositor stack lives in Ubuntu's
-`universe` component and carries no Canonical security-update commitment, which
-makes patching it the operator's responsibility. Gridline documents that gap
-instead of hiding it; see
+The audience is small, the way Omarchy's is. That is the nature of the thing
+rather than a problem to solve.
+
+The rigor elsewhere in this project follows from that, and not from any
+compliance requirement: packages instead of install scripts, GNOME always
+present, clean removal, and the compositor kept behind a single boundary. You
+are going to run this on the machine you work on, and an experimental desktop
+should not be able to leave you without a computer on a Tuesday morning.
+
+One gap is worth knowing before you install anything. The compositor stack lives
+in Ubuntu's `universe` component, which carries no Canonical security-update
+commitment, so patching it is the operator's responsibility, which on your own
+machine means yours. Gridline documents that instead of hiding it; see
 [security-and-manageability.md](docs/security-and-manageability.md).
 
 ## Design rules

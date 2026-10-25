@@ -54,10 +54,17 @@ context: |
   a current commitment. Material claiming enterprise or regulated suitability
   without reproducing this gap is defective.
 
-  Gridline's differentiator is enterprise deployability, not tiling. The
-  compliance target is the CIS Benchmark for Ubuntu Linux, Level 1 Workstation,
-  plus screen-lock policy and disk encryption. FIPS, STIG and PCI are explicitly
-  not targets.
+  Gridline is for people who already use Ubuntu, work in the terminal, and want
+  an Omarchy-like experience without leaving Ubuntu for a rolling base or
+  assembling the stack by hand. The audience is small by nature. The project's
+  rigor exists because this runs on its user's working machine, not to satisfy an
+  audit, and a change that reads as justifying the project to a review board has
+  the wrong audience in mind.
+
+  Hardening is a secondary concern and not the differentiator. Where a compliance
+  reference is useful it is the CIS Benchmark for Ubuntu Linux, Level 1
+  Workstation, plus screen-lock policy and disk encryption. FIPS, STIG and PCI
+  are explicitly not targets.
 
   Central manageability is a foundation concern. An administrator must be able to
   set session policy that a user cannot silently override, and the absence of a
