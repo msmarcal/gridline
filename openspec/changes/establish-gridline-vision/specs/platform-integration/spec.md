@@ -64,7 +64,12 @@ A Gridline session SHALL provide XDG Desktop Portals with a compatible Hyprland 
 
 ### Requirement: Portal backend selection is driven by a Gridline-owned configuration file
 
-The portal frontend selects backends by desktop name, trying each entry of `XDG_CURRENT_DESKTOP` in order and case-folding it to build the configuration filename it looks for, under a portal-specific subdirectory of each search path. Because Gridline's identity is `Gridline:Hyprland`, no configuration shipped by a compositor package applies to it. Gridline SHALL ship its own portal configuration file naming the backend preference for each required interface, SHALL NOT rely on the deprecated `UseIn` matching in a third-party `.portal` file, and SHALL NOT modify or replace a configuration file owned by another package.
+Gridline SHALL ship its own portal configuration file naming the backend preference for each required interface. It SHALL NOT rely on deprecated matching in a third-party portal definition, and SHALL NOT modify or replace a configuration file owned by another package.
+
+#### Scenario: Backend selection follows Gridline's desktop identity
+
+- **WHEN** the portal frontend resolves a backend and Gridline's desktop identity names Gridline first
+- **THEN** the configuration file it reads is the one Gridline owns, selected by Gridline's own desktop name rather than by a name belonging to the compositor package
 
 #### Scenario: Gridline's own portal configuration is the one that applies
 
