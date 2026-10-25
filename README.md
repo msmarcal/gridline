@@ -70,9 +70,9 @@ Three things are excluded on policy rather than availability:
 
 | Excluded | Why |
 | --- | --- |
-| Driving system updates | Patching is apt's job, and in a fleet the operator's. Gridline does not interpose itself. |
+| Driving system updates | Patching is apt's job. Gridline does not interpose itself between you and your package manager. |
 | Shortcuts to proprietary services | Gridline binds keys only to software it delivers. The remaining combinations stay unbound and documented. |
-| Installing software on demand | Post-install download is prohibited by the delivery rules, and is the first thing an audit rejects. |
+| Installing software on demand | Post-install download is prohibited by the delivery rules. A machine that fetches software after install cannot be returned to its prior state by removing packages. |
 
 The full inventory, including what the baseline cannot reach, is in
 [user-experience.md](docs/user-experience.md).
@@ -104,7 +104,7 @@ openspec validate --all --strict
 | [vision.md](docs/vision.md) | What Gridline is, the supported baseline, and the non-goals |
 | [architecture.md](docs/architecture.md) | The five layers and their boundaries |
 | [user-experience.md](docs/user-experience.md) | The experience target, what is reachable, and what is excluded |
-| [security-and-manageability.md](docs/security-and-manageability.md) | The compliance target, the `universe` gap, and why policy needs a layer |
+| [security-and-manageability.md](docs/security-and-manageability.md) | The facts that constrain the project: the `universe` gap, what policy can and cannot enforce |
 | [package-matrix.md](docs/package-matrix.md) | The binary packages and what each owns |
 | [component-ownership.md](docs/component-ownership.md) | Every component, its owner, and its fallback |
 | [compositor-adapter.md](docs/compositor-adapter.md) | The adapter contract and the isolation boundary |
@@ -114,14 +114,16 @@ openspec validate --all --strict
 Packaging layout and the source-package decisions are in
 [packages/gridline/README.md](packages/gridline/README.md).
 
-## Compliance target
+## Hardening reference
 
-CIS Benchmark for Ubuntu Linux, **Level 1 Workstation**, as a baseline, together
-with screen lock policy and disk encryption.
+Hardening is a secondary concern here, not the point of the project. Where a
+reference is useful, it is the CIS Benchmark for Ubuntu Linux, **Level 1
+Workstation**, together with screen lock policy and disk encryption: a generic
+floor whose desktop controls are concrete enough to check against.
 
-FIPS, STIG and PCI are explicitly out of scope: they require formal validation
-that a desktop session project does not deliver. Claiming them would be the kind
-of overreach that makes the rest of the document untrustworthy.
+FIPS, STIG and PCI are explicitly out of scope. They require formal validation
+that a desktop session project does not deliver, and claiming them would be the
+kind of overreach that makes everything else here untrustworthy.
 
 ## Name
 

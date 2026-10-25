@@ -108,8 +108,8 @@ These are rejected on policy, not availability, and they are the clearest place
 where Gridline's intent diverges from Omarchy's.
 
 - **Driving system updates.** Omarchy routes package upgrades through its own
-  tool. On Ubuntu, patching is apt's responsibility and, in a managed fleet, the
-  operator's. Gridline does not interpose itself.
+  tool. On Ubuntu, patching is apt's responsibility. Gridline does not interpose
+  itself between the user and their package manager.
 - **Shortcuts to proprietary services.** Omarchy binds keys to specific
   commercial mail, music, messaging and password products. Gridline binds keys
   only to software it delivers. The corresponding key combinations are left
@@ -117,8 +117,9 @@ where Gridline's intent diverges from Omarchy's.
   them without colliding with a Gridline default.
 - **Installing software on demand.** Omarchy can fetch coding agents when first
   invoked. Gridline delivers everything through packages; post-install download
-  is prohibited by the delivery rules and is the first thing an audit of a
-  managed desktop would reject.
+  is prohibited by the delivery rules, because a machine that fetches software
+  after install can no longer be returned to its prior state by removing
+  packages.
 
 ## Consequences for later changes
 

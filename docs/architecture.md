@@ -152,6 +152,6 @@ A requirement that appears in neither the downstream table nor this one is an at
 - [component-ownership.md](component-ownership.md): every component, its owner, and its fallback
 - [compositor-adapter.md](compositor-adapter.md): the adapter contract and the isolation boundary
 - [configuration.md](configuration.md): configuration precedence and session scoping
-- [security-and-manageability.md](security-and-manageability.md): the compliance target, the universe security-update gap, and why policy needs its own layer
+- [security-and-manageability.md](security-and-manageability.md): the facts that constrain the project, the universe security-update gap, and what policy can and cannot enforce
 - [user-experience.md](user-experience.md): the Omarchy-derived experience, what the baseline can deliver, and what is deliberately excluded
 - [recovery.md](recovery.md): what a user does when a session fails
