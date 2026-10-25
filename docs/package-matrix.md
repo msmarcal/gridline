@@ -9,8 +9,8 @@ The authoritative form of these boundaries is `openspec/specs/package-delivery/s
 | Package | Owns | Required by capability | Status |
 |---|---|---|---|
 | `gridline-session` | The GDM session entry, the session launcher, the core integration glue, and the compositor adapter layer | `desktop-session` (the session exists and starts), `platform-integration` (the session reaches the desktop stack), `compositor-abstraction` (the adapter lives here) | Planned |
-| `gridline-config` | Shipped defaults under `/etc/xdg`, default keybindings, default themes, the portal interface-to-backend mapping, and `gridline-portals.conf` | `desktop-session` (session-scoped configuration), `platform-integration` (deterministic portal backend selection) | Planned |
-| `gridline-tools` | The `gridline` command, `gridline doctor`, and the theme and diagnostic commands | `platform-integration` (capability gaps are diagnosable), `compositor-abstraction` (the command surface stays compositor-neutral) | Planned |
+| `gridline-config` | Shipped defaults under `/etc/xdg`, default keybindings, default themes, the portal interface-to-backend mapping, `gridline-portals.conf`, the administrator's policy input, the lock declarations, and the destination of the generated configuration | `desktop-session` (session-scoped configuration), `platform-integration` (deterministic portal backend selection), `session-manageability` (policy input and locks) | Planned |
+| `gridline-tools` | The `gridline` command, `gridline doctor`, the theme and diagnostic commands, and the generator that produces the effective configuration | `platform-integration` (capability gaps are diagnosable), `compositor-abstraction` (the command surface stays compositor-neutral), `session-manageability` (the generator) | Planned |
 | `gridline-desktop` | Nothing. A metapackage that pulls in the packages making up a complete Gridline desktop | `package-delivery` (the name is reserved) | **Reserved, not delivered** |
 
 Every binary package uses the `gridline-` prefix. See [packages/gridline/README.md](../packages/gridline/README.md) for why the prefix is a convention the build tooling relies on rather than a naming preference.
@@ -20,6 +20,8 @@ Every binary package uses the `gridline-` prefix. See [packages/gridline/README.
 Three boundaries sit close enough together to be worth stating explicitly, because `specs/package-delivery/spec.md` requires that no file be claimed by two packages.
 
 **Themes are split by kind, not by subject.** Theme *data* is shipped defaults, so it belongs to `gridline-config`. The theme *commands* that apply or list those themes are part of the command surface, so they belong to `gridline-tools`. A theme feature therefore touches two packages, and neither owns the other's files.
+
+**The generated configuration is split the same way.** `gridline-config` owns the destination, and `gridline-tools` owns the generator that writes into it, because the destination is configuration and the generator is a command. `gridline-config` installed on its own owns an empty destination and ships no generated content. See [packaging.md](packaging.md) for why the generator runs at runtime rather than at build time.
 
 **The adapter is integration glue, not a tool.** The compositor adapter ships in `gridline-session` because that package owns integration. Putting it in `gridline-tools` would force the diagnostic commands to carry compositor knowledge, which `specs/compositor-abstraction/spec.md` forbids.
 

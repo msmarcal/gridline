@@ -64,6 +64,8 @@ Two consequences for anyone working on configuration:
 
 Defaults an administrator is expected to edit are registered as dpkg conffiles.
 
+**The test is authorship, not location.** A file an administrator writes or is expected to edit is a conffile: shipped defaults, policy input, and lock declarations. A file Gridline produces from those is not, and it is removed when its owning package is removed. This is the same rule stated from the packaging side in [packaging.md](packaging.md), which carries the full table and the reason for each row. The two documents state one rule, not two similar ones.
+
 This is what implements "local changes survive upgrade" in `specs/package-delivery/spec.md`, including dpkg's prompt when a shipped default and a local edit both changed. Reimplementing preservation in a maintainer script would be more code and less predictable for anyone who already knows how Debian packages behave.
 
 The practical consequence for a contributor: changing a shipped default is a packaging-visible act. An administrator who edited that file will be asked about it on upgrade, so a default is worth getting right rather than iterating on casually.
