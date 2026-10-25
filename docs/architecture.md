@@ -149,6 +149,7 @@ A requirement that appears in neither the downstream table nor this one is an at
 
 - [vision.md](vision.md): what Gridline is, the baseline, and the non-goals
 - [package-matrix.md](package-matrix.md): the binary packages and what each owns
+- [packaging.md](packaging.md): how the packages are built, and how they behave across upgrade and removal
 - [component-ownership.md](component-ownership.md): every component, its owner, and its fallback
 - [compositor-adapter.md](compositor-adapter.md): the adapter contract and the isolation boundary
 - [configuration.md](configuration.md): configuration precedence and session scoping

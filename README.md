@@ -106,6 +106,7 @@ openspec validate --all --strict
 | [user-experience.md](docs/user-experience.md) | The experience target, what is reachable, and what is excluded |
 | [security-and-manageability.md](docs/security-and-manageability.md) | The facts that constrain the project: the `universe` gap, what policy can and cannot enforce |
 | [package-matrix.md](docs/package-matrix.md) | The binary packages and what each owns |
+| [packaging.md](docs/packaging.md) | How the packages are built, and how they behave across upgrade and removal |
 | [component-ownership.md](docs/component-ownership.md) | Every component, its owner, and its fallback |
 | [compositor-adapter.md](docs/compositor-adapter.md) | The adapter contract and the isolation boundary |
 | [configuration.md](docs/configuration.md) | Configuration resolution and session scoping |
