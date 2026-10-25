@@ -25,11 +25,11 @@ None. The packaging rules this change adds belong to the capability that already
 
 ### Modified Capabilities
 
-- `package-delivery`: gains requirements for the binary package naming convention, dependency declarations satisfiable from the supported archive, upgrade and downgrade behavior, the conffile versus generated configuration distinction, and named owning packages for policy input, generated configuration and lock declarations. No existing requirement is modified or removed.
+- `package-delivery`: gains requirements for the binary package naming convention, dependency declarations satisfiable from the supported archive, upgrade and downgrade behavior, the conffile versus generated configuration distinction, and the stability of a configuration artifact's package ownership. It also extends three existing requirements: `gridline-config` and `gridline-tools` gain the configuration artifacts they own plus the exclusivity clause their sibling already carried, and the `gridline-desktop` reservation is rephrased over durable project state. No requirement is removed.
 
 ## Impact
 
-- **Affected specs:** `package-delivery`, by addition only. `session-manageability` is not modified: its two assigned requirements are satisfied by the ownership requirement added here plus the design decisions below, not by changing their text.
+- **Affected specs:** `package-delivery`, by addition and by modification. `session-manageability` is not modified: its two assigned requirements describe the mechanism, while the extended `package-delivery` ownership requirements name the package that ships each artifact, so neither text needs changing.
 - **Code:** none. This change writes documentation and specifications.
 - **Breaking changes:** none. Nothing ships yet.
 - **Unblocks:** `add-debian-package-skeleton`, which creates `packages/gridline/debian/` against the rules defined here, and through it every `add-*` change that needs a package to ship into.
@@ -52,7 +52,7 @@ Every requirement added here is the responsibility of exactly one of the changes
 | Dependencies are declared and satisfiable from the supported archive | `add-debian-package-skeleton` | Dependency fields live in `debian/control`. The list accretes as later changes use components, but the declarations and their archive-component annotations are that change's structure |
 | Upgrade and downgrade leave a working session and keep local configuration | `add-debian-package-skeleton` | Conffile registration and maintainer scripts are what preserve an administrator's edit across an upgrade. `add-ci-vm-smoke-tests` verifies the behavior but does not deliver it |
 | Generated configuration is distinguishable from shipped editable defaults | `add-gridline-configuration-defaults` | The requirement is about files that do not exist until that change ships policy input and generated output. All three of its scenarios are vacuous in the skeleton, which registers a destination and generates nothing |
-| Policy input, generated configuration and lock declarations have named owning packages | `add-debian-package-skeleton` | Path ownership is asserted by `.install` manifests, so the boundary becomes real when they are written |
+| Package ownership of a configuration artifact does not move once content ships | `add-debian-package-skeleton` | Path ownership is asserted by `.install` manifests, so the boundary becomes real when they are written |
 
 Two attributions are worth their reasoning, because each could plausibly sit elsewhere.
 
@@ -61,5 +61,7 @@ Two attributions are worth their reasoning, because each could plausibly sit els
 **Generated configuration** is owned by `add-gridline-configuration-defaults` rather than by the skeleton, because a requirement about generated files cannot be satisfied before generated files exist. The skeleton carries a precondition instead: it must not register the generated destination as a conffile, so that the later change inherits a registration that can express the distinction.
 
 `add-ci-vm-smoke-tests` owns no requirement added here, so it does not appear in the table. Its role is verification: upgrade, downgrade and clean removal on the supported baseline are behaviors it exercises rather than delivers.
+
+Three of the deltas below are `MODIFIED` rather than `ADDED`, and the reason is worth recording. The archived ownership requirements list what each package owns, and none of the configuration artifacts this change decides appeared in those lists. A requirement asserting only that each artifact has a named owner would specify that a decision exists rather than what it is, leaving the decision in `design.md` where no spec can check it. Extending the lists puts the decision in the capability. The same edit closes each extended list with the exclusivity clause `gridline-session` already carried, in that order, because adding the clause before extending the list would turn a gap into a violation.
 
 `add-debian-package-skeleton` is new, and it exists because the foundation's sequence named no owner for the buildable tree. Every `add-*` change in that sequence assumes a package to ship into, and none of them creates one. Splitting it out keeps this change inside the project's rule that a definition change produces documentation and specifications only.

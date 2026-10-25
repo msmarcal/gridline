@@ -1,12 +1,12 @@
 # Tasks
 
-Scope note: this change produces documentation and specifications only. No `debian/` directory is created, no package is built, no maintainer script is written, and no dependency is named. `packages/gridline/debian/` belongs to `add-debian-package-skeleton`, which this change unblocks. Where a rule here constrains a later change, the task records the rule rather than applying it.
+Scope note: this change produces documentation and specifications only. No `debian/` directory is created, no package is built, no maintainer script is written, and no dependency is named. `packages/gridline/debian/` belongs to `add-debian-package-skeleton`, which this change unblocks. Where a rule here constrains a later change, the task records the rule rather than applying it. The spec delta extends three archived `package-delivery` requirements rather than restating their decisions, so the ownership of each configuration artifact is specified in the capability itself.
 
 ## 1. Packaging architecture document
 
 - [ ] 1.1 Write `docs/packaging.md` recording the source package layout, the `3.0 (native)` source format, and the one-source-package decision, and verify it does not contradict `packages/gridline/README.md`, which already states the same layout
 - [ ] 1.2 Record in `docs/packaging.md` the build-time file-ownership gate, naming which change implements it and which re-runs it in CI, and verify the named changes match the downstream table in `proposal.md`
-- [ ] 1.3 Record in `docs/packaging.md` the binary package naming convention and its dependence on the `.gitignore` staging glob, and verify the stated glob matches the one in `.gitignore`
+- [ ] 1.3 Record in `docs/packaging.md` the binary package naming convention and its dependence on the `.gitignore` staging glob, including that adding a binary package needs no new ignore rule, and verify the stated glob matches the one in `.gitignore`
 
 ## 2. Conffile and generated configuration rule
 
@@ -16,14 +16,14 @@ Scope note: this change produces documentation and specifications only. No `debi
 
 ## 3. Ownership of policy artifacts
 
-- [ ] 3.1 Record in `docs/packaging.md` and `docs/package-matrix.md` the owning package for policy input, lock declarations and the generated configuration destination, and verify each of the three names exactly one package in both documents
-- [ ] 3.2 Record that the generator executable is owned by `gridline-tools` while the output path is owned by `gridline-config`, with the reason, and verify the statement is consistent with the ownership rows in `openspec/specs/package-delivery/spec.md`
+- [ ] 3.1 Record in `docs/packaging.md` and `docs/package-matrix.md` the owning package for policy input, lock declarations and the generated configuration destination, and verify each of the three names the same package in both documents as the modified ownership requirements in `specs/package-delivery/spec.md` name
+- [ ] 3.2 Record that the generator executable is owned by `gridline-tools` while the output path is owned by `gridline-config`, with the reason, and verify every artifact named in the documents appears in the content list of exactly one modified ownership requirement, since each of those lists is now closed by an exclusivity clause
 - [ ] 3.3 Verify the recorded ownership satisfies the two `session-manageability` requirements assigned to this change, by checking each against `openspec/specs/session-manageability/spec.md` and noting which requirement each ownership statement serves
 
 ## 4. Dependency policy
 
 - [ ] 4.1 Record in `docs/packaging.md` the rule that a component whose absence blocks session startup is a dependency and one whose absence degrades is a recommendation, and verify the blocking and degrading classifications cited match the component table in `docs/architecture.md`
-- [ ] 4.2 Record the rule that each dependency's archive component is declared alongside it, with the support consequence of universe stated, and verify the statement matches the universe gap already recorded in `docs/security-and-manageability.md`
+- [ ] 4.2 Record in `docs/packaging.md` the rule that each dependency's archive component is declared alongside it, with the support consequence of universe stated, and verify the statement matches the universe gap already recorded in `docs/security-and-manageability.md`
 - [ ] 4.3 Verify `docs/packaging.md` names no individual dependency, since which components are required follows from later changes rather than from this one
 
 ## 5. Upgrade, downgrade and removal

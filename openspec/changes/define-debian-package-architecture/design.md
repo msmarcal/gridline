@@ -36,6 +36,12 @@ Constraints that shape the decisions below:
 
 *Alternative considered:* one source package per binary. Rejected: it buys independent release cadence the project does not need and costs a version matrix plus cross-package pinning on every change. The `packages/<name>/` layout keeps the option open for a genuinely separate source package later, such as one that vendors third-party code.
 
+### The `gridline-` prefix is what keeps build staging out of version control
+
+The repository ignores `packages/*/debian/gridline-*/`, so every binary package's build staging directory is excluded by the prefix convention alone. Adding a binary package therefore needs no new ignore rule.
+
+*Why this is a design decision and not a requirement:* a version-control rule is not behavior of the shipped software. Nobody installing or administering Gridline can observe it, so it belongs here and in `docs/packaging.md` rather than in a scenario. The prefix requirement in the spec states the observable half, that every binary package name begins with `gridline-`.
+
 ### Source format `3.0 (native)`
 
 The upstream and the packaging are the same tree, so there is no upstream tarball to patch.
