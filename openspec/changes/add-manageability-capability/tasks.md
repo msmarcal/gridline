@@ -2,7 +2,9 @@
 
 Scope note: this change produces documentation and specifications only. No policy format is fixed, no generator is implemented, and no package is built. Implementation belongs to `define-debian-package-architecture` and `add-gridline-configuration-defaults`, which this change unblocks.
 
-Completion note: the artifacts for these tasks were written in `c5f5195bf1`, in the same commit that created the change. Each item below was then checked against the committed tree by assertion rather than by reading: requirement and scenario counts, absence of paths and formats in scenarios, presence of the named statements, ordering of the policy layer before the configuration layer, and attribution of all six requirements. `openspec validate --strict` passes.
+Completion note: the artifacts for these tasks were written as the change itself was written, not after it, and later commits on this change refined them. The git history of this directory is the record of which commit carried which edit; this note deliberately cites no hash, because a hash list here goes stale on the next commit and a stale audit trail is worse than none.
+
+Each item below was checked against the committed tree by assertion rather than by reading: requirement and scenario counts, absence of paths and formats in scenarios, presence of the named statements, ordering of the policy layer before the configuration layer, attribution of all six requirements, and equality between the set of changes named in the preconditions and the set named in the attribution table. `openspec validate --strict` passes.
 
 ## 1. Capability specification
 
