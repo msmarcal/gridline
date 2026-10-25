@@ -127,6 +127,25 @@ where Gridline's intent diverges from Omarchy's.
   are documented rather than silently free.
 - The theme mechanism and the command menu are Gridline-owned capabilities, so
   they are subject to the policy layer: an administrator can set and lock them.
+- **Four of the elements above are mechanisms, and no change in the recorded
+  sequence delivers them.** The command menu, the theme mechanism, the system
+  panels and the targeted restart appear in no specification and in no row of
+  [package-matrix.md](package-matrix.md). The two that do have owners, the
+  `gridline` command and `gridline doctor`, are already required by
+  `package-delivery`.
+
+  The gap is an attribution failure rather than a deferral, and it is not closed
+  by assigning them to `add-gridline-configuration-defaults`. That change owns
+  configuration content, and [architecture.md](architecture.md) states that the
+  configuration layer ships no executables. A menu that reads entries and invokes
+  actions is a program. By the layer boundaries these four belong to the tools
+  layer, shipped by `gridline-tools`, alongside the command surface it already
+  owns.
+
+  Recording the gap here is not the same as closing it. A change has to own
+  them, and naming it belongs to whoever next revises the sequence, since the
+  tools-layer change in it today is scoped to diagnostics rather than to the
+  experience.
 - Nothing in this document introduces a component outside the archive. If a
   later change needs one, it has to argue against the preference for archive
   packages and account for the security-update gap.
