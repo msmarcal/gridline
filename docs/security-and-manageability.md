@@ -55,6 +55,23 @@ This is the same class of problem as the portal configuration file, and it has t
 
 The last row is why this cannot be deferred to the package that ships defaults: deciding where policy lives is an architecture decision, and changing it later invalidates every default already shipped.
 
+That capability is now specified. `openspec/changes/add-manageability-capability/` adds `session-manageability`, which establishes policy input separate from what components read, Gridline-owned generation, per-setting locks, and reporting of policy that is not in effect. The policy layer it implies is recorded in `docs/architecture.md`.
+
+### What the capability makes satisfiable, and what it does not
+
+Claiming a CIS control as satisfied requires enforcement, not detection. The distinction matters because one of Gridline's requirements only reports a condition, and reporting is not compliance.
+
+| Control | Status under Gridline | Mechanism |
+|---|---|---|
+| 1.7.4, screen locks when idle | Satisfiable | Screen lock policy is set once and generated into both components |
+| 1.7.5, screen locks cannot be overridden | Satisfiable only through the policy layer | Per-setting locks, since the dconf lock mechanism the control audits does not exist in these tools |
+| Disk encryption | Platform's responsibility | Gridline neither configures nor requires disabling it |
+| Secure Boot, TPM | Platform's responsibility | Out of scope, must not break |
+| Enterprise identity, including smartcard | Platform's responsibility | Gridline's obligation is non-interference, verified rather than assumed |
+| Audit logging | Platform's responsibility | Session components log to the journal and do not bypass `auditd` |
+
+The second row is the one to read carefully. The control is satisfiable, but only because Gridline supplies a mechanism that the underlying tools lack. An auditor comparing a Gridline machine to a GNOME machine will not find the dconf locks the benchmark's audit script looks for, so a Gridline deployment needs its compliance evidence expressed in Gridline's own terms. That is a documentation obligation this project has not yet met, and it is not satisfied by the specs alone.
+
 ## Lock screen and idle policy
 
 `hyprlock` ships `/etc/pam.d/hyprlock` containing `auth include login`, so authentication works with no packaging effort. Two notes for whichever change adopts it:

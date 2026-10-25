@@ -6,7 +6,7 @@ The binding requirements are in `openspec/specs/`. This document explains the sh
 
 ## Layers
 
-Gridline is four layers inside a packaging envelope. The envelope matters as much as the layers, because the delivery rule is a structural constraint and not a distribution detail.
+Gridline is five layers inside a packaging envelope. The envelope matters as much as the layers, because the delivery rule is a structural constraint and not a distribution detail.
 
 ### Session layer
 
@@ -17,6 +17,16 @@ Owns the GDM session entry, the session launcher, and the integration glue that 
 This is also the layer that integrates with the rest of the Ubuntu desktop stack. It does not reimplement NetworkManager, PipeWire, BlueZ or the portals; it ensures a Gridline session reaches them the way a GNOME session does.
 
 **Boundary:** the session layer is the only layer that knows the session is running. It never writes configuration, and it never implements a user-facing command.
+
+### Policy layer
+
+Shipped by `gridline-config`, as a separate concern from the defaults below it.
+
+Owns the administrator policy input, the lock declarations that say which settings a user may not change, and the generator that turns both into the configuration files session components actually read.
+
+**Boundary:** the policy layer is the only layer that writes configuration. Everything beneath it treats generated configuration as an output: a file produced here is not a conffile and is not meant to be hand-edited, because it may be regenerated. The layer owns no component behavior of its own; it decides what the components below it will read.
+
+**Why this layer exists at all** is a verified property of the baseline rather than a design preference. The compositor, locker and idle manager resolve configuration through `Hyprutils::Path::findConfig`, which returns the first matching file and stops — no merge across directories, and no lock mechanism. A user file therefore replaces an administrator file wholesale rather than overriding single settings, so an enforced setting cannot be expressed by placing a default in a search path. Without a layer that owns generation, administrator policy is unenforceable and its absence is undetectable. See [configuration.md](configuration.md) and `specs/session-manageability/spec.md`.
 
 ### Configuration layer
 
@@ -58,10 +68,13 @@ Every capability in `openspec/changes/establish-gridline-vision/proposal.md` map
 | `platform-integration` | Session layer | The integration surface is reached by the session as it starts; no other layer talks to NetworkManager, PipeWire, BlueZ, the portals or logind |
 | `compositor-abstraction` | Compositor adapter layer | The capability is the boundary, and the boundary is this layer's definition |
 | `package-delivery` | Packaging envelope | The delivery rule and package ownership constrain every layer and are owned by none of them |
+| `session-manageability` | Policy layer | Enforced policy requires a mechanism that owns generation; no search-path layer can provide it |
 
 Two capabilities share the session layer, which is expected: a capability has one home, but a layer may be home to more than one.
 
 The configuration and tools layers own no capability outright. They serve requirements that belong to others: configuration serves the session-scoped resolution requirements in `desktop-session` and the compositor-neutral configuration surface in `compositor-abstraction`; tools serve the diagnosability requirements spread across `platform-integration` and `compositor-abstraction`. This is why the ownership table in `proposal.md` attributes two requirements to a split rather than to a single change.
+
+The policy layer is the exception that proves the rule: it was added because a capability existed with no element able to hold it. `session-manageability` cannot live in the configuration layer, because that layer's defaults resolve by search path and the components in question ignore search-path precedence; and it cannot live in the session layer, because policy must be in effect before the session starts and must be inspectable when it is not running. A capability with no home is a sign the layer model is incomplete, not a sign the capability is misplaced.
 
 ## Required session components
 

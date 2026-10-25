@@ -20,7 +20,11 @@ The consequence is the one that matters: inside a Gridline session, Gridline's d
 
 ## Precedence
 
-From highest to lowest, in a Gridline session:
+There are two resolution models in a Gridline session, not one. Which applies depends on how the reading component looks up its configuration, and conflating them is the mistake this section exists to prevent.
+
+### XDG-aware applications
+
+For applications that read `XDG_CONFIG_DIRS` and merge per setting, precedence runs from highest to lowest:
 
 | Precedence | Source | Owner |
 |---|---|---|
@@ -29,9 +33,32 @@ From highest to lowest, in a Gridline session:
 | 3 | The shared `/etc/xdg` | Ubuntu and other packages |
 | 4 | Application built-in defaults | Each application |
 
-A user override always wins over a shipped Gridline default, which is ordinary XDG behavior and not something Gridline adds. An administrator editing a shipped default affects every user of the Gridline session on that machine, and nothing in any other session.
+A user override wins over a shipped Gridline default for that setting, which is ordinary XDG behavior and not something Gridline adds. An administrator editing a shipped default affects every user of the Gridline session on that machine, and nothing in any other session.
 
 In a GNOME session, level 2 is absent and the remaining levels are unchanged.
+
+### The `hypr*` components
+
+The compositor, locker and idle manager do **not** follow that model. They resolve configuration through `Hyprutils::Path::findConfig`, which checks `$XDG_CONFIG_HOME`, then `$HOME/.config`, then each entry of `XDG_CONFIG_DIRS`, then `/etc/xdg`, and **returns the first file it finds and stops**.
+
+The difference is not a detail of ordering. It changes what a user file does:
+
+| | XDG-aware application | `hypr*` component |
+|---|---|---|
+| User sets one key | That key overrides; other administrator values still apply | The administrator file is **never read**; every value in it is lost |
+| Administrator can enforce a value | Only if the user has not set it | Not by file placement at all |
+| Unapplied policy is visible | Values are traceable per source | Indistinguishable from policy being absent |
+
+So the sentence that would be natural here — that a user override wins over a shipped default — is true for the first column and misleading for the second. A user who writes any `~/.config/hypr/hyprlock.conf` does not override a Gridline default; they replace the only file that would have been read.
+
+### Why policy is a separate layer
+
+That property is why administrator policy cannot be expressed as a shipped default in a search path. An enforced setting needs a mechanism Gridline owns, which is specified by the `session-manageability` capability: policy input the administrator edits, a Gridline-owned generator that produces what the component actually reads, explicit per-setting locks, and a diagnostic that reports policy which is not in effect.
+
+Two consequences for anyone working on configuration:
+
+- **Generated configuration is not a conffile.** The conffile rule below governs shipped defaults an administrator is expected to edit. A file Gridline regenerates from policy input is an output; registering it as a conffile would make dpkg prompt about a file nobody is supposed to hand-edit.
+- **The supported way to set policy is the policy input**, not editing the component's own configuration file. A file edited in place may be regenerated.
 
 ## Shipped defaults are conffiles
 
