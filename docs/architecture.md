@@ -122,6 +122,7 @@ This architecture is delivered by the changes below. The authoritative attributi
 | Change | Delivers | Element |
 |---|---|---|
 | `define-debian-package-architecture` | Source package layout, binary package boundaries, file ownership rules, conffile strategy, clean removal, and the guarantee that GNOME survives install and removal unchanged | Packaging envelope |
+| `add-debian-package-skeleton` | The buildable source package: binary package declarations, build rules, changelog, and install manifests | Packaging envelope |
 | `define-supported-ubuntu-integration` | Component ownership matrix and package availability on the baseline, covering NetworkManager, PipeWire and WirePlumber, and BlueZ; AppArmor posture; security update path | Session layer |
 | `add-gdm-wayland-session` | Session registration at GDM, launcher and teardown, desktop identity, opt-in behavior, and the recoverability guarantee | Session layer |
 | `add-hyprland-session-baseline` | The adapter contract, the Hyprland adapter, capability discovery, and the mechanical adapter isolation check | Compositor adapter layer |
