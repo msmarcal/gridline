@@ -11,7 +11,7 @@ Scope note: this change produces documentation and specifications only. No `debi
 ## 2. Conffile and generated configuration rule
 
 - [ ] 2.1 Record in `docs/packaging.md` the authorship test that decides conffile versus generated, as a table covering shipped defaults, policy input, lock declarations and generated configuration, and verify every one of the four has a stated registration and a reason
-- [ ] 2.2 Verify the rule in `docs/packaging.md` does not contradict the conffile requirement in `openspec/specs/package-delivery/spec.md` or the generated-configuration statement in `docs/configuration.md`
+- [ ] 2.2 Verify the rule in `docs/packaging.md` contradicts neither the preservation of an administrator's edit required by `openspec/specs/package-delivery/spec.md`, which states the behavior without naming a mechanism, nor the non-registration of generated output required by this change's own delta, nor the generated-configuration statement in `docs/configuration.md`
 - [ ] 2.3 Record in `docs/configuration.md` a cross-reference to the authorship rule, and verify the two documents state the same rule rather than two similar ones
 
 ## 3. Ownership of policy artifacts
