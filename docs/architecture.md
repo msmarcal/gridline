@@ -56,7 +56,7 @@ Owns all compositor-specific logic, and reports the capability set the session l
 
 Not a runtime layer. It is the rule that every layer above reaches users only as a Debian package, with fixed ownership boundaries and no file claimed twice.
 
-It is listed as a structural element because `package-delivery` is a capability with real requirements, and those requirements constrain all four layers without belonging to any of them. A reader looking for where the delivery rule lives would otherwise find it nowhere.
+It is listed as a structural element because `package-delivery` is a capability with real requirements, and those requirements constrain every layer above without belonging to any of them. A reader looking for where the delivery rule lives would otherwise find it nowhere.
 
 ## Capability to layer
 
