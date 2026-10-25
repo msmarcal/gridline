@@ -95,6 +95,29 @@ Policy input is authored by an administrator, so its values do not exist at buil
 
 A build-time generator could only generate from the shipped defaults, which is precisely the case that needs no generator.
 
+## Licence and copyright
+
+The project is MIT, recorded in [LICENSE](../LICENSE). The only condition is
+attribution: the copyright notice and the licence text travel with copies and
+with substantial portions.
+
+`debian/copyright` is mandatory, and `add-debian-package-skeleton` writes it in
+machine-readable format 1.0. Three consequences for that change:
+
+- The `Files: *` stanza is `MIT`, with the full licence text reproduced in the
+  stanza rather than referenced from `/usr/share/common-licenses/`, which
+  carries the GPL and LGPL texts but not MIT.
+- Gridline links nothing and vendors nothing today, so no second stanza is
+  needed. A source package that later vendors third-party code gets its own
+  stanza, and that is one of the two reasons the layout leaves room for a
+  separate source package.
+- MIT imposes no obligation on anyone depending on a Gridline package, so the
+  licence does not constrain the dependency policy below. The archive component
+  of a dependency matters for support; its licence does not matter for ours.
+
+Gridline configures archive packages and ships no modified copy of any of them,
+so their licences stay theirs and are not restated here.
+
 ## Dependency policy
 
 **A component whose absence blocks session startup is a dependency. A component whose absence degrades the session is a recommendation.**
@@ -126,3 +149,4 @@ These behaviors become testable when `add-debian-package-skeleton` produces pack
 - [configuration.md](configuration.md): configuration precedence, and the authorship rule from the configuration side
 - [architecture.md](architecture.md): the blocking versus degrading classification that dependency strength follows
 - [security-and-manageability.md](security-and-manageability.md): the universe security-update gap
+- [LICENSE](../LICENSE): the MIT text that `debian/copyright` reproduces

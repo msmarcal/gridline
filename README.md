@@ -133,6 +133,17 @@ The project is **Project Gridline**; the composed form is used in prose, while
 "Gridline" is a common word in software and the name was checked rather than
 assumed; the findings are recorded in [vision.md](docs/vision.md#the-name).
 
+## Licence
+
+MIT. See [LICENSE](LICENSE).
+
+Attribution is the only condition: keep the copyright notice and the licence
+text in copies and in substantial portions. Beyond that, fork it, ship it,
+rename it, sell it.
+
+Gridline is a personal project. It is not a Canonical product, it is not
+endorsed by Canonical, and nothing here speaks for Canonical.
+
 ## Contributing
 
 The specifications come before the code. A change that adds behaviour starts as
