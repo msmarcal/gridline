@@ -57,9 +57,18 @@ than over SSH.
   existing one against the value recorded in task 4.1, and the test account created after
   installation, whose first visit to the greeter is the second scenario of the requirement
 - [ ] 4.5 Select the Gridline session and verify the login screen returns, then read the journal by the identifier from task 2.3 and confirm the missing compositor is named
-- [ ] 4.6 From the stock session, verify the recovery procedure in `docs/recovery.md` locates
-  that record using only tools present on a stock Ubuntu system, and correct the document if
-  the procedure does not match what the launcher actually writes. If it is corrected to
+- [ ] 4.6 From the stock session, run the recovery procedure exactly as `docs/recovery.md`
+  currently words it and capture what it returns, then run the selection by journal
+  identifier and capture that, before changing anything. The difference between the two
+  outputs is the record of why the correction exists, and running them in the other order
+  loses it. Then verify the procedure locates the record using only tools present on a
+  stock Ubuntu system, and correct the document if
+  the procedure does not match what the launcher actually writes. Note that the phrase
+  "under an identifiable Gridline unit or process name" is not merely vague: the launcher
+  is started by the display manager and has no unit of its own, which is the argument
+  `docs/architecture.md` records for choosing a syslog identifier, so the sentence
+  describes a mechanism the project has already documented as unavailable. If it is
+  corrected to
   select by the journal identifier, verify the identifier is spelled identically in
   `docs/recovery.md`, in `docs/architecture.md` where the contract is declared, and in the
   launcher itself, and add `docs/recovery.md` to the readers named alongside
