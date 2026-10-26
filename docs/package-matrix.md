@@ -13,6 +13,8 @@ The authoritative form of these boundaries is `openspec/specs/package-delivery/s
 | `gridline-tools` | The `gridline` command, `gridline doctor`, the theme and diagnostic commands, and the generator that produces the effective configuration | `platform-integration` (capability gaps are diagnosable), `compositor-abstraction` (the command surface stays compositor-neutral), `session-manageability` (the generator) | Planned |
 | `gridline-desktop` | Nothing. A metapackage that pulls in the packages making up a complete Gridline desktop | `package-delivery` (the name is reserved) | **Reserved, not delivered** |
 
+**One package description is out of date.** `debian/control` still describes `gridline-session` as shipping no content yet, which stopped being true when `add-gdm-wayland-session` shipped the session entry and the launcher. The descriptions for `gridline-config` and `gridline-tools` are still accurate, since those two ship directories and no files. Correcting it belongs to `add-hyprland-session-baseline`, the next change that edits `debian/control`, and it is recorded here so that a reader comparing this page's Status column against the package description does not conclude one of them is lying.
+
 Every binary package uses the `gridline-` prefix. See [packages/gridline/README.md](../packages/gridline/README.md) for why the prefix is a convention the build tooling relies on rather than a naming preference.
 
 ## Boundaries that are easy to get wrong

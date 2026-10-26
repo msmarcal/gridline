@@ -84,6 +84,18 @@ The new requirement is that recorded facts are verifiable against the archive. T
 
 The project context already requires the gap be documented rather than hidden. The new requirement makes its presence alongside the dependency a contract rather than a courtesy, because a reader checking what a component costs in support terms is reading the component's row, not a separate security document.
 
+## Where each requirement is satisfied
+
+The delta adds three requirements. Each is satisfied by something a reader can check without running anything, and this is where:
+
+| Requirement | Document and section |
+|---|---|
+| Required components are recorded with the behavior when each is absent | `docs/component-ownership.md`, the "Reading the table" guide naming the three categories, and every component row carrying one of them |
+| Each required component's archive support status is recorded | `docs/component-ownership.md`, the Component column on every row, with the support sentence in the same guide; the same sentence appears in `docs/package-matrix.md`, `docs/packaging.md` and `docs/security-and-manageability.md` |
+| Recorded component facts are verifiable against the supported archive | `docs/package-matrix.md`, the "How these were measured" section carrying the date, the baseline, the enabled archive components and both commands |
+
+The deferral scenario of the first requirement is satisfied by the "Dependencies not yet declared" section of `docs/component-ownership.md`, which names the owning change for each blocking component nothing declares yet.
+
 ## Risks / Trade-offs
 
 - **The archive moves and the records go stale.** → The requirement makes staleness a detectable defect rather than an invisible one, and the recorded procedure makes checking cheap. Versions carry the measurement date so a reader knows their age.

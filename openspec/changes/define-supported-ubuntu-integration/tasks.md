@@ -37,9 +37,9 @@ records it for the change that owns it rather than doing it.
 
 ## 6. Coherence
 
-- [ ] 6.1 Verify each of the three requirements added by this change's delta is satisfied by something a reader can check in the documents, and name for each requirement the document and section that satisfies it
-- [ ] 6.2 Verify no task in this change edited anything under `packages/`, by confirming the working tree shows no change to that directory
-- [ ] 6.3 Verify the findings recorded for later changes, the stale `gridline-session` description and the absent dependency fields, each name an owning change, and that neither was fixed here
+- [x] 6.1 Verify each of the three requirements added by this change's delta is satisfied by something a reader can check in the documents, and name for each requirement the document and section that satisfies it
+- [x] 6.2 Verify no task in this change edited anything under `packages/`, by confirming the working tree shows no change to that directory
+- [x] 6.3 Verify the findings recorded for later changes, the stale `gridline-session` description and the absent dependency fields, each name an owning change, and that neither was fixed here
 
 ## Workflow follow-up
 
