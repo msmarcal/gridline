@@ -15,6 +15,7 @@
 - [ ] 2.4 Verify the adapter reports no capability it cannot deliver through a documented interface, by listing for each reported capability the interface that backs it and checking each against the design table
 - [ ] 2.5 Verify the adapter exits non-zero when it cannot produce a complete answer, and that it writes the reason to stderr rather than printing a partial capability list
 - [ ] 2.6 Verify the adapter checks structure and names independently, with two synthetic `wayland-info` outputs. One carries the expected structural markers and interface names the adapter does not look for: it must exit zero and report no capability, which is an empty answer about the compositor. The other carries unexpected markers and the interface names the adapter does look for: it must exit non-zero and report nothing, which is an unreadable answer about the tool. An adapter that matches names without checking structure passes the first and fails the second. Read the failure record in both, since both end the launch and only the record says which happened
+- [ ] 2.7 Verify the adapter's list of Wayland interface names matches the table in design.md character for character, by comparing the two rather than reading them. The list is hardcoded in the adapter because a shell adapter cannot read a design document at runtime, so it is a second copy of a claim the project records elsewhere, and this project has twice paid for a second copy nobody compared. Record which names appear in one and not the other, including none
 
 ## 3. The launcher invokes the adapter
 
