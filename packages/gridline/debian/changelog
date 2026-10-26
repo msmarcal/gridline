@@ -1,0 +1,8 @@
+gridline (0.0.1) resolute; urgency=low
+
+  * Initial packaging. These three binary packages are structural: each one
+    declares the directories it owns and ships no content. Session
+    integration, configuration defaults and the command surface arrive in
+    later changes, into the directories established here.
+
+ -- Marcelo Marcal <marcelo@smarcal.com>  Sun, 25 Oct 2026 00:43:15 -0300

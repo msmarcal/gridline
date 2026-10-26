@@ -1,0 +1,11 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+# No two binary packages may ship the same path. The staged trees are the
+# input, so an overlap between two manifests fails the build instead of
+# surfacing as a file conflict at install time.
+override_dh_install:
+	dh_install
+	tools/check-path-ownership debian

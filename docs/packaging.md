@@ -66,6 +66,24 @@ The trade-off is accepted rather than solved: an administrator who edits generat
 
 This rule is the same one stated in [configuration.md](configuration.md), from the configuration side. Neither document may state it differently from the other.
 
+## Declared paths, and the ones deliberately not declared
+
+A package declares what it owns in its `debian/<package>.dirs` and `debian/<package>.install` manifests. These are the paths Gridline claims:
+
+| Package | Declares |
+|---|---|
+| `gridline-session` | `/usr/libexec/gridline/` |
+| `gridline-config` | `/etc/xdg/gridline/`, `/etc/xdg/gridline/generated/` |
+| `gridline-tools` | `/usr/share/gridline/` |
+
+**No shared system directory is declared.** `/usr/share/wayland-sessions`, `/usr/share/xdg-desktop-portal`, `/etc/xdg` and `/usr/libexec` all belong to archive packages already, and Gridline declares none of them. Files land in them later as Gridline-named drop-ins; the directories stay theirs.
+
+The reason is not conflict avoidance, because there is no conflict to avoid: a directory in Debian is shared ownership, so declaring one installs cleanly and reports nothing. That is what makes it an easy mistake. The reason is the fallback guarantee. A Gridline package that declared `/etc/xdg` would be a Gridline package whose removal could touch a directory the stock session reads.
+
+**`dpkg` still records those shared parents against Gridline, and that is expected.** `dpkg -S /etc/xdg` lists `gridline-config` alongside `systemd`, `snapd` and a dozen others, because a package containing `/etc/xdg/gridline/` necessarily contains `/etc/xdg/` too. Every package that installs under a shared directory appears the same way. Declared ownership is what the manifests claim; the `dpkg` directory list is the transitive closure of that, and the two are not the same question.
+
+What is verifiable, and verified on the baseline: removing every Gridline package leaves the shared directories in place with their archive owners unchanged, and takes every Gridline-named directory with it.
+
 ## Ownership of configuration artifacts
 
 Each artifact is owned by exactly one package, and both ownership lists are closed by an exclusivity clause in `openspec/specs/package-delivery/spec.md`.

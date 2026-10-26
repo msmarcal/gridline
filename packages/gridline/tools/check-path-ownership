@@ -1,0 +1,56 @@
+#!/bin/sh
+# Fail the build when two Gridline binary packages would claim the same path.
+#
+# Two different conflicts are checked, because they have different rules.
+#
+# Files: dpkg's actual conflict surface. Two packages shipping the same file
+# cannot be installed together. The staged trees are the input rather than the
+# manifests, because two globs can overlap without the manifests looking like
+# they do.
+#
+# Declared directories: dpkg shares directory ownership freely, so this is not
+# a dpkg conflict. It is a Gridline rule: the ownership requirements in
+# package-delivery are closed by an exclusivity clause, so a directory a
+# manifest declares belongs to exactly one package. Intermediate parents such
+# as usr or etc are shared by construction and are not declarations.
+set -eu
+
+staging_root="${1:-debian}"
+files=$(mktemp)
+dirs=$(mktemp)
+trap 'rm -f "$files" "$dirs"' EXIT
+
+for pkgdir in "$staging_root"/gridline-*/; do
+    [ -d "$pkgdir" ] || continue
+    pkg=$(basename "$pkgdir")
+    find "$pkgdir" -mindepth 1 \( -type f -o -type l \) \
+        -printf '%P\t'"$pkg"'\n' >> "$files"
+done
+
+for manifest in "$staging_root"/gridline-*.dirs; do
+    [ -f "$manifest" ] || continue
+    pkg=$(basename "$manifest" .dirs)
+    while IFS= read -r line; do
+        case "$line" in ''|\#*) continue ;; esac
+        printf '%s\t%s\n' "$line" "$pkg" >> "$dirs"
+    done < "$manifest"
+done
+
+report() {
+    label="$1"; table="$2"
+    dupes=$(cut -f1 "$table" | sort | uniq -d)
+    [ -n "$dupes" ] || return 0
+    echo "check-path-ownership: $label claimed by more than one package:" >&2
+    echo "$dupes" | while IFS= read -r path; do
+        owners=$(awk -F'\t' -v p="$path" '$1 == p { printf " %s", $2 }' "$table")
+        echo "  $path <-$owners" >&2
+    done
+    return 1
+}
+
+status=0
+report "file" "$files" || status=1
+report "declared directory" "$dirs" || status=1
+[ "$status" -eq 0 ] || exit 1
+
+echo "check-path-ownership: $(cut -f1 "$files" 2>/dev/null | sort -u | wc -l) files and $(cut -f1 "$dirs" 2>/dev/null | sort -u | wc -l) declared directories, each claimed once"

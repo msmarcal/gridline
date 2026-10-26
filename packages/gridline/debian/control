@@ -1,0 +1,43 @@
+Source: gridline
+Section: x11
+Priority: optional
+Maintainer: Marcelo Marcal <marcelo@smarcal.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Homepage: https://gridline-desktop.org
+Rules-Requires-Root: no
+
+Package: gridline-session
+Architecture: all
+Depends: ${misc:Depends}
+Description: Gridline session integration (no content yet)
+ Gridline is an optional Wayland tiling desktop session for Ubuntu. This
+ package will own the session entry the display manager reads, the session
+ launcher, the core integration glue, and the compositor adapter layer.
+ .
+ It ships no content yet. This version establishes the directory it owns so
+ that later changes install into a boundary that is already fixed.
+
+Package: gridline-config
+Architecture: all
+Depends: ${misc:Depends}
+Description: Gridline configuration defaults and policy input (no content yet)
+ Gridline is an optional Wayland tiling desktop session for Ubuntu. This
+ package will own the shipped defaults, the default keybindings and themes,
+ the administrator's policy input, the lock declarations, and the destination
+ of the generated configuration.
+ .
+ It ships no content yet. This version establishes the directories it owns,
+ keeping administrator-authored configuration and generated output in separate
+ places from the start.
+
+Package: gridline-tools
+Architecture: all
+Depends: ${misc:Depends}
+Description: Gridline command-line tools (no content yet)
+ Gridline is an optional Wayland tiling desktop session for Ubuntu. This
+ package will own the gridline command, gridline doctor, the theme and
+ diagnostic commands, and the generator that produces the effective
+ configuration.
+ .
+ It ships no content yet. This version establishes the directory it owns.

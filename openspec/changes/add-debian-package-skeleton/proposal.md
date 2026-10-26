@@ -29,7 +29,7 @@ None.
 
 ### Modified Capabilities
 
-- `package-delivery`: gains one requirement, that a Gridline package claims only Gridline-named paths. Inspecting the baseline showed why it is needed: `/usr/share/wayland-sessions`, `/usr/share/xdg-desktop-portal`, `/etc/xdg` and `/usr/libexec` are all already owned by archive packages. Directories are shared ownership in Debian, so claiming one produces no conflict and no error, which is exactly what makes it an easy mistake. No existing requirement is modified or removed.
+- `package-delivery`: gains two requirements. The first is that a Gridline package declares only Gridline-named paths. Inspecting the baseline showed why it is needed: `/usr/share/wayland-sessions`, `/usr/share/xdg-desktop-portal`, `/etc/xdg` and `/usr/libexec` are all already owned by archive packages. Directories are shared ownership in Debian, so declaring one produces no conflict and no error, which is exactly what makes it an easy mistake. The second is that removing a Gridline package leaves shared directories intact, which is the half that actually protects the fallback and the half that can be verified. No existing requirement is modified or removed.
 
 ## Impact
 
@@ -55,7 +55,8 @@ Every requirement this change adds or is assigned is the responsibility of exact
 
 | Requirement | Owned by | Why there |
 |---|---|---|
-| A Gridline package claims only Gridline-named paths | `add-debian-package-skeleton` | The `.install` manifests this change writes are where the claim is made or avoided |
+| A Gridline package declares only Gridline-named paths | `add-debian-package-skeleton` | The install manifests this change writes are where the declaration is made or avoided |
+| Removing a Gridline package leaves shared directories intact | `add-debian-package-skeleton` | Removal behavior follows from what the manifests declare, and the baseline host can exercise it |
 | Binary package names carry the gridline- prefix | `add-debian-package-skeleton` | Names are declared in the `control` this change creates |
 | Dependencies are declared and satisfiable from the supported archive | `add-debian-package-skeleton` | The dependency fields exist here; their entries accrete later |
 | Package ownership of a configuration artifact does not move once content ships | `add-debian-package-skeleton` | The `.install` manifests fix the boundary before any content exists to move |

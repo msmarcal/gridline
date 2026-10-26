@@ -57,7 +57,19 @@ A binary package named without the prefix would have its staging tree show up as
 dpkg-buildpackage -us -uc -b
 ```
 
-Run from `packages/gridline/`. Build-time ignore patterns are documented above; staging artifacts are ignored by explicit path, so a clean tree after a build is the expected state.
+Run from `packages/gridline/`. It produces three binary packages in the parent directory:
+
+| Package | Declares |
+|---|---|
+| `gridline-session_<version>_all.deb` | `/usr/libexec/gridline/` |
+| `gridline-config_<version>_all.deb` | `/etc/xdg/gridline/`, `/etc/xdg/gridline/generated/` |
+| `gridline-tools_<version>_all.deb` | `/usr/share/gridline/` |
+
+`debuild` is not used: it is not installed on the supported baseline, and `dpkg-buildpackage` is what the packaging is verified against.
+
+The build runs `tools/check-path-ownership` after `dh_install`. It fails the build when two binary packages would ship the same file or declare the same directory, so an ownership collision is a build failure rather than a file conflict discovered at install time. Intermediate parents such as `/etc/xdg` are shared by construction and are not collisions.
+
+Build-time ignore patterns are documented above; staging artifacts are ignored by explicit path, so a clean tree after a build is the expected state.
 
 ## `gridline-desktop` is a reserved boundary
 
