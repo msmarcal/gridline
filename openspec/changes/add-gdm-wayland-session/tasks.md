@@ -57,7 +57,15 @@ than over SSH.
   existing one against the value recorded in task 4.1, and the test account created after
   installation, whose first visit to the greeter is the second scenario of the requirement
 - [ ] 4.5 Select the Gridline session and verify the login screen returns, then read the journal by the identifier from task 2.3 and confirm the missing compositor is named
-- [ ] 4.6 From the stock session, verify the recovery procedure in `docs/recovery.md` locates that record using only tools present on a stock Ubuntu system, and correct the document if the procedure does not match what the launcher actually writes
+- [ ] 4.6 From the stock session, verify the recovery procedure in `docs/recovery.md` locates
+  that record using only tools present on a stock Ubuntu system, and correct the document if
+  the procedure does not match what the launcher actually writes. If it is corrected to
+  select by the journal identifier, verify the identifier is spelled identically in
+  `docs/recovery.md`, in `docs/architecture.md` where the contract is declared, and in the
+  launcher itself, and add `docs/recovery.md` to the readers named alongside
+  `add-session-health-check`: a contract with two readers and two spellings is not a
+  contract. Record whether the document needed correcting or already matched, since the
+  checkbox alone cannot distinguish the two outcomes
 - [ ] 4.7 Verify the Gridline entry is withheld when the launcher is absent, by removing the
   launcher file while leaving the entry installed and confirming the session is not offered
   while Ubuntu still is, then restoring it and verifying both that `dpkg --verify
