@@ -20,6 +20,8 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 | Hyprland | Hyprland | `hyprland` 0.53.3+ds-4 | **universe** | Integration only, through the compositor adapter | Session does not start. The launcher reports the missing compositor and returns the user to GDM, where GNOME remains selectable |
 | systemd-logind | systemd | `systemd` | main | Integration only: seat, session and power event handling | Not applicable. Part of the baseline init system |
 | Compositor adapter | Gridline | `gridline-session` | n/a | **Owned by Gridline** | Session does not start. A missing or failing adapter is a Gridline bug, reported with the compositor named |
+| Session entry | Gridline | `gridline-session` | n/a | **Owned by Gridline.** A Gridline-named drop-in in `/usr/share/wayland-sessions/`, which `ubuntu-session` owns. Gridline declares the file, never the directory | The session is not offered at the login screen. The stock Ubuntu entry is unaffected and still selectable, so a user is never left without a desktop to choose |
+| Session launcher | Gridline | `gridline-session` | n/a | **Owned by Gridline** | The session entry names it in `TryExec`, so if the launcher is absent the entry is withheld rather than offered and failing. The stock session remains selectable |
 
 ## Desktop integration
 

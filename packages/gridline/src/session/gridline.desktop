@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Gridline
+Comment=Tiling Wayland session on Ubuntu
+Exec=/usr/libexec/gridline/gridline-session
+TryExec=/usr/libexec/gridline/gridline-session
+Type=Application
+DesktopNames=Gridline;Hyprland

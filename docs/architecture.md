@@ -115,6 +115,24 @@ That gap is deliberate to record and not deliberate to keep. `add-session-lifecy
 
 There is also a mechanical obstacle, which is new information and narrows the options. The archive ships `hyprpolkitagent`, `hypridle` and `xdg-desktop-portal-hyprland` as systemd user units with `PartOf=graphical-session.target`, `ConditionEnvironment=WAYLAND_DISPLAY` and `Restart=on-failure`. Under those units a failed component restarts quietly and the session starts anyway: systemd offers no hook that turns a unit failure into a refusal to start the session. Enforcing this rule therefore requires a Gridline-owned startup check in the launcher, which is a deliverable, not a configuration choice. `add-session-lifecycle-integration` inherits that too: either it builds the check, or the rule stays aspirational no matter what the specification says.
 
+### The launch failure record is a contract
+
+When the launcher ends a launch because a required component is missing, it writes the record to the journal under the syslog identifier **`gridline-session`**, naming the component and why it was judged missing.
+
+**That identifier is a contract, not an implementation detail.** `add-session-health-check` selects records by it, so `gridline doctor` can report a launch that failed before anything Gridline-specific was running. Changing it silently breaks that change, and a record that cannot be attributed to Gridline is a record the diagnostics cannot find.
+
+A syslog identifier was chosen over a systemd unit because the launcher is started by the display manager rather than by systemd, so it has no unit of its own to be attributed to. `journalctl -t gridline-session` selects the records with no time window and no knowledge of which boot they came from, which is what the recovery procedure needs from a user who has just been returned to the login screen.
+
+### The desktop identity comes from the session entry
+
+`XDG_CURRENT_DESKTOP` is set by the display manager from the `DesktopNames` field of the session entry. The entry carries `DesktopNames=Gridline;Hyprland` and the display manager turns that into `Gridline:Hyprland`. The launcher neither sets nor modifies the variable.
+
+**This supersedes the decision recorded in `establish-gridline-vision`**, which had the compositor element supplied by the adapter at runtime rather than written into the entry. The mechanism the display manager already uses is static by nature, and one source of truth is worth more than the flexibility: if the entry sets the value and the launcher rewrites it, anything reading the variable between those two moments sees a value that is about to change. Portal backend selection reads exactly this variable, so a window where it is wrong is a window where backend resolution is wrong.
+
+The cost is that a second compositor needs a second session entry rather than an adapter reporting its own name. The archive already works this way, shipping separate Wayland and Xorg entries for Ubuntu, and it has a property the dynamic version lacks: the user chooses the compositor at the login screen, visibly, instead of inheriting whatever the adapter resolved.
+
+Consequence for `add-hyprland-session-baseline`: the adapter does not supply the identity. If it needs to know which compositor is active, it reads the second element of `XDG_CURRENT_DESKTOP`.
+
 ## Downstream changes
 
 This architecture is delivered by the changes below. The authoritative attribution is the downstream table in `openspec/changes/establish-gridline-vision/proposal.md`; the change names here are the same set, with no change named in one table and missing from the other.
@@ -123,14 +141,16 @@ This architecture is delivered by the changes below. The authoritative attributi
 |---|---|---|
 | `define-debian-package-architecture` | Source package layout, binary package boundaries, file ownership rules, conffile strategy, clean removal, and the guarantee that GNOME survives install and removal unchanged | Packaging envelope |
 | `add-debian-package-skeleton` | The buildable source package: binary package declarations, build rules, changelog, and install manifests | Packaging envelope |
-| `define-supported-ubuntu-integration` | Component ownership matrix and package availability on the baseline, covering NetworkManager, PipeWire and WirePlumber, and BlueZ; AppArmor posture; security update path | Session layer |
 | `add-gdm-wayland-session` | Session registration at GDM, launcher and teardown, desktop identity, opt-in behavior, and the recoverability guarantee | Session layer |
+| `define-supported-ubuntu-integration` | Component ownership matrix and package availability on the baseline, covering NetworkManager, PipeWire and WirePlumber, and BlueZ; AppArmor posture; security update path | Session layer |
 | `add-hyprland-session-baseline` | The adapter contract, the Hyprland adapter, capability discovery, and the mechanical adapter isolation check | Compositor adapter layer |
 | `add-desktop-portal-integration` | Portal backend mapping, `gridline-portals.conf` and deterministic backend selection under Gridline's desktop identity, XWayland support, Snap compatibility | Session and configuration layers |
 | `add-session-lifecycle-integration` | Power management and suspend, lid handling, battery observability, session locking across suspend with fail-safe behavior, and the polkit authentication agent | Session layer |
 | `add-gridline-configuration-defaults` | Shipped defaults, keybindings and themes; session-scoped configuration precedence; the compositor-neutral configuration surface | Configuration layer |
 | `add-session-health-check` | The diagnostic command surface, capability gap reporting, and the compositor-neutral command surface | Tools layer |
 | `add-ci-vm-smoke-tests` | Automated verification of session startup, integration behavior, and the adapter isolation check in CI | All elements |
+
+The sequence runs `add-gdm-wayland-session` before `define-supported-ubuntu-integration`, inverting the order first recorded. The inversion is safe because the session change declares no dependency entry: its launcher reports a missing compositor rather than requiring one, so `gridline-session` carries only `${misc:Depends}` and needs nothing from the component matrix that `define-supported-ubuntu-integration` produces. It is worth doing because it is the first change where the session appears at the login screen and the fallback path can be exercised rather than described.
 
 Two of these were added after the original sequence was written, because the specifications grew and the sequence did not: `add-session-lifecycle-integration`, for power management, locking and polkit, and `add-gridline-configuration-defaults`, for configuration content, precedence and the compositor-neutral configuration surface. Neither had an owner before.
 

@@ -1,0 +1,58 @@
+#!/bin/sh
+# Gridline session launcher.
+#
+# Establishes the components the session requires before declaring the session
+# up. On finding one missing it records which one and returns the seat to the
+# display manager, rather than starting a partial session the user cannot
+# explain. There is no fallback to another compositor and no retry: a session
+# that cannot be what it claims to be hands control back.
+#
+# The journal identifier below is a contract. add-session-health-check selects
+# records by it, so changing it breaks that change.
+
+set -u
+
+JOURNAL_IDENTIFIER=gridline-session
+ADAPTER_DIR=/usr/libexec/gridline/adapters
+
+# Report a missing required component on stderr and in the journal, then end
+# the launch. stderr reaches the display manager's own log; the journal record
+# is what survives for the diagnostics to read.
+report_missing() {
+    component=$1
+    detail=$2
+    printf '%s: required component missing: %s (%s)\n' \
+        "$JOURNAL_IDENTIFIER" "$component" "$detail" >&2
+    if command -v logger >/dev/null 2>&1; then
+        logger -t "$JOURNAL_IDENTIFIER" -p daemon.err \
+            "required component missing: $component ($detail)"
+    fi
+    exit 1
+}
+
+# Required components, checked in order. The first one missing ends the launch,
+# because reporting one cause is more useful than reporting a list the user has
+# to read backwards.
+
+if [ ! -d "$ADAPTER_DIR" ]; then
+    report_missing "compositor adapter" \
+        "no adapter directory at $ADAPTER_DIR"
+fi
+
+adapter=
+for candidate in "$ADAPTER_DIR"/*/adapter; do
+    [ -x "$candidate" ] || continue
+    adapter=$candidate
+    break
+done
+
+if [ -z "$adapter" ]; then
+    report_missing "compositor adapter" \
+        "no executable adapter under $ADAPTER_DIR"
+fi
+
+# An adapter is present but this version cannot speak the adapter contract,
+# which add-hyprland-session-baseline defines. Reaching here is still a launch
+# that cannot complete, so it is reported the same way rather than guessed at.
+report_missing "compositor adapter contract" \
+    "found $adapter but this version cannot invoke it"
