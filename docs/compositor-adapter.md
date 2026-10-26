@@ -65,7 +65,25 @@ The test is scoped to adapter capabilities and does not generalise to every comp
 - An adapter never reports a capability it implements by guessing, by parsing internal state, or by depending on behavior the compositor does not document.
 - The launcher treats an unreported capability as absent. Silence is not consent.
 
-The wire format of the report is an implementation concern owned by `add-hyprland-session-baseline`. What is fixed here is the capability set and the reporting rules.
+### The wire format
+
+The session asks by running the adapter with one argument and reads the answer from its output.
+
+```
+<adapter> capabilities
+```
+
+Four things make up the answer, and the session relies on all four.
+
+**The query is an argument.** `capabilities` asks what the adapter provides. `start` asks it to start the compositor. An adapter that does not recognise an argument exits non-zero.
+
+**The answer is one capability name per line on standard output.** Names are written exactly as the tables above spell them, with no other text, no ordering requirement, and no duplicates. A line the session does not recognise is ignored rather than treated as an error, so an adapter reporting a capability from a later contract version does not break an older session.
+
+**The exit status says whether the answer is usable.** Zero means the adapter finished reporting. Non-zero means it did not, whatever it managed to print first.
+
+**An absent line and a non-zero exit are the same answer: the capability is unavailable.** This is the reporting rule above, extended so that a partial answer cannot be read as a complete one. An adapter that fails halfway through printing has not reported the capabilities it already printed, because the session cannot tell a short list from an interrupted one.
+
+The format is deliberately poorer than it could be. It carries no version, no degraded state and no explanation, because a capability is reported or it is not, and anything an adapter needs to explain belongs on standard error where the journal will keep it. A session that must parse structure to decide whether a capability is present has a contract that invites the ambiguity this one refuses.
 
 ## Only documented interfaces
 

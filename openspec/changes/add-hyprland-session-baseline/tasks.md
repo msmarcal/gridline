@@ -2,10 +2,10 @@
 
 ## 1. The adapter layer and the wire format
 
-- [ ] 1.1 Create `packages/gridline/src/adapters/` and verify the path matches the one `docs/compositor-adapter.md` and `docs/architecture.md` already name, by grep rather than by memory
-- [ ] 1.2 Document the wire format in `docs/compositor-adapter.md`, replacing the sentence that defers it to this change, and verify the document no longer says the format is owned by a later change
-- [ ] 1.3 Verify the documented format states all four parts the session relies on: the query argument, one capability per line on stdout, the meaning of exit status, and that an absent line and a non-zero exit are the same answer
-- [ ] 1.4 Verify the capability names in the documented format are character-for-character the names in the required and optional tables of the same document, since a format that renames a capability breaks the contract it implements
+- [x] 1.1 Create `packages/gridline/src/adapters/` and verify the path matches the one `docs/compositor-adapter.md` and `docs/architecture.md` already name, by grep rather than by memory
+- [x] 1.2 Document the wire format in `docs/compositor-adapter.md`, replacing the sentence that defers it to this change, and verify the document no longer says the format is owned by a later change
+- [x] 1.3 Verify the documented format states all four parts the session relies on: the query argument, one capability per line on stdout, the meaning of exit status, and that an absent line and a non-zero exit are the same answer
+- [x] 1.4 Verify the capability names in the documented format are character-for-character the names in the required and optional tables of the same document, since a format that renames a capability breaks the contract it implements
 
 ## 2. The Hyprland adapter
 
