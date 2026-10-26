@@ -43,7 +43,12 @@ than over SSH.
   only for the greeter verifications in this group, and verify it has a valid
   login shell and appears in the greeter user list
 - [ ] 4.2 With the packages installed, verify the Gridline session appears in GDM's session list alongside Ubuntu
-- [ ] 4.3 Verify GDM still preselects the session the user last used rather than Gridline, by recording the preselected session before installing and after
+- [ ] 4.3 Verify installing Gridline does not change what GDM preselects, by recording the
+  preselected session at the greeter before installing and again after, and confirming the
+  two match. Note that AccountsService writes `Session=` only once a user picks a session
+  other than the default, so on this baseline the recorded value is the system default
+  rather than a remembered choice: the invariant is that it is unchanged and is not
+  Gridline, not that it names a previously used session
 - [ ] 4.4 Select the Gridline session and verify the login screen returns, then read the journal by the identifier from task 2.3 and confirm the missing compositor is named
 - [ ] 4.5 From the stock session, verify the recovery procedure in `docs/recovery.md` locates that record using only tools present on a stock Ubuntu system, and correct the document if the procedure does not match what the launcher actually writes
 - [ ] 4.6 Verify the Gridline entry is withheld when the launcher is absent, by removing the launcher file while leaving the entry installed and confirming the session is not offered while Ubuntu still is, then restoring it
