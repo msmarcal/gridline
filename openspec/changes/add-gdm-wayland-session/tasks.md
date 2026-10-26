@@ -39,21 +39,28 @@ hangs instead of exiting, which leaves its VT occupied; the recovery is
 switching back to the original VT, so run this at the physical console rather
 than over SSH.
 
-- [ ] 4.1 Create a local test account with no administrative privileges, used
-  only for the greeter verifications in this group, and verify it has a valid
-  login shell and appears in the greeter user list
-- [ ] 4.2 With the packages installed, verify the Gridline session appears in GDM's session list alongside Ubuntu
-- [ ] 4.3 Verify installing Gridline does not change what GDM preselects, by recording the
+- [ ] 4.1 Record the session the greeter preselects for the existing account, then install the
+  packages, and verify the recording was taken before installation so task 4.4 has a
+  before value to compare against
+- [ ] 4.2 Create a local test account with no administrative privileges **after** the packages
+  are installed, used only for the greeter verifications in this group, and verify it has a
+  valid login shell and appears in the greeter user list. The order matters: the second
+  scenario of the opt-in requirement is a user created on a system where Gridline is already
+  installed, so an account created before installation cannot exercise it
+- [ ] 4.3 With the packages installed, verify the Gridline session appears in GDM's session list alongside Ubuntu
+- [ ] 4.4 Verify installing Gridline does not change what GDM preselects, by recording the
   preselected session at the greeter before installing and again after, and confirming the
   two match. Note that AccountsService writes `Session=` only once a user picks a session
   other than the default, so on this baseline the recorded value is the system default
   rather than a remembered choice: the invariant is that it is unchanged and is not
-  Gridline, not that it names a previously used session
-- [ ] 4.4 Select the Gridline session and verify the login screen returns, then read the journal by the identifier from task 2.3 and confirm the missing compositor is named
-- [ ] 4.5 From the stock session, verify the recovery procedure in `docs/recovery.md` locates that record using only tools present on a stock Ubuntu system, and correct the document if the procedure does not match what the launcher actually writes
-- [ ] 4.6 Verify the Gridline entry is withheld when the launcher is absent, by removing the launcher file while leaving the entry installed and confirming the session is not offered while Ubuntu still is, then restoring it
+  Gridline, not that it names a previously used session. Check it for both accounts: the
+  existing one against the value recorded in task 4.1, and the test account created after
+  installation, whose first visit to the greeter is the second scenario of the requirement
+- [ ] 4.5 Select the Gridline session and verify the login screen returns, then read the journal by the identifier from task 2.3 and confirm the missing compositor is named
+- [ ] 4.6 From the stock session, verify the recovery procedure in `docs/recovery.md` locates that record using only tools present on a stock Ubuntu system, and correct the document if the procedure does not match what the launcher actually writes
+- [ ] 4.7 Verify the Gridline entry is withheld when the launcher is absent, by removing the launcher file while leaving the entry installed and confirming the session is not offered while Ubuntu still is, then restoring it
 
-- [ ] 4.7 Remove the test account and its home directory, and verify no human
+- [ ] 4.8 Remove the test account and its home directory, and verify no human
   account other than the baseline owner remains and that no files under the
   removed home directory survive
 ## 5. Documentation and sequence
