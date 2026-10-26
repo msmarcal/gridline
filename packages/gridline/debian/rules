@@ -3,9 +3,12 @@
 %:
 	dh $@
 
-# No two binary packages may ship the same path. The staged trees are the
-# input, so an overlap between two manifests fails the build instead of
-# surfacing as a file conflict at install time.
-override_dh_install:
-	dh_install
+# No two binary packages may ship the same file or declare the same directory.
+#
+# The gate runs immediately before dh_builddeb, which is the first point where
+# every staging tree is complete. Anchoring it earlier leaves it blind: helpers
+# that run after the anchor stage files it never sees. dh_installdocs alone
+# adds the changelog and copyright that Debian policy requires, so a gate
+# placed at dh_install reports zero files while six are about to ship.
+execute_before_dh_builddeb:
 	tools/check-path-ownership debian

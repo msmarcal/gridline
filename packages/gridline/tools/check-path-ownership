@@ -22,9 +22,13 @@ trap 'rm -f "$files" "$dirs"' EXIT
 
 for pkgdir in "$staging_root"/gridline-*/; do
     [ -d "$pkgdir" ] || continue
+    pkgdir=${pkgdir%/}
     pkg=$(basename "$pkgdir")
-    find "$pkgdir" -mindepth 1 \( -type f -o -type l \) \
-        -printf '%P\t'"$pkg"'\n' >> "$files"
+    # DEBIAN/ holds this package's own control metadata, not shipped paths.
+    # Every package has DEBIAN/control and DEBIAN/md5sums at the same relative
+    # path, so including them would report a collision on every build.
+    find "$pkgdir" -mindepth 1 -path "$pkgdir/DEBIAN" -prune -o \
+        \( -type f -o -type l \) -printf '%P\t'"$pkg"'\n' >> "$files"
 done
 
 for manifest in "$staging_root"/gridline-*.dirs; do
