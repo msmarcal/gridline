@@ -19,9 +19,9 @@ records it for the change that owns it rather than doing it.
 
 ## 3. Attribute the deferred declarations
 
-- [ ] 3.1 Record in `docs/component-ownership.md`, for each blocking component no Gridline package can declare yet, the change that owns the declaration, and verify each named change exists in the downstream sequence table in `docs/architecture.md`
-- [ ] 3.2 Verify the compositor adapter is recorded as Gridline's own rather than as a deferred third-party declaration, since it ships in `gridline-session` already
-- [ ] 3.3 Record that all three binary packages currently declare `Depends: ${misc:Depends}` and nothing else, and verify this is stated as a known gap attributed to a later change rather than as the intended end state
+- [x] 3.1 Record in `docs/component-ownership.md`, for each blocking component no Gridline package can declare yet, the change that owns the declaration, and verify each named change exists in the downstream sequence table in `docs/architecture.md`
+- [x] 3.2 Verify the compositor adapter is recorded as Gridline's own rather than as a deferred third-party declaration, since it ships in `gridline-session` already
+- [x] 3.3 Record that all three binary packages currently declare `Depends: ${misc:Depends}` and nothing else, and verify this is stated as a known gap attributed to a later change rather than as the intended end state
 
 ## 4. Record archive support status
 

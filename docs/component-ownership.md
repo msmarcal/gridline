@@ -76,6 +76,20 @@ Both candidates exist on the baseline and neither selection is final; `add-sessi
 
 **The archive units cannot refuse startup.** `hyprpolkitagent.service`, `hypridle.service` and `xdg-desktop-portal-hyprland.service` are systemd user units with `PartOf=graphical-session.target`, `ConditionEnvironment=WAYLAND_DISPLAY` and `Restart=on-failure`. A failing unit restarts quietly and the session comes up regardless. The blocking rule in [architecture.md](architecture.md) therefore needs a Gridline-owned startup check to be enforceable at all; systemd alone will not enforce it.
 
+## Dependencies not yet declared
+
+Five components block session startup, and no Gridline package declares any of them today. All three binary packages carry `Depends: ${misc:Depends}` and nothing else. That is the correct state rather than an oversight, and this section exists so the two cannot be confused: a dependency that is missing because nobody got to it looks exactly like one that is missing because the decision it encodes has not been made.
+
+| Blocking component | Why it cannot be declared yet | Change that owns the declaration |
+|---|---|---|
+| Hyprland | The adapter that drives a compositor does not exist, so declaring one would install software the launcher cannot use | `add-hyprland-session-baseline` |
+| `xdg-desktop-portal-hyprland` | Follows the compositor: the backend is only required once the adapter reports the `screencast` capability | `add-hyprland-session-baseline` |
+| Screen locker | The component is not selected. `hyprlock` is a candidate, not a choice | `add-session-lifecycle-integration` |
+| polkit authentication agent | The agent is not selected. `hyprpolkitagent` is a candidate, not a choice | `add-session-lifecycle-integration` |
+| Compositor adapter | Not deferred and not third-party. It is Gridline's own and ships in `gridline-session` | n/a |
+
+The degrading components carry no declaration either, for a different reason: the session cannot run at all yet, so a recommendation would describe a desktop that does not start. The change that makes the session start is the one that can state what it recommends.
+
 ## Security and updates
 
 | Component | Upstream | Ubuntu source | Gridline ownership | Fallback |
