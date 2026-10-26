@@ -38,7 +38,7 @@ What the environment allows, checked rather than assumed:
 
 *Why:* a directory in Debian is shared ownership. Several packages may own `/etc/xdg` at once, so claiming it produces no conflict, no error, and no useful assertion either: `dpkg -S /etc/xdg` would simply list Gridline alongside `systemd` and `snapd`. The claim that means something is the one only Gridline can make.
 
-*Why this is a requirement and not only a decision:* the failure is silent. A `.install` line claiming a shared directory installs cleanly and looks correct, so nothing catches it except a rule written down. It also matters for the fallback guarantee: a Gridline package that owns `/etc/xdg` is a Gridline package whose removal can touch a directory the GNOME session depends on.
+*Why this is a requirement and not only a decision:* the failure is silent. A `.dirs` line claiming a shared directory installs cleanly and looks correct, so nothing catches it except a rule written down. It also matters for the fallback guarantee: a Gridline package that owns `/etc/xdg` is a Gridline package whose removal can touch a directory the GNOME session depends on.
 
 *Consequence for later changes:* the session entry lands in `/usr/share/wayland-sessions/` as a Gridline-named file, and `gridline-portals.conf` lands in `/usr/share/xdg-desktop-portal/` the same way. Files, not directories.
 
@@ -50,21 +50,32 @@ What the environment allows, checked rather than assumed:
 
 *Why a separate subdirectory:* it keeps the authorship boundary visible in the filesystem. Everything directly under `/etc/xdg/gridline/` is administrator-authored and registered as a conffile; everything under `generated/` is output, is not a conffile, and goes away with the package. An administrator who has to ask which kind a file is has already been failed by the layout.
 
-*Named here because ownership requires a name.* `define-debian-package-architecture` assigned the ownership requirement to this change precisely because `.install` manifests are where the boundary becomes real, and a manifest needs a path.
+*Named here because ownership requires a name.* `define-debian-package-architecture` assigned the ownership requirement to this change precisely because install manifests are where the boundary becomes real, and a manifest needs a path. Here that manifest is a `.dirs` file, since the directories ship empty.
 
 ### One source package, three binary packages, `3.0 (native)`
 
 Confirms what `docs/packaging.md` and `packages/gridline/README.md` already record. `gridline-desktop` is not built.
 
-*Why `debian/rules` stays a plain debhelper sequence:* there is nothing to compile. `dh $@` with the directories installed from `.install` manifests is the whole build, and any override added now would be machinery with no work to do.
+*Why `debian/rules` stays a plain debhelper sequence:* there is nothing to compile. `dh $@` with the directories created from `.dirs` manifests is the whole build, and any override added now would be machinery with no work to do.
 
-### The ownership gate compares built packages, not the source tree
+### The ownership gate runs where the staging trees are complete
 
-The gate runs after the binary packages are staged and compares the file lists dpkg would install.
+The gate compares the file lists dpkg would install, read from the staged package trees at the last point where every tree is finished.
 
-*Why after staging rather than by reading the `.install` files:* an `.install` manifest may use a glob, and two globs can overlap without looking like it. Comparing what was actually staged catches the overlap a textual comparison would miss.
+*Why read the staged trees rather than the manifests:* a file manifest may use a glob, and two globs can overlap without looking like it. Comparing what was actually staged catches an overlap a textual comparison would miss. The directory half is different and does read the manifests, because a declared directory is an explicit claim with no glob to resolve.
 
-*Where it lives:* a script in the source package, invoked from `debian/rules` after `dh_install`, so a duplicated path fails `dpkg-buildpackage` rather than waiting for someone to install both packages.
+*Where it lives:* a script in the source package, invoked from `debian/rules` as `execute_before_dh_builddeb`.
+
+*Why that anchor and not `dh_install`:* `dh_install` is not the last helper to populate a staging tree. `dh_installdocs`, `dh_installchangelogs`, `dh_link`, `dh_compress` and `dh_fixperms` all run after it, so a gate anchored there never sees what they stage. `dh_builddeb` is the first point at which every tree is complete, which makes it the only anchor where the file half of the check is looking at what actually ships.
+
+*This was found by running it, not by reading it.* The gate was first anchored to `override_dh_install`, and on the baseline it reported zero files while each of the three packages was about to ship two: the changelog and copyright Debian policy requires. Six files shipped uninspected. An anchor earlier in the sequence, such as `dh_installdirs`, is worse rather than better.
+
+*Moving it exposed two defects of its own, both worth recording because neither is obvious from reading:*
+
+- Every package carries `DEBIAN/control` and `DEBIAN/md5sums` at the same relative path, so the file scan reported a collision on every build. That directory holds the package's own control metadata rather than shipped paths, and the scan prunes it.
+- The staging glob yields a trailing slash, so the prune path contained a double slash and matched nothing. The bug survived an isolated test of the `find` invocation, because that test typed the path without the trailing slash the script actually builds.
+
+*What the gate is verified to catch,* exercised on the baseline rather than argued: a duplicated file installed through a file manifest; a duplicated path created by a helper that runs after `dh_install`, tested with a symlink from `dh_link`, which the previous anchor could not have seen; and the same directory declared by two packages. On a clean build it reports six files and four declared directories, which matches what the three packages contain.
 
 *The gate does not check the other half.* Whether a claimed directory belongs to an archive package is a different question, answered against the installed system rather than against the build, and the spec requires it to surface in build or review. The honest placement is a separate check the build can run only on a machine that has the archive package installed, which is why the requirement says "build or review" rather than naming one.
 

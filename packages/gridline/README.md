@@ -67,7 +67,9 @@ Run from `packages/gridline/`. It produces three binary packages in the parent d
 
 `debuild` is not used: it is not installed on the supported baseline, and `dpkg-buildpackage` is what the packaging is verified against.
 
-The build runs `tools/check-path-ownership` after `dh_install`. It fails the build when two binary packages would ship the same file or declare the same directory, so an ownership collision is a build failure rather than a file conflict discovered at install time. Intermediate parents such as `/etc/xdg` are shared by construction and are not collisions.
+The build runs `tools/check-path-ownership` as `execute_before_dh_builddeb`, which is the last point where every staging tree is complete. It fails the build when two binary packages would ship the same file or declare the same directory, so an ownership collision is a build failure rather than a file conflict discovered at install time. Intermediate parents such as `/etc/xdg` are shared by construction and are not collisions.
+
+The anchor matters. `dh_install` is not the last helper to populate a staging tree, so a gate placed there misses everything `dh_installdocs`, `dh_link`, `dh_compress` and `dh_fixperms` stage afterwards. On a clean build the gate reports six files and four declared directories; if it ever reports fewer files than the packages actually contain, it is looking at an incomplete tree.
 
 Build-time ignore patterns are documented above; staging artifacts are ignored by explicit path, so a clean tree after a build is the expected state.
 

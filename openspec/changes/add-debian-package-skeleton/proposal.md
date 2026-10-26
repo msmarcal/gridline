@@ -6,7 +6,7 @@ Gridline has 43 requirements and no file that `dpkg` can install. Every `add-*` 
 
 Three things change the moment `packages/gridline/debian/` exists, and all three are cheaper to get right before any content arrives:
 
-- **Path ownership becomes real.** `package-delivery` says which package owns what. An `.install` manifest is what asserts it, so until one exists the boundary is a document rather than a fact `dpkg -L` can answer.
+- **Path ownership becomes real.** `package-delivery` says which package owns what. An install manifest is what asserts it, so until one exists the boundary is a document rather than a fact `dpkg -L` can answer.
 - **The build gate starts working.** The rule that no two packages ship the same path is only enforceable once there are packages built together to compare.
 - **Verification stops being deferred.** The development host is Ubuntu 26.04.1 LTS resolute on amd64, which is exactly the declared baseline. Install, removal, upgrade and downgrade can be exercised for real rather than described.
 
@@ -15,7 +15,7 @@ Three things change the moment `packages/gridline/debian/` exists, and all three
 **This change ships implementation.** It creates a buildable Debian source package and verifies it by building and installing on the supported baseline.
 
 - Creates `packages/gridline/debian/`: `control` declaring three binary packages, `rules` with a debhelper sequence, `changelog`, `copyright` in machine-readable format 1.0 with the MIT text reproduced, and `source/format` set to `3.0 (native)`.
-- Creates one `.install` manifest per binary package, declaring the Gridline-named directories each one owns. The packages ship those directories and no content; content arrives in the changes that own it.
+- Creates one `.dirs` manifest per binary package, declaring the Gridline-named directories each one owns. `.dirs` rather than `.install` because the directories ship empty, and `dh_install` needs a source file to copy. The packages ship those directories and no content; content arrives in the changes that own it.
 - Adds a build-time gate that fails when two binary packages would ship the same path.
 - Verifies on the baseline: the build produces exactly three `.deb` files, they install together without conflict, `dpkg -L` attributes each directory to the package the capability says owns it, removal returns the system to its prior state, and an upgrade followed by a downgrade leaves the system working.
 
@@ -59,7 +59,7 @@ Every requirement this change adds or is assigned is the responsibility of exact
 | Removing a Gridline package leaves shared directories intact | `add-debian-package-skeleton` | Removal behavior follows from what the manifests declare, and the baseline host can exercise it |
 | Binary package names carry the gridline- prefix | `add-debian-package-skeleton` | Names are declared in the `control` this change creates |
 | Dependencies are declared and satisfiable from the supported archive | `add-debian-package-skeleton` | The dependency fields exist here; their entries accrete later |
-| Package ownership of a configuration artifact does not move once content ships | `add-debian-package-skeleton` | The `.install` manifests fix the boundary before any content exists to move |
+| Package ownership of a configuration artifact does not move once content ships | `add-debian-package-skeleton` | The `.dirs` manifests fix the boundary before any content exists to move |
 | Upgrade and downgrade leave a working session and keep local configuration | `add-debian-package-skeleton` | The packaging that produces the behavior is created here, and the baseline host can exercise it |
 
 `add-ci-vm-smoke-tests` owns no requirement here. It re-runs this change's verification in a clean VM, which is a different question from whether the behavior exists: this change establishes it on one machine, that change proves it on a machine nobody has touched.
