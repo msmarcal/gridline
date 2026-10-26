@@ -59,4 +59,6 @@ None.
 | Session identifies itself to the desktop stack | `add-gdm-wayland-session` | `DesktopNames` in the entry is what sets the identity |
 | GNOME session remains installed and supported | `define-debian-package-architecture` | Already archived: install and removal behavior is packaging, not session logic |
 
+This change runs before `define-supported-ubuntu-integration`, inverting the order the foundation recorded. The inversion is safe because this change declares no dependency entry: the launcher reports a missing compositor rather than requiring one, so it needs nothing from the component matrix that change produces. It is worth doing because this is the first change where the session appears at the login screen and the fallback path can be exercised, and because leaving the recorded sequence disagreeing with the executed one is the divergence this project has paid for repeatedly.
+
 `add-session-health-check` owns no requirement here. It reads the journal record this change writes, which is why the record has to be attributable before that change exists.

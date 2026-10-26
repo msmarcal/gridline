@@ -40,6 +40,8 @@ Verification note: the failure path can only be exercised from the login screen,
 - [ ] 5.2 Record in `docs/component-ownership.md` that the session entry is a Gridline-named drop-in in a directory `ubuntu-session` owns, and verify the row states the fallback behavior for the entry being absent
 - [ ] 5.3 Update `docs/package-matrix.md` so `gridline-session` lists the session entry and the launcher among what it owns, and verify the statement matches the ownership requirement in `openspec/specs/package-delivery/spec.md`
 - [ ] 5.4 Verify every requirement added in `specs/desktop-session/spec.md` appears in this change's attribution table in `proposal.md` with exactly one owning change, and that no requirement is listed twice or omitted
+- [ ] 5.5 Reorder the downstream sequence table in `docs/architecture.md` so the recorded order matches the order actually executed, placing this change before `define-supported-ubuntu-integration`, and verify every change already archived appears above every change not yet started
+- [ ] 5.6 Record in `docs/architecture.md` why the inversion is safe, namely that this change declares no dependency entry and so needs nothing from the component matrix `define-supported-ubuntu-integration` produces, and verify the claim against the result of task 1.4
 
 ## Workflow follow-up
 
