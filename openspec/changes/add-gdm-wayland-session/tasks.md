@@ -60,10 +60,13 @@ than over SSH.
 - [ ] 4.6 From the stock session, verify the recovery procedure in `docs/recovery.md` locates that record using only tools present on a stock Ubuntu system, and correct the document if the procedure does not match what the launcher actually writes
 - [ ] 4.7 Verify the Gridline entry is withheld when the launcher is absent, by removing the
   launcher file while leaving the entry installed and confirming the session is not offered
-  while Ubuntu still is, then restoring it and verifying `dpkg --verify gridline-session`
-  reports nothing. Restoring by reinstalling the same `.deb` is the method that cannot
-  leave residue; copying the file back happens to match today because the build does not
-  transform it, which is a property to check rather than rely on
+  while Ubuntu still is, then restoring it and verifying both that `dpkg --verify
+  gridline-session` reports nothing and that the launcher's mode is `755` and it executes.
+  Both checks are needed: `dpkg --verify` compares md5 only, so a file restored with the
+  wrong permissions passes it while the launcher cannot run, which is the failure that
+  makes the entry resolve and the session die on selection. Reinstalling the same `.deb`
+  is the method that restores content and mode together; copying the source file back
+  restores mode `775` rather than the `755` that `dh_fixperms` produces
 
 - [ ] 4.8 Remove the test account and its home directory, and verify no human
   account other than the baseline owner remains and that no files under the
