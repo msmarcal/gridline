@@ -78,6 +78,16 @@ Reporting on the compositor half alone would have the adapter claim a capability
 
 **The backend this resolves to is reached through the compositor's name, not Gridline's.** `hyprland.portal` lists `UseIn=wlroots;Hyprland;sway;Wayfire;river;` with no `Gridline`, and Gridline's identity is `Gridline:Hyprland`, so the frontend matches on the second name. `docs/component-ownership.md` already records that this is a working path by accident and that `gridline-portals.conf` is what makes it deliberate. That file belongs to `add-desktop-portal-integration`; this change depends on the accidental path and says so rather than leaving a later reader to discover it.
 
+### `confirm` asks the Wayland registry, through the archive's tool for asking it
+
+The adapter needs to know which protocols the running compositor advertises. `hyprctl` has no command that lists globals, so the question has to go to the Wayland registry itself, which is where a compositor publishes what it implements. `wayland-utils` 1.3.0-1 provides `wayland-info`, which binds to the registry and prints the globals.
+
+**This is a documented mechanism, not inspection.** The registry is the interface a Wayland compositor publishes its protocols through, and `wayland-info` is the archive's tool for reading it. That is what separates it from reading protocol names out of the compositor binary, which this design rejected as depending on internal layout: one asks the compositor what it offers, the other guesses from the file on disk.
+
+The cost is a third `universe` dependency, carrying the same absent security-update commitment as the other two, recorded where it is declared. The alternative was shipping a compiled Wayland client inside the adapter, which avoids the dependency and costs more elsewhere: `gridline-session` would stop being `Architecture: all`, the source package would gain C and a `libwayland-dev` build dependency, and the ownership gate would start seeing build artifacts. Changing the shape the package skeleton deliberately established, for an implementation convenience, is the worse trade.
+
+Parsing another tool's human-readable output is the real fragility, and it is bounded rather than removed. The adapter matches an interface name as a whole word, so a longer name containing a shorter one cannot produce a false positive, and it treats output it cannot parse as a failure to answer. The contract already says what that means: a `confirm` that exits non-zero has reported nothing, so an unreadable answer ends the launch instead of producing a half-believed capability set.
+
 ### The launcher starts the compositor through the adapter, not directly
 
 After the capability check passes, the launcher invokes `<adapter> start`. The launcher never names Hyprland. This is what keeps the isolation check from failing on the launcher itself, and it is the mechanism behind the `compositor-abstraction` requirement that supporting a second compositor is confined to selecting which adapter is active.

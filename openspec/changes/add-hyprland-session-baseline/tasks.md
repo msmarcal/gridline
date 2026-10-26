@@ -10,7 +10,7 @@
 ## 2. The Hyprland adapter
 
 - [ ] 2.1 Add the Hyprland adapter at `packages/gridline/src/adapters/hyprland/adapter`, executable, and verify the launcher's existing discovery glob finds it by running that glob against the staged tree
-- [ ] 2.2 Implement `capabilities` and `confirm`. `capabilities` reports only what installed files establish and exits non-zero when a file the adapter needs is absent; `confirm` reports each Wayland-protocol capability when the running compositor advertises it, verified against the protocol names in design.md. `screencast` needs both halves: the screencopy protocols **and** a `.portal` file declaring `org.freedesktop.impl.portal.ScreenCast` with its D-Bus service installed. Verify by removing the compositor's portal backend and confirming `screencast` is absent from `confirm` even while the protocols are still advertised
+- [ ] 2.2 Implement `capabilities` and `confirm`. `capabilities` reports only what installed files establish and exits non-zero when a file the adapter needs is absent; `confirm` asks the Wayland registry through `wayland-info` and reports each protocol-backed capability when the running compositor advertises its interface. Match each interface name as a whole word, so a longer name containing a shorter one cannot produce a false positive, and exit non-zero on output that cannot be parsed rather than reporting a partial set. `screencast` needs both halves: the screencopy protocols **and** a `.portal` file declaring `org.freedesktop.impl.portal.ScreenCast` with its D-Bus service installed. Verify by removing the compositor's portal backend and confirming `screencast` is absent from `confirm` even while the protocols are still advertised
 - [ ] 2.3 Implement the `hyprctl`-served capabilities under `confirm`, reporting them only when `hyprctl` answers against the running instance. Verify three states, not two: `hyprctl` absent, `hyprctl` present with no instance, and `hyprctl` answering a running compositor. The middle state is the one a present-or-absent test misses, and it is the state every pre-launch invocation is in
 - [ ] 2.4 Verify the adapter reports no capability it cannot deliver through a documented interface, by listing for each reported capability the interface that backs it and checking each against the design table
 - [ ] 2.5 Verify the adapter exits non-zero when it cannot produce a complete answer, and that it writes the reason to stderr rather than printing a partial capability list
@@ -33,7 +33,7 @@
 
 ## 5. Packaging
 
-- [ ] 5.1 Declare `hyprland` and `xdg-desktop-portal-hyprland` as `Depends` of `gridline-session`, and verify with `dpkg-deb -f` on the built package rather than by reading the control file
+- [ ] 5.1 Declare `hyprland`, `xdg-desktop-portal-hyprland` and `wayland-utils` as `Depends` of `gridline-session`, and verify with `dpkg-deb -f` on the built package rather than by reading the control file
 - [ ] 5.2 State the `universe` support gap in the `gridline-session` long description, using the same sentence the live documents carry, and verify the wording is identical by comparing against `docs/component-ownership.md`
 - [ ] 5.3 Correct the two statements describing `gridline-session` as shipping no content, and verify the four describing `gridline-config` and `gridline-tools` are untouched, since those two still ship directories and no files
 - [ ] 5.4 Build the packages and verify the ownership gate and the isolation check both pass, and that the adapter installs under `/usr/libexec/gridline/adapters/hyprland/adapter` with mode 755
