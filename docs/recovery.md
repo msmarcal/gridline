@@ -70,7 +70,7 @@ This document is the "documented recovery procedure" that `openspec/specs/deskto
 | Requirement in `specs/desktop-session/spec.md` | Where it appears here |
 |---|---|
 | GNOME session remains installed and supported | Step 2, and the table above |
-| Session launch reaches a usable desktop or fails visibly: the session exits, the user is returned to GDM, and the cause is written to the journal under an identifiable Gridline unit or process name | Steps 1 and 3 |
+| Session launch reaches a usable desktop or fails visibly: the session exits, the user is returned to GDM, and the cause is written to the journal under the syslog identifier `gridline-session` | Steps 1 and 3 |
 | A failed Gridline session is recoverable without Gridline: recovery to a working desktop | Steps 1 and 2 |
 | A failed Gridline session is recoverable without Gridline: the failure is discoverable from the fallback session using only tools present on a stock Ubuntu system | Step 3, using `journalctl` |
 | Gridline is removable, returning the system to a working stock Ubuntu desktop | Step 5 |

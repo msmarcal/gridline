@@ -1,5 +1,28 @@
 # Spec Delta
 
+## MODIFIED Requirements
+
+### Requirement: Session launch reaches a usable desktop or fails visibly
+
+Selecting the Gridline session SHALL either reach a usable tiling desktop or return the user to the login screen with the failure recorded in the system journal.
+
+The record SHALL be selectable by its author rather than by searching the journal's text, because a user reading it has just been returned to the login screen and knows neither which boot the failure belongs to nor how recently it happened.
+
+#### Scenario: Successful launch
+
+- **WHEN** a user selects the Gridline session and authenticates
+- **THEN** a Wayland tiling desktop starts and accepts keyboard and pointer input
+
+#### Scenario: Launch failure returns control to the user
+
+- **WHEN** a required component of the session fails to start
+- **THEN** the session exits, the user is returned to GDM, and the cause is written to the journal under the syslog identifier `gridline-session`
+
+#### Scenario: The failure record is selectable without a time window
+
+- **WHEN** a user returned to the login screen looks for the cause from the stock session
+- **THEN** selecting records by the syslog identifier returns the launcher's records and no others, without naming a boot or a time range
+
 ## ADDED Requirements
 
 ### Requirement: A session entry is offered only when its launcher is present

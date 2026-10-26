@@ -28,7 +28,9 @@ None.
 
 ### Modified Capabilities
 
-- `desktop-session`: gains one requirement, that a session entry is offered only when the launcher it names is present. Inspecting the baseline showed the mechanism exists and is already relied on: `ubuntu.desktop` carries `TryExec=/usr/bin/gnome-session`, and GDM hides an entry whose `TryExec` cannot be resolved. Without it, a partially configured install would offer a session that cannot start, which contradicts the promise that a failure is visible and attributable rather than mysterious. No existing requirement is modified or removed.
+- `desktop-session`: gains one requirement, that a session entry is offered only when the launcher it names is present. Inspecting the baseline showed the mechanism exists and is already relied on: `ubuntu.desktop` carries `TryExec=/usr/bin/gnome-session`, and GDM hides an entry whose `TryExec` cannot be resolved. Without it, a partially configured install would offer a session that cannot start, which contradicts the promise that a failure is visible and attributable rather than mysterious.
+
+  It also modifies one existing requirement, that session launch reaches a usable desktop or fails visibly. The requirement described the failure record as written "under an identifiable Gridline unit or process name", which names a mechanism this change established does not exist: the display manager starts the launcher, so it has no unit to be attributed to. The requirement now names the syslog identifier `gridline-session`, which is what the launcher writes under and what `journalctl -t` selects, and gains a scenario for selecting the record without naming a boot or a time range. Correcting it here rather than later keeps the fix with the work that found it, and avoids archiving a durable requirement whose mechanism the project has already documented as unavailable. No requirement is removed.
 
 ## Impact
 
