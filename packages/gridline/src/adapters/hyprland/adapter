@@ -1,0 +1,116 @@
+#!/bin/sh
+# Gridline compositor adapter for Hyprland.
+#
+# All Hyprland-specific knowledge in the project lives in this directory. The
+# isolation check treats the path as the boundary, so a compositor name, binary,
+# protocol or configuration format appearing anywhere outside it fails the build.
+#
+# The contract this implements is docs/compositor-adapter.md. Three verbs:
+#
+#   capabilities  what installed files establish, before the compositor runs
+#   start         launch the compositor
+#   confirm       what the running compositor establishes
+#
+# Why two query verbs: an idle Hyprland answers nothing about which protocols it
+# implements. hyprctl exits non-zero without an instance signature, and the
+# compositor binary aborts before parsing arguments when XDG_RUNTIME_DIR is
+# unset. So the cheap checks run early and the protocol checks run late.
+
+set -u
+
+COMPOSITOR=Hyprland
+COMPOSITOR_CTL=hyprctl
+PORTAL_DEF=/usr/share/xdg-desktop-portal/portals/hyprland.portal
+PORTAL_IFACE=org.freedesktop.impl.portal.ScreenCast
+PORTAL_SERVICE=/usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.hyprland.service
+
+# Wayland interfaces backing each protocol-served capability. These names are a
+# second copy of the table in this change's design document, which is why the
+# tasks require comparing the two rather than reading them.
+IFACE_lock_signaling=ext_session_lock_v1
+IFACE_idle_reporting=ext_idle_notifier_v1
+IFACE_output_management=zwlr_output_manager_v1
+IFACE_screencast_a=zwlr_screencopy_manager_v1
+IFACE_screencast_b=hyprland_toplevel_export_manager_v1
+IFACE_output_scaling=wp_fractional_scale_manager_v1
+IFACE_touch_and_gestures=zwp_pointer_gestures_v1
+
+fail() {
+    printf 'gridline adapter (%s): %s\n' "$COMPOSITOR" "$1" >&2
+    exit 1
+}
+
+# The registry is where a Wayland compositor publishes what it implements, and
+# wayland-info is the archive's tool for reading it. Output is checked for the
+# marker that introduces an interface before any name is matched: output without
+# it is output this adapter cannot read, which is a different answer from a
+# compositor that advertises nothing. Only one of the two is about the compositor.
+REGISTRY_MARKER='interface:'
+
+registry=
+read_registry() {
+    command -v wayland-info >/dev/null 2>&1 \
+        || fail 'wayland-info is not installed, so the registry cannot be read'
+    registry=$(wayland-info 2>/dev/null) \
+        || fail 'wayland-info could not reach the compositor'
+    printf '%s\n' "$registry" | grep -q "$REGISTRY_MARKER" \
+        || fail 'wayland-info produced output this adapter does not recognise'
+}
+
+# Whole-word match, so a longer interface name containing a shorter one cannot
+# report the shorter one as present.
+advertises() {
+    printf '%s\n' "$registry" | grep -qw "$1"
+}
+
+serves_screencast_portal() {
+    [ -r "$PORTAL_DEF" ] || return 1
+    grep -q "$PORTAL_IFACE" "$PORTAL_DEF" || return 1
+    [ -r "$PORTAL_SERVICE" ]
+}
+
+case "${1-}" in
+capabilities)
+    # Only what installed files establish. A capability absent here is one this
+    # adapter cannot establish yet, not one the compositor lacks; confirm is the
+    # gate. What this phase decides is whether to bother starting at all.
+    command -v "$COMPOSITOR" >/dev/null 2>&1 \
+        || fail "$COMPOSITOR is not installed"
+    echo compositor-launch
+    echo session-identity
+    echo shutdown
+    serves_screencast_portal && echo screencast
+    exit 0
+    ;;
+confirm)
+    read_registry
+    command -v "$COMPOSITOR_CTL" >/dev/null 2>&1 \
+        || fail "$COMPOSITOR_CTL is not installed"
+    "$COMPOSITOR_CTL" version >/dev/null 2>&1 \
+        || fail "$COMPOSITOR_CTL cannot reach a running compositor"
+
+    echo compositor-launch
+    echo session-identity
+    echo shutdown
+    echo input-configuration
+    echo window-control
+
+    advertises "$IFACE_lock_signaling"    && echo lock-signaling
+    advertises "$IFACE_idle_reporting"    && echo idle-reporting
+    advertises "$IFACE_output_management" && echo output-management
+    advertises "$IFACE_output_scaling"    && echo output-scaling
+    advertises "$IFACE_touch_and_gestures" && echo touch-and-gestures
+
+    if advertises "$IFACE_screencast_a" && advertises "$IFACE_screencast_b" \
+        && serves_screencast_portal; then
+        echo screencast
+    fi
+    exit 0
+    ;;
+start)
+    exec "$COMPOSITOR"
+    ;;
+*)
+    fail "unknown query: ${1-<none>}"
+    ;;
+esac
