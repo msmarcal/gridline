@@ -59,6 +59,18 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 | `xwayland` | 2:24.1.10-1 | main | X11 application support |
 | `gdm3` | 50.1-0ubuntu0.1 | main | Display manager |
 
+### How these were measured
+
+Measured 2026-10-26 against a system running the supported baseline, Ubuntu 26.04.1 LTS amd64, with `main`, `universe`, `restricted` and `multiverse` enabled. Both commands are part of a stock Ubuntu system and neither needs a Gridline package installed:
+
+```
+apt-get update
+apt-cache policy <package>     # whether it exists, and the candidate version
+apt-cache madison <package>    # the archive component that provides it
+```
+
+The two answer different questions and are worth running together: `policy` reports what would be installed, `madison` reports which component it comes from. A reader repeating this needs nothing the table does not already name.
+
 Confirming these against the archive is owned by `define-supported-ubuntu-integration`, which also owns re-checking them, since they move with the archive.
 
 **Every Hypr-ecosystem package is in universe.** Two consequences follow and neither is a packaging detail. A security issue in the compositor has no Canonical update commitment behind it, which is a fact users of this session are entitled to know rather than discover. And `gridline-desktop`, once it ships, depends on universe packages and therefore cannot itself live in main - which makes this the central obstacle to any future official-flavor candidacy, not a footnote to it.

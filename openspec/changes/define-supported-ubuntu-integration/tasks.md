@@ -6,8 +6,8 @@ records it for the change that owns it rather than doing it.
 
 ## 1. Confirm the measurement
 
-- [ ] 1.1 Re-run the availability query against a system on the supported baseline for all nineteen components in design.md, and verify each one's existence, version and archive component against the table there, recording any that moved since 2026-10-26 rather than silently accepting the design's values
-- [ ] 1.2 Verify the query used is one a reader can repeat with stock tools and no Gridline package installed, and record the exact command and the date in `docs/package-matrix.md`
+- [x] 1.1 Re-run the availability query against a system on the supported baseline for all nineteen components in design.md, and verify each one's existence, version and archive component against the table there, recording any that moved since 2026-10-26 rather than silently accepting the design's values
+- [x] 1.2 Verify the query used is one a reader can repeat with stock tools and no Gridline package installed, and record the exact command and the date in `docs/package-matrix.md`
 - [ ] 1.3 Verify that every component named in `docs/component-ownership.md` appears in the measurement, and that the measurement introduces no component the ownership matrix does not carry; report either direction of mismatch as a finding rather than adding rows to make the two agree
 
 ## 2. Record the classification
