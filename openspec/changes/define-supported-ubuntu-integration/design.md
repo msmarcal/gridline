@@ -4,7 +4,7 @@
 
 See proposal.md for motivation. Three constraints shape the approach.
 
-**The measurement is done.** Every component the twelve `platform-integration` requirements rest on was queried against the baseline archive from a VM running the supported baseline, Ubuntu 26.04.1 LTS amd64, on 2026-10-26. All nineteen exist:
+**The measurement is done.** Every component the twelve `platform-integration` requirements rest on, and every component `docs/component-ownership.md` carries, was queried against the baseline archive from a VM running the supported baseline, Ubuntu 26.04.1 LTS amd64, on 2026-10-26. All twenty-two exist:
 
 | Package | Version | Archive component |
 |---|---|---|
