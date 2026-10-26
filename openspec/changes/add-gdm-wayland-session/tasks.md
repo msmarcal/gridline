@@ -2,7 +2,7 @@
 
 Scope note: this change ships implementation. It creates the session entry and the launcher in `gridline-session` and verifies them on the development host, which is the declared baseline. No compositor is started, no adapter contract is defined, and no dependency on a compositor package is declared.
 
-Verification note: the failure path can only be exercised from the login screen, so the tasks in group 4 require logging out of the current desktop. The expected outcome is a return to GDM with the stock session still selectable, which is itself the thing being verified.
+Verification note: the failure path can only be exercised from the login screen, so the tasks in group 4 are performed at the greeter rather than from a terminal. The expected outcome is a return to GDM with the stock session still selectable, which is itself the thing being verified. Group 4 carries an execution note describing how to reach the greeter without ending the running session.
 
 ## 1. Session entry
 
@@ -28,12 +28,29 @@ Verification note: the failure path can only be exercised from the login screen,
 
 ## 4. Login screen verification on the baseline
 
-- [ ] 4.1 With the packages installed, verify the Gridline session appears in GDM's session list alongside Ubuntu
-- [ ] 4.2 Verify GDM still preselects the session the user last used rather than Gridline, by recording the preselected session before installing and after
-- [ ] 4.3 Select the Gridline session and verify the login screen returns, then read the journal by the identifier from task 2.3 and confirm the missing compositor is named
-- [ ] 4.4 From the stock session, verify the recovery procedure in `docs/recovery.md` locates that record using only tools present on a stock Ubuntu system, and correct the document if the procedure does not match what the launcher actually writes
-- [ ] 4.5 Verify the Gridline entry is withheld when the launcher is absent, by removing the launcher file while leaving the entry installed and confirming the session is not offered while Ubuntu still is, then restoring it
+Execution note: these verifications do not require ending the current session.
+Use Switch User to reach the greeter on a second VT, which leaves the running
+session intact on its own VT. Selecting Gridline there exercises the failure
+path, and returning to the original VT recovers a session that was never
+closed. Verifying with a second account rather than the account already logged
+in keeps the session selection real, because a greeter may offer to resume an
+existing session instead of starting one. The residual risk is a launcher that
+hangs instead of exiting, which leaves its VT occupied; the recovery is
+switching back to the original VT, so run this at the physical console rather
+than over SSH.
 
+- [ ] 4.1 Create a local test account with no administrative privileges, used
+  only for the greeter verifications in this group, and verify it has a valid
+  login shell and appears in the greeter user list
+- [ ] 4.2 With the packages installed, verify the Gridline session appears in GDM's session list alongside Ubuntu
+- [ ] 4.3 Verify GDM still preselects the session the user last used rather than Gridline, by recording the preselected session before installing and after
+- [ ] 4.4 Select the Gridline session and verify the login screen returns, then read the journal by the identifier from task 2.3 and confirm the missing compositor is named
+- [ ] 4.5 From the stock session, verify the recovery procedure in `docs/recovery.md` locates that record using only tools present on a stock Ubuntu system, and correct the document if the procedure does not match what the launcher actually writes
+- [ ] 4.6 Verify the Gridline entry is withheld when the launcher is absent, by removing the launcher file while leaving the entry installed and confirming the session is not offered while Ubuntu still is, then restoring it
+
+- [ ] 4.7 Remove the test account and its home directory, and verify no human
+  account other than the baseline owner remains and that no files under the
+  removed home directory survive
 ## 5. Documentation and sequence
 
 - [ ] 5.1 Record in `docs/architecture.md` that the desktop identity comes from the session entry rather than from the launcher, and verify the document states this supersedes the earlier decision and gives the reason
