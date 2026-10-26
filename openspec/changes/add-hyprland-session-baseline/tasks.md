@@ -37,7 +37,11 @@
 - [ ] 5.2 State the `universe` support gap in the `gridline-session` long description, using the same sentence the live documents carry, and verify the wording is identical by comparing against `docs/component-ownership.md`
 - [ ] 5.3 Correct the two statements describing `gridline-session` as shipping no content, and verify the four describing `gridline-config` and `gridline-tools` are untouched, since those two still ship directories and no files
 - [ ] 5.4 Build the packages and verify the ownership gate and the isolation check both pass, and that the adapter installs under `/usr/libexec/gridline/adapters/hyprland/adapter` with mode 755
-- [ ] 5.5 Install on the baseline VM and verify the declared dependencies resolve from the archive alone, with no third-party source configured
+- [ ] 5.5 Remove `hyprland` and `xdg-desktop-portal-hyprland` with
+  `apt-get remove --purge`, verify `apt-get autoremove` leaves them absent,
+  then declare the dependency and confirm `apt` resolves it from the archive
+  alone, since the measurement that informed the design installed both as
+  manual packages and the baseline this task verifies is a clean install
 
 ## 6. The session starts
 
