@@ -144,7 +144,7 @@ The strength is not a packager's judgment call: [architecture.md](architecture.m
 
 Every dependency resolves on the supported baseline using the Ubuntu archive alone. No Gridline package requires a third-party repository to install.
 
-**Each dependency records whether it comes from main or from universe.** That is a support fact rather than packaging trivia: universe carries no Canonical security-update commitment, so patching a universe component is the operator's responsibility, which on a personal machine means its owner. The gap is recorded in [security-and-manageability.md](security-and-manageability.md); a per-dependency annotation is what makes the total visible without a separate audit.
+**Each dependency records whether it comes from main or from universe.** That is a support fact rather than packaging trivia. Universe carries **no Canonical security-update commitment**. Main does. Patching a universe component is therefore the operator's responsibility, which on a personal machine means its owner. The gap is recorded in [security-and-manageability.md](security-and-manageability.md); a per-dependency annotation is what makes the total visible without a separate audit.
 
 **This document names no individual dependency.** Which components Gridline requires follows from what later changes actually use, so the list accretes in `add-debian-package-skeleton` and after. Settling the policy before the list is the point: an early mistake then is a missing entry rather than a wrong structure.
 

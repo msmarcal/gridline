@@ -44,7 +44,7 @@ When it does ship, it carries no executable, configuration or data files of its 
 
 ## Archive packages Gridline depends on
 
-Gridline ships almost no code of its own: the binaries that make a Gridline session work come from the Ubuntu archive unmodified. The versions published for the Ubuntu 26.04 LTS (`resolute`) baseline are below, with the archive component, because `main` carries a Canonical security-update commitment and `universe` does not.
+Gridline ships almost no code of its own: the binaries that make a Gridline session work come from the Ubuntu archive unmodified. The versions published for the Ubuntu 26.04 LTS (`resolute`) baseline are below, with the archive component. Universe carries **no Canonical security-update commitment**. Main does.
 
 | Source package | Version on the baseline | Component | Role |
 |---|---|---|---|

@@ -25,9 +25,9 @@ records it for the change that owns it rather than doing it.
 
 ## 4. Record archive support status
 
-- [ ] 4.1 Verify every component row in `docs/component-ownership.md` names its archive component, and that every row whose component is or includes `universe` is marked distinctly enough that a reader scanning the table sees it without reading prose. State the count found rather than checking against one written here, since a count written into the task goes stale the moment a row is added and the row that matters is the one nobody counted
-- [ ] 4.2 Verify each `universe` row states, alongside the dependency, that no Canonical security-update commitment covers it, and that the statement is the same claim in the same words as `docs/security-and-manageability.md` makes, so the two copies cannot drift
-- [ ] 4.3 Correct the polkit component's name in `docs/component-ownership.md`, which carries `polkit-1`, a name that is neither the binary package nor the source package on this baseline. Verify the replacement by the column it sits in: the Ubuntu source column takes `policykit-1`, and `polkitd` appears only where the binary is what matters, such as a statement about what is installed. Verify by grep that no live document still carries `polkit-1`, and that archived artifacts keep theirs unchanged
+- [x] 4.1 Verify every component row in `docs/component-ownership.md` names its archive component, and that every row whose component is or includes `universe` is marked distinctly enough that a reader scanning the table sees it without reading prose. State the count found rather than checking against one written here, since a count written into the task goes stale the moment a row is added and the row that matters is the one nobody counted
+- [x] 4.2 Verify each `universe` row states, alongside the dependency, that no Canonical security-update commitment covers it, and that the statement is the same claim in the same words as `docs/security-and-manageability.md` makes, so the two copies cannot drift
+- [x] 4.3 Correct the polkit component's name in `docs/component-ownership.md`, which carries `polkit-1`, a name that is neither the binary package nor the source package on this baseline. Verify the replacement by the column it sits in: the Ubuntu source column takes `policykit-1`, and `polkitd` appears only where the binary is what matters, such as a statement about what is installed. Verify by grep that no live document still carries `polkit-1`, and that archived artifacts keep theirs unchanged
 
 ## 5. Reconcile the two documents
 

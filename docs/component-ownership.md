@@ -8,7 +8,7 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 
 - **Upstream** is the project that develops the component.
 - **Ubuntu source** is the archive source package that provides it, with the version published for the Ubuntu 26.04 LTS (`resolute`) baseline.
-- **Component** is the archive component the package sits in. `main` carries a Canonical security-update commitment; `universe` does not. Every Hypr-ecosystem package Gridline depends on is in `universe`, which is recorded here because it is a support fact rather than packaging trivia.
+- **Component** is the archive component the package sits in. Universe carries **no Canonical security-update commitment**. Main does. Every Hypr-ecosystem package Gridline depends on is in `universe`, which is recorded here because it is a support fact rather than packaging trivia, and every row below that names `universe` is a row carrying that gap.
 - **Gridline ownership** names what Gridline itself owns. "Integration only" means Gridline owns how the session reaches the component and nothing about the component.
 - **Fallback** is the behavior when the component is absent or fails. Every Ubuntu-provided component falls into exactly one of three categories, and the cell says which:
   - **Session does not start.** The component's absence blocks startup. Five rows on this page carry it.
@@ -68,7 +68,7 @@ These two are different in kind. Their absence **blocks session startup** rather
 | Component | Upstream | Ubuntu source | Component | Gridline ownership | Fallback |
 |---|---|---|---|---|---|
 | Screen locker | Hyprland (candidate: `hyprlock`); selection owned by `add-session-lifecycle-integration` | `hyprlock` 0.9.2-1build4 | **universe** | Integration only, once chosen | **Session does not start.** A desktop that cannot lock must not run, because the failure surfaces as an unlocked unattended machine. The user returns to GDM with the cause named |
-| polkit authentication agent | polkit, plus the chosen agent (candidate: `hyprpolkitagent`); selection owned by `add-session-lifecycle-integration` | `polkit-1` (main), `hyprpolkitagent` 0.1.3-1 | main / **universe** | Integration only, once chosen | **Session does not start.** Without an agent, privileged actions fail with no prompt and no explanation. Reported with the missing agent named |
+| polkit authentication agent | polkit, plus the chosen agent (candidate: `hyprpolkitagent`); selection owned by `add-session-lifecycle-integration` | `policykit-1` 127-2ubuntu1.1, binary `polkitd` (main); `hyprpolkitagent` 0.1.3-1 | main / **universe** | Integration only, once chosen | **Session does not start.** Without an agent, privileged actions fail with no prompt and no explanation. Reported with the missing agent named |
 
 Both candidates exist on the baseline and neither selection is final; `add-session-lifecycle-integration` still owns the choice. Two facts from the archive constrain it:
 
@@ -92,10 +92,10 @@ The degrading components carry no declaration either, for a different reason: th
 
 ## Security and updates
 
-| Component | Upstream | Ubuntu source | Gridline ownership | Fallback |
-|---|---|---|---|---|
-| AppArmor | AppArmor | `apparmor` | Gridline may own enforce-mode profiles for its own executables, and owns the rule that it never weakens an existing profile | Not applicable as a degradation path. Gridline never disables a profile to make itself work; if a Gridline executable cannot run under confinement, the profile is fixed, not removed |
-| APT and the Ubuntu update path | Debian, Canonical | `apt`, `unattended-upgrades` | Integration only: Gridline ships no pin, hold or preference file | Not applicable. Gridline packages update like any other; there is no Gridline-specific update mechanism to fall back from |
+| Component | Upstream | Ubuntu source | Component | Gridline ownership | Fallback |
+|---|---|---|---|---|---|
+| AppArmor | AppArmor | `apparmor` 5.0.2-0ubuntu1~26.04.1 | main | Gridline may own enforce-mode profiles for its own executables, and owns the rule that it never weakens an existing profile | Not applicable as a degradation path. Gridline never disables a profile to make itself work; if a Gridline executable cannot run under confinement, the profile is fixed, not removed |
+| APT and the Ubuntu update path | Debian, Canonical | `apt` 3.2.0, `unattended-upgrades` 2.12ubuntu9 | main | Integration only: Gridline ships no pin, hold or preference file | Not applicable. Gridline packages update like any other; there is no Gridline-specific update mechanism to fall back from |
 
 ## Components Gridline owns outright
 
