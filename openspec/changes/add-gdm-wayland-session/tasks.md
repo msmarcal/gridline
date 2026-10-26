@@ -48,7 +48,7 @@ than over SSH.
   scenario of the opt-in requirement is a user created on a system where Gridline is already
   installed, so an account created before installation cannot exercise it
 - [x] 4.3 With the packages installed, verify the Gridline session appears in GDM's session list alongside Ubuntu
-- [ ] 4.4 Verify installing Gridline does not change what GDM preselects, by recording the
+- [x] 4.4 Verify installing Gridline does not change what GDM preselects, by recording the
   preselected session at the greeter before installing and again after, and confirming the
   two match. Note that AccountsService writes `Session=` only once a user picks a session
   other than the default, so on this baseline the recorded value is the system default
@@ -76,7 +76,7 @@ than over SSH.
   `add-session-health-check`: a contract with two readers and two spellings is not a
   contract. Record whether the document needed correcting or already matched, since the
   checkbox alone cannot distinguish the two outcomes
-- [ ] 4.7 Verify the Gridline entry is withheld when the launcher is absent, by removing the
+- [x] 4.7 Verify the Gridline entry is withheld when the launcher is absent, by removing the
   launcher file while leaving the entry installed and confirming the session is not offered
   while Ubuntu still is, then restoring it and verifying both that `dpkg --verify
   gridline-session` reports nothing and that the launcher's mode is `755` and it executes.
@@ -90,7 +90,7 @@ than over SSH.
   worse than a constant one, because it survives review on whichever machine happens to
   have the favourable value
 
-- [ ] 4.8 Remove the test account and its home directory, and verify no human
+- [x] 4.8 Remove the test account and its home directory, and verify no human
   account other than the baseline owner remains and that no files under the
   removed home directory survive
 ## 5. Documentation and sequence
