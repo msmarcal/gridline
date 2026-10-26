@@ -6,9 +6,9 @@ records it for the change that owns it rather than doing it.
 
 ## 1. Confirm the measurement
 
-- [x] 1.1 Re-run the availability query against a system on the supported baseline for all nineteen components in design.md, and verify each one's existence, version and archive component against the table there, recording any that moved since 2026-10-26 rather than silently accepting the design's values
+- [x] 1.1 Re-run the availability query against a system on the supported baseline for every component design.md tabulates, and verify each one's existence, version and archive component against the table there, recording any that moved since 2026-10-26 rather than silently accepting the design's values
 - [x] 1.2 Verify the query used is one a reader can repeat with stock tools and no Gridline package installed, and record the exact command and the date in `docs/package-matrix.md`
-- [ ] 1.3 Verify that every component named in `docs/component-ownership.md` appears in the measurement, and that the measurement introduces no component the ownership matrix does not carry; report either direction of mismatch as a finding rather than adding rows to make the two agree
+- [x] 1.3 Verify that every component named in `docs/component-ownership.md` appears in the measurement, and that the measurement introduces no component the ownership matrix does not carry; report either direction of mismatch as a finding rather than adding rows to make the two agree
 
 ## 2. Record the classification
 
@@ -27,7 +27,7 @@ records it for the change that owns it rather than doing it.
 
 - [ ] 4.1 Verify every component row in `docs/component-ownership.md` names its archive component, and that the five `universe` entries are marked distinctly enough that a reader scanning the table sees them without reading prose
 - [ ] 4.2 Verify each `universe` row states, alongside the dependency, that no Canonical security-update commitment covers it, and that the statement is the same claim in the same words as `docs/security-and-manageability.md` makes, so the two copies cannot drift
-- [ ] 4.3 Correct the polkit daemon's package name to `polkitd` wherever a live document names `policykit-1`, and verify by grep that no live document still carries the old name while archived artifacts keep theirs unchanged
+- [ ] 4.3 Correct the polkit component's name in `docs/component-ownership.md`, which carries `polkit-1`, a name that is neither the binary package nor the source package on this baseline. Verify the replacement by the column it sits in: the Ubuntu source column takes `policykit-1`, and `polkitd` appears only where the binary is what matters, such as a statement about what is installed. Verify by grep that no live document still carries `polkit-1`, and that archived artifacts keep theirs unchanged
 
 ## 5. Reconcile the two documents
 

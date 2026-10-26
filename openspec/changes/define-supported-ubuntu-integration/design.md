@@ -27,8 +27,17 @@ See proposal.md for motivation. Three constraints shape the approach.
 | `hypridle` | 0.1.7-2 | **universe** |
 | `hyprpaper` | 0.8.3-1 | **universe** |
 | `hyprpolkitagent` | 0.1.3-1 | **universe** |
+| `apt` | 3.2.0 | main |
+| `systemd` | 259.9-0ubuntu0.1 | main |
+| `unattended-upgrades` | 2.12ubuntu9 | main |
 
-Fourteen in `main`, five in `universe`, and every `universe` entry is Hypr-ecosystem. The `main` versions confirm what `docs/package-matrix.md` already recorded. One correction falls out: the polkit daemon's binary package on this baseline is `polkitd`, not the `policykit-1` name the ownership matrix carries.
+Twenty-two components, sixteen in `main` and six in `universe`, and every `universe` entry is Hypr-ecosystem. The versions confirm what `docs/package-matrix.md` already recorded for the rows it carries.
+
+The last three rows were added after the first draft of this design, which measured nineteen components derived from the `platform-integration` requirements rather than from `docs/component-ownership.md`. Cross-checking the two sets found `apt`, `systemd` and `unattended-upgrades` in the ownership matrix and absent from the measurement. That the two sets both held nineteen entries was coincidence, and a count is not a cross-check.
+
+The cross-check also ran the other way, and what it found there is not a gap in the ownership matrix. Three measured components have no row in it: `hypridle` and `hyprpaper`, which are candidates for an idle daemon and a wallpaper tool that no current requirement rests on, and `ubuntu-session`, which the matrix names in prose as the owner of the session directory rather than as a component Gridline depends on. Adding rows for them would record a dependency the project has not taken. They stay measured and unlisted, and the change that selects an idle daemon is the one that gives `hypridle` a row.
+
+One naming correction falls out, and it has three distinct values rather than two. The ownership matrix names the polkit component `polkit-1`. On this baseline the binary package is `polkitd` and its source package is `policykit-1`, so `polkit-1` is neither. The matrix's column is **Ubuntu source**, so the value that belongs there is `policykit-1`; `polkitd` belongs wherever the binary is what matters.
 
 **This is a definition change.** It produces documentation and specs, never packaging metadata or builds. That boundary is what keeps the classification below a record rather than a half-made decision: saying a component is blocking is this change's work, writing `Depends:` is the work of whichever change delivers a session that can use it.
 
@@ -80,7 +89,7 @@ The project context already requires the gap be documented rather than hidden. T
 - **The archive moves and the records go stale.** → The requirement makes staleness a detectable defect rather than an invisible one, and the recorded procedure makes checking cheap. Versions carry the measurement date so a reader knows their age.
 - **A classification recorded but not declared can drift from what `debian/control` eventually says.** → The requirement that the declaration match the classification is written now and becomes checkable the moment a dependency field exists, so the drift fails a check rather than passing unnoticed.
 - **Restating the `universe` gap in more places invites divergence between the copies.** → The gap is one sentence with one meaning. This project has already seen a two-copy claim drift, in the journal mechanism the archived `add-gdm-wayland-session` corrected, which is why the restatement is a requirement rather than an editorial habit.
-- **Correcting `policykit-1` to `polkitd` touches a name an archived document used.** → The correction is made in live documents only. Archived change artifacts keep what they said, which is the project's established rule.
+- **The polkit naming correction can introduce a second error in place of the first.** → The column being corrected decides the value. A source column takes `policykit-1` and a binary reference takes `polkitd`; replacing `polkit-1` with the wrong one of those is not a fix. The correction is made in live documents only, and archived change artifacts keep what they said, which is the project's established rule.
 
 ## Migration Plan
 

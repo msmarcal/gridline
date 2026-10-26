@@ -14,7 +14,7 @@ The project's own context states the standard this falls short of: on a released
 
 **This change produces documentation and specs only.** It builds no package, edits no packaging metadata, and runs no hardware validation. It establishes what the component set is and makes the record binding; the change that can act on a component is the one that declares it.
 
-- Verifies every component the twelve `platform-integration` requirements rest on against the baseline archive: existence, version, and archive component. The measurement is recorded in design.md: all nineteen exist, fourteen in `main`, five in `universe`, and every `universe` entry is Hypr-ecosystem.
+- Verifies against the baseline archive every component the twelve `platform-integration` requirements rest on and every component `docs/component-ownership.md` carries: existence, version, and archive component. The measurement is recorded in design.md: all twenty-two exist, sixteen in `main`, six in `universe`, and every `universe` entry is Hypr-ecosystem.
 - Classifies each component by what its absence does, blocking session startup or degrading a capability within it, and records that classification where the component is described rather than leaving it implied by prose.
 - Records which blocking components cannot be declared yet and which change owns each, so a deferred dependency is attributed rather than merely missing.
 - Reconciles `docs/component-ownership.md` and `docs/package-matrix.md` against the measurement, states which document is authoritative where they overlap, and corrects the polkit daemon's package name, which this baseline provides as `polkitd`.
