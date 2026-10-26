@@ -31,9 +31,9 @@ records it for the change that owns it rather than doing it.
 
 ## 5. Reconcile the two documents
 
-- [ ] 5.1 Update the archive table in `docs/package-matrix.md` to match the confirmed measurement, and verify every version and component in it appears identically in `docs/component-ownership.md`
-- [ ] 5.2 State in both documents that `docs/component-ownership.md` is authoritative for component facts where the two overlap, and verify the statement appears in both rather than only in the one that wins
-- [ ] 5.3 Remove or update the note in `docs/package-matrix.md` saying confirmation against the archive is owned by this change, and verify what replaces it names who owns re-checking from now on
+- [x] 5.1 Update the archive table in `docs/package-matrix.md` to match the confirmed measurement, and verify every version and component in it appears identically in `docs/component-ownership.md`
+- [x] 5.2 State in both documents that `docs/component-ownership.md` is authoritative for component facts where the two overlap, and verify the statement appears in both rather than only in the one that wins
+- [x] 5.3 Remove or update the note in `docs/package-matrix.md` saying confirmation against the archive is owned by this change, and verify what replaces it names who owns re-checking from now on
 
 ## 6. Coherence
 

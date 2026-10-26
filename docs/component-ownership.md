@@ -4,6 +4,8 @@ Every component a Gridline session depends on, who owns it, and what happens whe
 
 Two rules govern this table. First, **where Ubuntu already provides a component, Gridline does not reimplement it**; Gridline owns the integration, not the component. Second, **every component has a stated fallback**, because a desktop whose failure modes are undefined is a desktop that fails silently.
 
+**This page is authoritative for component facts.** Where it and [package-matrix.md](package-matrix.md) carry the same version or archive component, this page wins. That page keeps the same measurement as a packaging-side view, and states the same rule, so a reader who finds the two disagreeing knows which one to correct.
+
 ## Reading the table
 
 - **Upstream** is the project that develops the component.
@@ -23,7 +25,8 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 |---|---|---|---|---|---|
 | GDM | GNOME | `gdm3` 50.1-0ubuntu0.1 | main | Integration only: Gridline ships a session entry GDM reads | Not applicable. GDM is the baseline display manager; without it there is no login screen for any session, Gridline's or GNOME's |
 | Hyprland | Hyprland | `hyprland` 0.53.3+ds-4 | **universe** | Integration only, through the compositor adapter | **Session does not start.** The launcher reports the missing compositor and returns the user to GDM, where GNOME remains selectable |
-| systemd-logind | systemd | `systemd` | main | Integration only: seat, session and power event handling | Not applicable. Seat, session and power event handling come from the baseline init system; without it the machine has no user sessions at all, Gridline's or GNOME's |
+| Stock Ubuntu session | GNOME | `ubuntu-session` 50.1-0ubuntu0.1 | main | Integration only: Gridline never modifies it, never removes it and never makes it the non-default | Not applicable, and for a reason no other row has: it is the fallback every other row's failure path returns to. Without it there is no supported desktop to fall back to, so a Gridline failure would have nowhere to land |
+| systemd-logind | systemd | `systemd` 259.9-0ubuntu0.1 | main | Integration only: seat, session and power event handling | Not applicable. Seat, session and power event handling come from the baseline init system; without it the machine has no user sessions at all, Gridline's or GNOME's |
 | Compositor adapter | Gridline | `gridline-session` | n/a | **Owned by Gridline** | **Session does not start.** A missing or failing adapter is a Gridline bug, reported with the compositor named |
 | Session entry | Gridline | `gridline-session` | n/a | **Owned by Gridline.** A Gridline-named drop-in in `/usr/share/wayland-sessions/`, which `ubuntu-session` owns. Gridline declares the file, never the directory | The session is not offered at the login screen. The stock Ubuntu entry is unaffected and still selectable, so a user is never left without a desktop to choose |
 | Session launcher | Gridline | `gridline-session` | n/a | **Owned by Gridline** | The session entry names it in `TryExec`, so if the launcher is absent the entry is withheld rather than offered and failing. The stock session remains selectable |
@@ -32,13 +35,13 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 
 | Component | Upstream | Ubuntu source | Component | Gridline ownership | Fallback |
 |---|---|---|---|---|---|
-| NetworkManager | GNOME | `network-manager` | main | Integration only: the session surfaces state and answers secret prompts | Session starts without network management. The condition is reported by the diagnostic commands; the user can reach a network from the GNOME session |
-| PipeWire | PipeWire | `pipewire` | main | Integration only | Session starts without audio. Reported as a capability gap, not a startup failure |
-| WirePlumber | PipeWire | `wireplumber` | main | Integration only | Session starts, audio routing is unmanaged. Reported as a capability gap |
-| BlueZ | BlueZ | `bluez` | main | Integration only | Session starts without Bluetooth. Reported as a capability gap |
-| UPower | freedesktop | `upower` | main | Integration only: battery and power source observability | Session starts, battery state is not observable. Reported as a capability gap; relevant only on machines with a battery |
+| NetworkManager | GNOME | `network-manager` 1.54.3-2ubuntu3.1 | main | Integration only: the session surfaces state and answers secret prompts | Session starts without network management. The condition is reported by the diagnostic commands; the user can reach a network from the GNOME session |
+| PipeWire | PipeWire | `pipewire` 1.6.2-1ubuntu1.2 | main | Integration only | Session starts without audio. Reported as a capability gap, not a startup failure |
+| WirePlumber | PipeWire | `wireplumber` 0.5.13-1ubuntu1.1 | main | Integration only | Session starts, audio routing is unmanaged. Reported as a capability gap |
+| BlueZ | BlueZ | `bluez` 5.85-4ubuntu0.4 | main | Integration only | Session starts without Bluetooth. Reported as a capability gap |
+| UPower | freedesktop | `upower` 1.91.1-1 | main | Integration only: battery and power source observability | Session starts, battery state is not observable. Reported as a capability gap; relevant only on machines with a battery |
 | XWayland | X.Org | `xwayland` 2:24.1.10-1 | main | Integration only | Session starts, X11-only applications do not run. Reported as a capability gap, since native Wayland applications are unaffected |
-| snapd | Canonical | `snapd` | main | Integration only: Gridline sets the desktop identity confined Snaps resolve against | Session starts, Snap applications may lose theme or portal access. Reported as a capability gap |
+| snapd | Canonical | `snapd` 2.77.1+ubuntu26.04.2 | main | Integration only: Gridline sets the desktop identity confined Snaps resolve against | Session starts, Snap applications may lose theme or portal access. Reported as a capability gap |
 
 ## Portals
 

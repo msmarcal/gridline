@@ -58,6 +58,18 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 | `xdg-desktop-portal-gtk` | 1.15.3-2ubuntu1 | main | GTK portal backend |
 | `xwayland` | 2:24.1.10-1 | main | X11 application support |
 | `gdm3` | 50.1-0ubuntu0.1 | main | Display manager |
+| `ubuntu-session` | 50.1-0ubuntu0.1 | main | The stock session that stays selectable |
+| `network-manager` | 1.54.3-2ubuntu3.1 | main | Networking |
+| `pipewire` | 1.6.2-1ubuntu1.2 | main | Audio server |
+| `wireplumber` | 0.5.13-1ubuntu1.1 | main | Audio session manager |
+| `bluez` | 5.85-4ubuntu0.4 | main | Bluetooth |
+| `upower` | 1.91.1-1 | main | Battery and power source observability |
+| `snapd` | 2.77.1+ubuntu26.04.2 | main | Snap applications |
+| `policykit-1` | 127-2ubuntu1.1 | main | polkit daemon, binary `polkitd` |
+| `systemd` | 259.9-0ubuntu0.1 | main | Seat, session and power event handling |
+| `apparmor` | 5.0.2-0ubuntu1~26.04.1 | main | Confinement |
+| `apt` | 3.2.0 | main | Update path |
+| `unattended-upgrades` | 2.12ubuntu9 | main | Update path |
 
 ### How these were measured
 
@@ -71,7 +83,9 @@ apt-cache madison <package>    # the archive component that provides it
 
 The two answer different questions and are worth running together: `policy` reports what would be installed, `madison` reports which component it comes from. A reader repeating this needs nothing the table does not already name.
 
-Confirming these against the archive is owned by `define-supported-ubuntu-integration`, which also owns re-checking them, since they move with the archive.
+These rows were confirmed against the archive by `define-supported-ubuntu-integration`. Re-checking them is not owned by a single change, because they move with the archive rather than with the project: any change that adds, removes or alters a dependency re-checks the rows it touches, using the procedure above. If an automated check is ever built, `add-ci-vm-smoke-tests` is where it belongs, since that is the change that owns running things against a baseline machine.
+
+**[component-ownership.md](component-ownership.md) is authoritative for component facts.** Where that page and this one carry the same version or archive component, it wins, because it is the one organized by component and it carries what each component's absence does. This table is the packaging-side view of the same measurement. Two packages appear here and not there: `hypridle` and `hyprpaper` are candidates no requirement rests on yet, so giving them a row there would record a dependency the project has not taken.
 
 **Every Hypr-ecosystem package is in universe.** Two consequences follow and neither is a packaging detail. A security issue in the compositor has no Canonical update commitment behind it, which is a fact users of this session are entitled to know rather than discover. And `gridline-desktop`, once it ships, depends on universe packages and therefore cannot itself live in main - which makes this the central obstacle to any future official-flavor candidacy, not a footnote to it.
 
