@@ -10,16 +10,21 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 - **Ubuntu source** is the archive source package that provides it, with the version published for the Ubuntu 26.04 LTS (`resolute`) baseline.
 - **Component** is the archive component the package sits in. `main` carries a Canonical security-update commitment; `universe` does not. Every Hypr-ecosystem package Gridline depends on is in `universe`, which is recorded here because it is a support fact rather than packaging trivia.
 - **Gridline ownership** names what Gridline itself owns. "Integration only" means Gridline owns how the session reaches the component and nothing about the component.
-- **Fallback** is the behavior when the component is absent or fails. **"Not applicable"** is a deliberate category, not a missing entry: it marks a component that cannot be absent without the baseline itself being broken, so there is no Gridline-side degradation path to describe. A component whose absence Gridline could survive always names what happens instead.
+- **Fallback** is the behavior when the component is absent or fails. Every Ubuntu-provided component falls into exactly one of three categories, and the cell says which:
+  - **Session does not start.** The component's absence blocks startup. Five rows on this page carry it.
+  - **Session starts**, followed by the capability that is lost. The component's absence degrades the session. Nine rows carry it, and each names what degrades rather than saying the session degrades generally.
+  - **Not applicable.** A deliberate category, not a missing entry: it marks a component that cannot be absent without the baseline itself being broken, so there is no Gridline-side degradation path to describe. Each such row states why.
+
+  Gridline's own artifacts, the adapter, the session entry, the launcher, `gridline-portals.conf` and the backend mapping, are not Ubuntu-provided and are not classified this way. Their cells describe the failure they produce, which for several of them is neither a blocked start nor a degraded capability: a missing session entry means the session is never offered, which is not the same as failing.
 
 ## Session and compositor
 
 | Component | Upstream | Ubuntu source | Component | Gridline ownership | Fallback |
 |---|---|---|---|---|---|
 | GDM | GNOME | `gdm3` 50.1-0ubuntu0.1 | main | Integration only: Gridline ships a session entry GDM reads | Not applicable. GDM is the baseline display manager; without it there is no login screen for any session, Gridline's or GNOME's |
-| Hyprland | Hyprland | `hyprland` 0.53.3+ds-4 | **universe** | Integration only, through the compositor adapter | Session does not start. The launcher reports the missing compositor and returns the user to GDM, where GNOME remains selectable |
-| systemd-logind | systemd | `systemd` | main | Integration only: seat, session and power event handling | Not applicable. Part of the baseline init system |
-| Compositor adapter | Gridline | `gridline-session` | n/a | **Owned by Gridline** | Session does not start. A missing or failing adapter is a Gridline bug, reported with the compositor named |
+| Hyprland | Hyprland | `hyprland` 0.53.3+ds-4 | **universe** | Integration only, through the compositor adapter | **Session does not start.** The launcher reports the missing compositor and returns the user to GDM, where GNOME remains selectable |
+| systemd-logind | systemd | `systemd` | main | Integration only: seat, session and power event handling | Not applicable. Seat, session and power event handling come from the baseline init system; without it the machine has no user sessions at all, Gridline's or GNOME's |
+| Compositor adapter | Gridline | `gridline-session` | n/a | **Owned by Gridline** | **Session does not start.** A missing or failing adapter is a Gridline bug, reported with the compositor named |
 | Session entry | Gridline | `gridline-session` | n/a | **Owned by Gridline.** A Gridline-named drop-in in `/usr/share/wayland-sessions/`, which `ubuntu-session` owns. Gridline declares the file, never the directory | The session is not offered at the login screen. The stock Ubuntu entry is unaffected and still selectable, so a user is never left without a desktop to choose |
 | Session launcher | Gridline | `gridline-session` | n/a | **Owned by Gridline** | The session entry names it in `TryExec`, so if the launcher is absent the entry is withheld rather than offered and failing. The stock session remains selectable |
 

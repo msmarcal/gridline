@@ -12,10 +12,10 @@ records it for the change that owns it rather than doing it.
 
 ## 2. Record the classification
 
-- [ ] 2.1 Record in `docs/component-ownership.md`, for every component, whether its absence blocks session startup or degrades a named capability, and verify no row states only that the component is used
-- [ ] 2.2 Verify the blocking set recorded matches the five components `docs/architecture.md` names as blocking, and that any difference is resolved by correcting one document rather than leaving both
-- [ ] 2.3 Verify the degrading set is exactly the nine components design.md lists, and that each row names which capability degrades rather than saying the session degrades generally
-- [ ] 2.4 Verify every row that names "Not applicable" as its fallback states why the component cannot be absent without the baseline itself being broken, so the category stays deliberate rather than becoming a blank
+- [x] 2.1 Record in `docs/component-ownership.md`, for every component, whether its absence blocks session startup or degrades a named capability, and verify no row states only that the component is used
+- [x] 2.2 Verify the blocking set recorded matches the five components `docs/architecture.md` names as blocking, and that any difference is resolved by correcting one document rather than leaving both
+- [x] 2.3 Verify the degrading set is exactly the nine components design.md lists, and that each row names which capability degrades rather than saying the session degrades generally
+- [x] 2.4 Verify every row that names "Not applicable" as its fallback states why the component cannot be absent without the baseline itself being broken, so the category stays deliberate rather than becoming a blank
 
 ## 3. Attribute the deferred declarations
 
