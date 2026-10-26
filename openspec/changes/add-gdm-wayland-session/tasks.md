@@ -65,8 +65,12 @@ than over SSH.
   Both checks are needed: `dpkg --verify` compares md5 only, so a file restored with the
   wrong permissions passes it while the launcher cannot run, which is the failure that
   makes the entry resolve and the session die on selection. Reinstalling the same `.deb`
-  is the method that restores content and mode together; copying the source file back
-  restores mode `775` rather than the `755` that `dh_fixperms` produces
+  is the method that restores content and mode together. Copying the source file back
+  restores whatever mode the checkout produced, which is `0777 & ~umask` for a file git
+  records as executable, so it matches the `755` that `dh_fixperms` produces only when the
+  clone was made with `umask 022`. A divergence that depends on the cloner's umask is
+  worse than a constant one, because it survives review on whichever machine happens to
+  have the favourable value
 
 - [ ] 4.8 Remove the test account and its home directory, and verify no human
   account other than the baseline owner remains and that no files under the
