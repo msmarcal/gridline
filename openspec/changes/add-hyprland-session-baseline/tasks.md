@@ -14,6 +14,7 @@
 - [ ] 2.3 Implement the `hyprctl`-served capabilities under `confirm`, reporting them only when `hyprctl` answers against the running instance. Verify three states, not two: `hyprctl` absent, `hyprctl` present with no instance, and `hyprctl` answering a running compositor. The middle state is the one a present-or-absent test misses, and it is the state every pre-launch invocation is in
 - [ ] 2.4 Verify the adapter reports no capability it cannot deliver through a documented interface, by listing for each reported capability the interface that backs it and checking each against the design table
 - [ ] 2.5 Verify the adapter exits non-zero when it cannot produce a complete answer, and that it writes the reason to stderr rather than printing a partial capability list
+- [ ] 2.6 Verify the adapter distinguishes an empty answer from an unreadable one, by feeding `confirm` synthetic `wayland-info` output in a shape it does not recognise and confirming it exits non-zero rather than reporting zero capabilities. Both outcomes end the launch, so the test must read the failure record: the cause named must be the unreadable answer, not a missing capability
 
 ## 3. The launcher invokes the adapter
 
@@ -42,6 +43,7 @@
   then declare the dependency and confirm `apt` resolves it from the archive
   alone, since the measurement that informed the design installed both as
   manual packages and the baseline this task verifies is a clean install
+- [ ] 5.6 Record `wayland-utils` in `docs/component-ownership.md` and `docs/package-matrix.md` with its version, archive component and absence behavior, and verify the row states it is `universe` and not Hypr-ecosystem, so the existing claim that every Hypr-ecosystem package is in `universe` stays true rather than being stretched to cover it
 
 ## 6. The session starts
 

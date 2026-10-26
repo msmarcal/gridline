@@ -86,7 +86,11 @@ The adapter needs to know which protocols the running compositor advertises. `hy
 
 The cost is a third `universe` dependency, carrying the same absent security-update commitment as the other two, recorded where it is declared. The alternative was shipping a compiled Wayland client inside the adapter, which avoids the dependency and costs more elsewhere: `gridline-session` would stop being `Architecture: all`, the source package would gain C and a `libwayland-dev` build dependency, and the ownership gate would start seeing build artifacts. Changing the shape the package skeleton deliberately established, for an implementation convenience, is the worse trade.
 
-Parsing another tool's human-readable output is the real fragility, and it is bounded rather than removed. The adapter matches an interface name as a whole word, so a longer name containing a shorter one cannot produce a false positive, and it treats output it cannot parse as a failure to answer. The contract already says what that means: a `confirm` that exits non-zero has reported nothing, so an unreadable answer ends the launch instead of producing a half-believed capability set.
+Parsing another tool's human-readable output is the real fragility, and it is bounded rather than removed. The adapter matches an interface name as a whole word, so a longer name containing a shorter one cannot produce a false positive.
+
+Whole-word matching does not address the failure that actually matters. If `wayland-info` changes its output shape between versions, the adapter matches **nothing**, and zero matched names is indistinguishable from a compositor that advertises nothing. The session is safe either way, because reporting no capabilities means every required one is missing and the launch ends. But it ends with the wrong cause named, and the real cause, a tool whose format moved, is invisible until someone reads the adapter.
+
+So the adapter does not decide by match count alone. It first establishes that the output is the shape it expects, by finding the structural markers `wayland-info` uses to introduce an interface. Output without them is output the adapter cannot read, and the contract already settles that: `confirm` exits non-zero and has reported nothing. An empty answer and an unreadable one must not reach the launcher as the same thing, because only one of them is about the compositor.
 
 ### The launcher starts the compositor through the adapter, not directly
 
