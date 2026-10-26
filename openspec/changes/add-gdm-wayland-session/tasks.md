@@ -47,7 +47,7 @@ than over SSH.
   valid login shell and appears in the greeter user list. The order matters: the second
   scenario of the opt-in requirement is a user created on a system where Gridline is already
   installed, so an account created before installation cannot exercise it
-- [ ] 4.3 With the packages installed, verify the Gridline session appears in GDM's session list alongside Ubuntu
+- [x] 4.3 With the packages installed, verify the Gridline session appears in GDM's session list alongside Ubuntu
 - [ ] 4.4 Verify installing Gridline does not change what GDM preselects, by recording the
   preselected session at the greeter before installing and again after, and confirming the
   two match. Note that AccountsService writes `Session=` only once a user picks a session
@@ -56,8 +56,8 @@ than over SSH.
   Gridline, not that it names a previously used session. Check it for both accounts: the
   existing one against the value recorded in task 4.1, and the test account created after
   installation, whose first visit to the greeter is the second scenario of the requirement
-- [ ] 4.5 Select the Gridline session and verify the login screen returns, then read the journal by the identifier from task 2.3 and confirm the missing compositor is named
-- [ ] 4.6 From the stock session, run the recovery procedure exactly as `docs/recovery.md`
+- [x] 4.5 Select the Gridline session and verify the login screen returns, then read the journal by the identifier from task 2.3 and confirm the missing compositor is named
+- [x] 4.6 From the stock session, run the recovery procedure exactly as `docs/recovery.md`
   currently words it and capture what it returns, then run the selection by journal
   identifier and capture that, before changing anything. The difference between the two
   outputs is the record of why the correction exists, and running them in the other order

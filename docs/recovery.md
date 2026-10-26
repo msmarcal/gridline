@@ -20,19 +20,15 @@ The Ubuntu GNOME session is installed and supported at all times while Gridline 
 
 ### 3. Find out what failed
 
-From the GNOME session, open a terminal and read the journal for the current boot:
+From the GNOME session, open a terminal and read what the Gridline launcher wrote:
 
 ```
-journalctl -b
+journalctl -t gridline-session
 ```
 
-To narrow it to the failed session:
+`gridline-session` is the **syslog identifier** the launcher writes its records under, and `-t` selects by that identifier. One command is enough because selecting by author needs no time window, no knowledge of which boot the failure happened in, and no search for the word "Gridline" in records other programs wrote. A failure records which component did not start.
 
-```
-journalctl -b --since "10 minutes ago" | grep -i gridline
-```
-
-Gridline writes its launch failures to the system journal under an identifiable Gridline unit or process name, so the cause is attributable rather than lost in a generic crash. A failure records which component did not start.
+Searching the journal by word instead returns whatever else mentions Gridline: other programs' records, and every line on a machine whose hostname contains the name. Selecting by identifier returns the launcher's records and nothing else.
 
 If the failure was a missing compositor capability, the record names the capability. If it was a missing fail-safe component, such as the screen locker or the polkit authentication agent, the record names that component and the session's refusal to start without it is deliberate rather than a bug. See [architecture.md](architecture.md) for why those two block startup.
 

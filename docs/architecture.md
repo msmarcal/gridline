@@ -119,7 +119,7 @@ There is also a mechanical obstacle, which is new information and narrows the op
 
 When the launcher ends a launch because a required component is missing, it writes the record to the journal under the syslog identifier **`gridline-session`**, naming the component and why it was judged missing.
 
-**That identifier is a contract, not an implementation detail.** `add-session-health-check` selects records by it, so `gridline doctor` can report a launch that failed before anything Gridline-specific was running. Changing it silently breaks that change, and a record that cannot be attributed to Gridline is a record the diagnostics cannot find.
+**That identifier is a contract, not an implementation detail.** `add-session-health-check` selects records by it, so `gridline doctor` can report a launch that failed before anything Gridline-specific was running. [recovery.md](recovery.md) names the same identifier in the procedure it gives a user who has just been returned to the login screen, so the contract has three readers: the launcher that writes it, the diagnostic that queries it, and the recovery procedure a user follows by hand. Changing it silently breaks that change, and a record that cannot be attributed to Gridline is a record the diagnostics cannot find.
 
 A syslog identifier was chosen over a systemd unit because the launcher is started by the display manager rather than by systemd, so it has no unit of its own to be attributed to. `journalctl -t gridline-session` selects the records with no time window and no knowledge of which boot they came from, which is what the recovery procedure needs from a user who has just been returned to the login screen.
 
