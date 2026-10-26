@@ -35,7 +35,7 @@
 
 ## 5. Packaging
 
-- [ ] 5.1 Record `wayland-utils` in `docs/component-ownership.md` and `docs/package-matrix.md` with its version, archive component and absence behavior, and verify the row states it is `universe` and not Hypr-ecosystem, so the existing claim that every Hypr-ecosystem package is in `universe` stays true rather than being stretched to cover it
+- [x] 5.1 Record `wayland-utils` in `docs/component-ownership.md` and `docs/package-matrix.md` with its version, archive component and absence behavior, and verify the row states it is `universe` and not Hypr-ecosystem, so the existing claim that every Hypr-ecosystem package is in `universe` stays true rather than being stretched to cover it
 
 - [ ] 5.2 Declare `hyprland`, `xdg-desktop-portal-hyprland` and `wayland-utils` as `Depends` of `gridline-session`, and verify with `dpkg-deb -f` on the built package rather than by reading the control file
 - [ ] 5.3 State the `universe` support gap in the `gridline-session` long description, using the same sentence the live documents carry, and verify the wording is identical by comparing against `docs/component-ownership.md`

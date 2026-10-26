@@ -72,6 +72,7 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 | `apparmor` | 5.0.2-0ubuntu1~26.04.1 | main | Confinement |
 | `apt` | 3.2.0 | main | Update path |
 | `unattended-upgrades` | 2.12ubuntu9 | main | Update path |
+| `wayland-utils` | 1.3.0-1 | **universe** | Wayland registry query, used by the compositor adapter |
 
 ### How these were measured
 
@@ -88,6 +89,8 @@ The two answer different questions and are worth running together: `policy` repo
 These rows were confirmed against the archive by `define-supported-ubuntu-integration`. Re-checking them is not owned by a single change, because they move with the archive rather than with the project: any change that adds, removes or alters a dependency re-checks the rows it touches, using the procedure above. If an automated check is ever built, `add-ci-vm-smoke-tests` is where it belongs, since that is the change that owns running things against a baseline machine.
 
 **[component-ownership.md](component-ownership.md) is authoritative for component facts.** Where that page and this one carry the same version or archive component, it wins, because it is the one organized by component and it carries what each component's absence does. This table is the packaging-side view of the same measurement. Two packages appear here and not there: `hypridle` and `hyprpaper` are candidates no requirement rests on yet, so giving them a row there would record a dependency the project has not taken.
+
+**One universe package is not Hypr-ecosystem.** `wayland-utils` comes from freedesktop and is the only non-Hypr entry in the table carrying the universe gap, so the claim below remains true as written rather than being stretched to cover it. The adapter depends on it because the compositor publishes its protocols through the Wayland registry and offers no command that lists them.
 
 **Every Hypr-ecosystem package is in universe.** Two consequences follow and neither is a packaging detail. A security issue in the compositor has no Canonical update commitment behind it, which is a fact users of this session are entitled to know rather than discover. And `gridline-desktop`, once it ships, depends on universe packages and therefore cannot itself live in main - which makes this the central obstacle to any future official-flavor candidacy, not a footnote to it.
 
