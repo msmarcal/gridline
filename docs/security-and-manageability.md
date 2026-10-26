@@ -28,7 +28,7 @@ Any Gridline material that claims suitability for a regulated environment withou
 
 ## Central configuration: the mechanism does not exist yet
 
-An enterprise desktop must let an administrator set a policy the user cannot override. On GNOME this is dconf: system databases under `/etc/dconf/db/`, a profile naming their precedence, and a `locks/` subdirectory that makes specific keys unwritable by the user. CIS controls 1.7.4 and 1.7.5 are written directly against that mechanism — 1.7.4 sets `idle-delay` and `lock-delay`, and 1.7.5 locks both so a user cannot change them.
+An enterprise desktop must let an administrator set a policy the user cannot override. On GNOME this is dconf: system databases under `/etc/dconf/db/`, a profile naming their precedence, and a `locks/` subdirectory that makes specific keys unwritable by the user. CIS controls 1.7.4 and 1.7.5 are written directly against that mechanism - 1.7.4 sets `idle-delay` and `lock-delay`, and 1.7.5 locks both so a user cannot change them.
 
 **The Hypr tools do not use dconf.** Verified against the baseline binaries: `hypridle` and `hyprlock` link `libhyprlang` and resolve configuration through `Hyprutils::Path::findConfig`, with no dconf or GSettings symbols at all. The search order that function implements, read from `hyprutils` source, is:
 
@@ -83,14 +83,14 @@ The second row is the one to read carefully. The control is satisfiable, but onl
 
 ## Screen capture cuts both ways
 
-Gridline already requires deterministic portal backend selection so screen sharing works. An enterprise target adds the opposite requirement: an administrator may need to **restrict** capture. The portal mechanism serves both, which is an argument for routing capture through portals rather than letting applications reach the compositor directly — a restriction expressed in portal configuration is auditable, one enforced by a compositor flag is not.
+Gridline already requires deterministic portal backend selection so screen sharing works. An enterprise target adds the opposite requirement: an administrator may need to **restrict** capture. The portal mechanism serves both, which is an argument for routing capture through portals rather than letting applications reach the compositor directly - a restriction expressed in portal configuration is auditable, one enforced by a compositor flag is not.
 
 ## What stays out of scope
 
 Gridline must not require anything outside the supported Ubuntu stack, and must not interfere with mechanisms a corporate estate depends on:
 
 - Full-disk encryption, Secure Boot and TPM behavior are the platform's, not the session's. Gridline neither requires disabling them nor claims to configure them.
-- Enterprise identity — SSSD, Kerberos, Active Directory, smartcard login — is a platform concern. Gridline's obligation is to not break it, and to verify that it does not.
+- Enterprise identity - SSSD, Kerberos, Active Directory, smartcard login - is a platform concern. Gridline's obligation is to not break it, and to verify that it does not.
 - Audit and logging continue to work: the session does not bypass `auditd`, and its components log to the journal.
 
 These are verification obligations, not features. A tiling session that quietly breaks smartcard login is useless to the audience this project is for, and the failure would surface during a pilot rather than during development unless something checks it.

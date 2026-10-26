@@ -61,7 +61,7 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 
 Confirming these against the archive is owned by `define-supported-ubuntu-integration`, which also owns re-checking them, since they move with the archive.
 
-**Every Hypr-ecosystem package is in universe.** Two consequences follow and neither is a packaging detail. A security issue in the compositor has no Canonical update commitment behind it, which is a fact users of this session are entitled to know rather than discover. And `gridline-desktop`, once it ships, depends on universe packages and therefore cannot itself live in main — which makes this the central obstacle to any future official-flavor candidacy, not a footnote to it.
+**Every Hypr-ecosystem package is in universe.** Two consequences follow and neither is a packaging detail. A security issue in the compositor has no Canonical update commitment behind it, which is a fact users of this session are entitled to know rather than discover. And `gridline-desktop`, once it ships, depends on universe packages and therefore cannot itself live in main - which makes this the central obstacle to any future official-flavor candidacy, not a footnote to it.
 
 The archive also tracks upstream at a distance: `hyprland` 0.53.3 against upstream 0.56.2 released 2026-08-05, three minor releases back. For an audience that follows the Hyprland changelog this is the most visible gap in the project, and Gridline has no mechanism to close it without abandoning the archive-only delivery rule. Stating the baseline version plainly is the honest option.
 
