@@ -18,7 +18,7 @@ See proposal.md for motivation. Four things are already settled and are inputs h
 | `lock-signaling` | `ext_session_lock_v1` |
 | `idle-reporting` | `ext_idle_notifier_v1` |
 | `output-management` | `zwlr_output_manager_v1` |
-| `screencast` | `zwlr_screencopy_manager_v1`, `hyprland_toplevel_export_manager_v1` |
+| `screencast` | `zwlr_screencopy_manager_v1` and `hyprland_toplevel_export_manager_v1`, **and** the compositor's portal backend declaring `org.freedesktop.impl.portal.ScreenCast` |
 | `output-scaling` (optional) | `wp_fractional_scale_manager_v1` |
 | `touch-and-gestures` (optional) | `zwp_pointer_gestures_v1` |
 
@@ -57,6 +57,16 @@ The cost is that a broken adapter and an honest minimal adapter are indistinguis
 For capabilities served by a Wayland protocol, the Hyprland adapter reports the capability when the compositor advertises that protocol. For capabilities served by `hyprctl`, it reports them when `hyprctl` is executable and answers.
 
 The alternative was a static list: Hyprland 0.53 supports these, so report them. That was rejected because it makes the adapter lie after an upstream change, which is the failure the contract's "never report a capability it implements by guessing" rule exists to prevent. A version-pinned list is a guess with a date on it.
+
+### `screencast` is reported only when both halves are present
+
+`docs/compositor-adapter.md` defines `screencast` as serving the compositor-dependent portal interfaces, not as the compositor advertising a capture protocol. Those are different claims, and the first draft of this design confused them by listing only the compositor protocols as what backs the capability.
+
+The adapter reports `screencast` when the compositor advertises the screencopy protocols **and** the compositor's portal backend declares `org.freedesktop.impl.portal.ScreenCast` in its `.portal` file with an installed D-Bus service. On the baseline that file is `/usr/share/xdg-desktop-portal/portals/hyprland.portal`, declaring `org.freedesktop.impl.portal.desktop.hyprland`. Both halves are readable at query time without running anything.
+
+Reporting on the compositor half alone would have the adapter claim a capability it cannot deliver without a component it does not check, which is what the contract's rule against reporting a guessed capability forbids. It would also make `screencast` the one required capability whose absence is discovered after the session starts, which is the failure `docs/compositor-adapter.md` says is worse than not starting.
+
+**The backend this resolves to is reached through the compositor's name, not Gridline's.** `hyprland.portal` lists `UseIn=wlroots;Hyprland;sway;Wayfire;river;` with no `Gridline`, and Gridline's identity is `Gridline:Hyprland`, so the frontend matches on the second name. `docs/component-ownership.md` already records that this is a working path by accident and that `gridline-portals.conf` is what makes it deliberate. That file belongs to `add-desktop-portal-integration`; this change depends on the accidental path and says so rather than leaving a later reader to discover it.
 
 ### The launcher starts the compositor through the adapter, not directly
 
