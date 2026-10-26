@@ -75,13 +75,17 @@ The session asks by running the adapter with one argument and reads the answer f
 
 Four things make up the answer, and the session relies on all four.
 
-**The query is an argument.** `capabilities` asks what the adapter provides. `start` asks it to start the compositor. An adapter that does not recognise an argument exits non-zero.
+**The query is an argument.** `capabilities` asks what the adapter can establish before the compositor runs. `start` asks it to start the compositor. `confirm` asks the same question as `capabilities` against the compositor now running. An adapter that does not recognise an argument exits non-zero.
+
+`confirm` exists because most capabilities cannot be established before launch. A compositor that is not running answers nothing about which protocols it implements, so an adapter claiming them beforehand would be guessing, which this contract forbids. The two queries are the same question asked at two moments, and they answer in the same form.
+
+**`capabilities` is not the gate for required capabilities; `confirm` is.** A capability absent from the pre-launch answer means the adapter cannot establish it yet, not that it is unavailable. What the pre-launch query gates on is its exit status: an adapter that already knows it cannot proceed, because a file it needs is not installed, says so before anything starts. That keeps the cheap failure cheap without pretending the expensive one can be checked early.
 
 **The answer is one capability name per line on standard output.** Names are written exactly as the tables above spell them, with no other text, no ordering requirement, and no duplicates. A line the session does not recognise is ignored rather than treated as an error, so an adapter reporting a capability from a later contract version does not break an older session.
 
 **The exit status says whether the answer is usable.** Zero means the adapter finished reporting. Non-zero means it did not, whatever it managed to print first.
 
-**An absent line and a non-zero exit are the same answer: the capability is unavailable.** This is the reporting rule above, extended so that a partial answer cannot be read as a complete one. An adapter that fails halfway through printing has not reported the capabilities it already printed, because the session cannot tell a short list from an interrupted one.
+**An absent line and a non-zero exit are the same answer from `confirm`: the capability is unavailable.** This is the reporting rule above, extended so that a partial answer cannot be read as a complete one. An adapter that fails halfway through printing has not reported the capabilities it already printed, because the session cannot tell a short list from an interrupted one.
 
 The format is deliberately poorer than it could be. It carries no version, no degraded state and no explanation, because a capability is reported or it is not, and anything an adapter needs to explain belongs on standard error where the journal will keep it. A session that must parse structure to decide whether a capability is present has a contract that invites the ambiguity this one refuses.
 

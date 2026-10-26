@@ -52,9 +52,19 @@ A capability absent from the output and an adapter that exits non-zero both mean
 
 The cost is that a broken adapter and an honest minimal adapter are indistinguishable to the session. That is acceptable because both outcomes are the same: the session does not start and the first missing required capability is named. The adapter's own stderr reaches the journal for anyone diagnosing which of the two it was.
 
-### The adapter reports a capability only if its interface is present, checked at query time
+### The capability check happens in two phases, because one phase cannot work
 
-For capabilities served by a Wayland protocol, the Hyprland adapter reports the capability when the compositor advertises that protocol. For capabilities served by `hyprctl`, it reports them when `hyprctl` is executable and answers.
+The first draft decided the adapter reports a capability when the compositor advertises the protocol that serves it. Implementation showed that cannot be done at the moment the contract asks for it. The capability query runs before the compositor starts, and on the baseline a Hyprland that is not running answers nothing: `hyprctl` exits non-zero without an instance signature, and `Hyprland --help` aborts before parsing arguments because `XDG_RUNTIME_DIR` is unset. There is no documented interface that reports protocol support from an idle installation.
+
+So the launcher asks twice. `capabilities` before launch reports what the adapter can establish from installed files alone, and its exit status is the early gate: an adapter that already knows it cannot proceed says so before anything starts. `start` launches the compositor. `confirm` then asks the same question against the running compositor, and that answer is the gate for required capabilities.
+
+**Pre-launch and post-launch is not the same split as optional and required.** A capability can be required and only confirmable after launch, and `lock-signaling` is exactly that: it is blocking, because a desktop that cannot be shown to lock must not run, and it is unknowable until the compositor is up to advertise `ext_session_lock_v1`. Reading "confirmed later" as "matters less" would contradict the blocking classification `define-supported-ubuntu-integration` recorded. The phase says when the answer is available, not how much the answer counts.
+
+Three alternatives were rejected. **Launching first and asking afterwards without a pre-launch phase** puts the only check at a point where it can no longer prevent what it exists to prevent, which is the defect the ownership gate's anchor history already taught this project. **Reading protocol support out of the compositor binary** is depending on internal layout, which the contract forbids; it was legitimate as a planning measurement and is not legitimate as a mechanism. **Narrowing the capability set to what is checkable early** reopens a list `docs/compositor-adapter.md` owns and this change said it would not reopen.
+
+### The adapter reports a capability only if its interface is present, checked at the phase that can establish it
+
+For capabilities served by a Wayland protocol, the Hyprland adapter reports the capability under `confirm`, when the running compositor advertises that protocol. For capabilities served by `hyprctl`, it reports them under `confirm` too, when `hyprctl` answers against the running instance. Under `capabilities` it reports only what installed files establish, which on this baseline is the portal half of `screencast` and the presence of the compositor binary.
 
 The alternative was a static list: Hyprland 0.53 supports these, so report them. That was rejected because it makes the adapter lie after an upstream change, which is the failure the contract's "never report a capability it implements by guessing" rule exists to prevent. A version-pinned list is a guess with a date on it.
 
