@@ -39,10 +39,10 @@ hangs instead of exiting, which leaves its VT occupied; the recovery is
 switching back to the original VT, so run this at the physical console rather
 than over SSH.
 
-- [ ] 4.1 Record the session the greeter preselects for the existing account, then install the
+- [x] 4.1 Record the session the greeter preselects for the existing account, then install the
   packages, and verify the recording was taken before installation so task 4.4 has a
   before value to compare against
-- [ ] 4.2 Create a local test account with no administrative privileges **after** the packages
+- [x] 4.2 Create a local test account with no administrative privileges **after** the packages
   are installed, used only for the greeter verifications in this group, and verify it has a
   valid login shell and appears in the greeter user list. The order matters: the second
   scenario of the opt-in requirement is a user created on a system where Gridline is already
