@@ -67,9 +67,10 @@ than over SSH.
   "under an identifiable Gridline unit or process name" is not merely vague: the launcher
   is started by the display manager and has no unit of its own, which is the argument
   `docs/architecture.md` records for choosing a syslog identifier, so the sentence
-  describes a mechanism the project has already documented as unavailable. If it is
-  corrected to
-  select by the journal identifier, verify the identifier is spelled identically in
+  describes a mechanism the project has already documented as unavailable. Its replacement
+  must name the mechanism as a syslog identifier, because that is what `journalctl -t`
+  selects; a sentence that stays generic reproduces the same defect in new words. Then
+  verify the identifier is spelled identically in
   `docs/recovery.md`, in `docs/architecture.md` where the contract is declared, and in the
   launcher itself, and add `docs/recovery.md` to the readers named alongside
   `add-session-health-check`: a contract with two readers and two spellings is not a
