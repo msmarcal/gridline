@@ -59,6 +59,7 @@ Execution note: this group needs a graphical console on the VM, not `lxc exec`. 
 - [ ] 6.5 Log out and verify the compositor terminates, the seat returns to the display manager, and the greeter is usable without a reboot
 - [ ] 6.6 Verify the failure path still works after the success path exists, by removing the adapter and confirming the session reports the missing adapter and returns to the greeter, then restoring it by reinstalling the package and verifying both the file's md5 and its mode
 - [ ] 6.7 Record which of the two optional capabilities the adapter reported on this machine, since the answer is hardware-dependent and a reader of the result needs to know what was and was not exercised
+- [ ] 6.8 Decide whether `docs/component-ownership.md` gains a row for the compositor's own session entry, now that the greeter has been seen with both offered. Record the decision and its reason either way, since a question left open in a document outlives the change that opened it, and verify the section added by this change no longer says the answer is pending
 
 ## Workflow follow-up
 

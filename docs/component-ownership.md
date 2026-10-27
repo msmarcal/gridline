@@ -94,6 +94,18 @@ Five components block session startup, and no Gridline package declares any of t
 
 The degrading components carry no declaration either, for a different reason: the session cannot run at all yet, so a recommendation would describe a desktop that does not start. The change that makes the session start is the one that can state what it recommends.
 
+## Session entries the dependency brought
+
+Depending on the compositor installs session entries the compositor's own package owns. On the baseline, `hyprland` ships `hyprland.desktop` and `hyprland-uwsm.desktop` into `/usr/share/wayland-sessions/`.
+
+One is withheld: `hyprland-uwsm.desktop` names `uwsm` in `TryExec`, which the baseline does not install, so the display manager does not offer it. That is the same mechanism Gridline relies on for its own entry, working here for another package.
+
+The other is offered. Selecting it reaches the compositor directly, with no capability check, no failure record under Gridline's syslog identifier, and none of the guarantees the Gridline session entry carries. A user who picks it has not started Gridline.
+
+**Gridline does not own either file and must not modify or remove them.** Archive packages own their own files, and a package that deletes another's entry would break that package on its own terms. What Gridline owns is having introduced them, by declaring the dependency that installs them.
+
+Whether this page gains a row for the offered entry is decided by `add-hyprland-session-baseline` once its session has been observed starting, because the answer depends on whether a user can tell the two apart at the login screen. Recorded here rather than in that change's artifacts so the question survives the change being archived.
+
 ## Security and updates
 
 | Component | Upstream | Ubuntu source | Component | Gridline ownership | Fallback |
