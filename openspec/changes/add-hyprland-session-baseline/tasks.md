@@ -28,11 +28,11 @@
 
 ## 4. The isolation check
 
-- [ ] 4.1 Add the isolation check under `packages/gridline/tools/`, partitioning the tree by the documented adapter path, and verify it reports the partition sizes rather than passing silently on an empty scan
-- [ ] 4.2 Populate the reference list from what this change introduces: the compositor binary name, `hyprctl`, the protocol names in design.md, and the Hyprland configuration file name; verify each entry matches something that actually exists in the adapter
-- [ ] 4.3 Anchor the check in `debian/rules` beside the ownership gate, and verify both run before `dh_builddeb` by reading the build log for their output
-- [ ] 4.4 Verify the check fails on a planted leak, by temporarily placing a compositor reference in a file outside the adapter path, confirming the build fails naming that file and reference, and removing it. The same task that plants it removes it, and the removal is verified rather than assumed
-- [ ] 4.5 Verify a clean tree passes, and record the number of files scanned on each side of the boundary, since a check that scans nothing passes for the wrong reason
+- [x] 4.1 Add the isolation check under `packages/gridline/tools/`, partitioning the tree by the documented adapter path, and verify it reports the partition sizes rather than passing silently on an empty scan
+- [x] 4.2 Populate the reference list from what this change introduces: the compositor binary name, `hyprctl`, the protocol names in design.md, and the Hyprland configuration file name; verify each entry matches something that actually exists in the adapter
+- [x] 4.3 Anchor the check in `debian/rules` beside the ownership gate, and verify both run before `dh_builddeb` by reading the build log for their output
+- [x] 4.4 Verify the check fails on a planted leak, by temporarily placing a compositor reference in a file outside the adapter path, confirming the build fails naming that file and reference, and removing it. The same task that plants it removes it, and the removal is verified rather than assumed
+- [x] 4.5 Verify a clean tree passes, and record the number of files scanned on each side of the boundary, since a check that scans nothing passes for the wrong reason
 
 ## 5. Packaging
 

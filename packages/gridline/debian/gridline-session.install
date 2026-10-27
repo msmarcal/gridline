@@ -1,2 +1,3 @@
 src/session/gridline.desktop usr/share/wayland-sessions/
 src/session/gridline-session usr/libexec/gridline/
+src/adapters/hyprland/adapter usr/libexec/gridline/adapters/hyprland/

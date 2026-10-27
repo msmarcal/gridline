@@ -29,7 +29,6 @@ A session does not start unless the adapter reports all of these.
 | Capability | What the session needs from it |
 |---|---|
 | `compositor-launch` | Start the compositor and report that it is ready to accept clients, or fail with a reason |
-| `session-identity` | Supply the compositor's identity token, which the launcher appends to the Gridline desktop identity |
 | `output-management` | Enumerate outputs and apply a configuration, so a display change does not leave the session without usable output |
 | `input-configuration` | Apply keyboard, pointer and touchpad settings from Gridline's own configuration |
 | `window-control` | The tiling operations Gridline's keybindings are defined against: focus, move, resize, workspace switching |
@@ -37,6 +36,8 @@ A session does not start unless the adapter reports all of these.
 | `idle-reporting` | Report idle state, so an idle timeout can trigger locking or suspend |
 | `screencast` | Serve the compositor-dependent portal interfaces, so that screen capture and sharing work |
 | `shutdown` | Terminate the compositor cleanly and release the seat on logout |
+
+**`session-identity` was removed from this table.** It described the adapter supplying the compositor's identity token for the launcher to append. [architecture.md](architecture.md) supersedes that: `XDG_CURRENT_DESKTOP` is composed by the display manager from the session entry's `DesktopNames`, the launcher neither sets nor modifies it, and the adapter does not participate. An adapter that needs to know which compositor is active reads the second element of that variable. Keeping the row would have made the launcher refuse to start without a capability no adapter can establish.
 
 Three of these are required for reasons worth stating, because each is a capability another project might reasonably treat as optional.
 

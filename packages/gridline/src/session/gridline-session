@@ -54,7 +54,7 @@ fi
 # Capabilities the session refuses to start without. This list is a second copy
 # of the required table in docs/compositor-adapter.md, because a shell launcher
 # cannot read that document at runtime. The tasks require comparing the two.
-REQUIRED_CAPABILITIES="compositor-launch session-identity output-management
+REQUIRED_CAPABILITIES="compositor-launch output-management
 input-configuration window-control lock-signaling idle-reporting screencast
 shutdown"
 

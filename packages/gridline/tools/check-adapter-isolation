@@ -1,0 +1,84 @@
+#!/bin/sh
+# Compositor-specific content may exist only inside the adapter layer.
+#
+# The path decides, never a reviewer. A file is adapter content because of where
+# it is, so a compositor-specific component that needs to exist belongs inside
+# the path, and one that cannot move inside it is a design problem this check is
+# correctly surfacing.
+#
+# Scope is src/ and tools/: the content Gridline ships and the programs that
+# build it. Two kinds of file are out of scope, both by rule rather than by a
+# judgment about any particular file.
+#
+# debian/ is out because packaging metadata must name the packages the project
+# depends on, and a Depends on a compositor is a dependency the project
+# recorded, not compositor logic that leaked out of the adapter.
+#
+# Desktop entries are out because the display manager composes
+# XDG_CURRENT_DESKTOP from their DesktopNames field, and portal backend
+# resolution reads that variable. The compositor's name has to be there. See
+# docs/architecture.md, which records that the identity comes from the entry and
+# that the adapter does not supply it.
+
+set -eu
+
+root=$(dirname "$0")/..
+adapter_path=src/adapters
+self=tools/check-adapter-isolation
+
+# References that mean compositor-specific content. The list starts from what
+# this change introduces; a check whose list is empty passes trivially and
+# proves nothing. The change that adds a compositor-specific mechanism extends
+# it, and add-ci-vm-smoke-tests re-runs the whole check.
+references='Hyprland
+hyprland
+hyprctl
+hyprland.conf
+ext_session_lock_v1
+ext_idle_notifier_v1
+zwlr_output_manager_v1
+zwlr_screencopy_manager_v1
+hyprland_toplevel_export_manager_v1
+wp_fractional_scale_manager_v1
+zwp_pointer_gestures_v1'
+
+cd "$root"
+
+inside=0
+outside=0
+hits=0
+
+for file in $(find src tools -type f | sort); do
+    case "$file" in
+    "$adapter_path"/*) inside=$((inside + 1)); continue ;;
+    "$self") continue ;;
+    *.desktop) continue ;;
+    esac
+    outside=$((outside + 1))
+    printf '%s\n' "$references" | while IFS= read -r ref; do
+        if grep -qw -- "$ref" "$file" 2>/dev/null; then
+            printf 'adapter isolation: %s references %s\n' "$file" "$ref" >&2
+        fi
+    done
+done
+
+# The loop above runs in a subshell, so count the hits in one pass here.
+hits=$(for file in $(find src tools -type f | sort); do
+    case "$file" in
+    "$adapter_path"/*) continue ;;
+    "$self") continue ;;
+    *.desktop) continue ;;
+    esac
+    printf '%s\n' "$references" | while IFS= read -r ref; do
+        grep -qw -- "$ref" "$file" 2>/dev/null && printf 'x\n'
+    done
+done | wc -l)
+
+printf 'adapter isolation: %s files inside %s, %s outside, %s references found\n' \
+    "$inside" "$adapter_path" "$outside" "$hits"
+
+[ "$hits" -eq 0 ] || {
+    printf 'adapter isolation: compositor-specific content outside %s\n' \
+        "$adapter_path" >&2
+    exit 1
+}

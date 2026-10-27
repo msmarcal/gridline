@@ -10,5 +10,9 @@
 # that run after the anchor stage files it never sees. dh_installdocs alone
 # adds the changelog and copyright that Debian policy requires, so a gate
 # placed at dh_install reports zero files while six are about to ship.
+# Compositor-specific content may exist only inside the adapter layer. Anchored
+# at the same stage as the ownership gate, so there is one answer to when the
+# gates run rather than two.
 execute_before_dh_builddeb:
 	tools/check-path-ownership debian
+	tools/check-adapter-isolation

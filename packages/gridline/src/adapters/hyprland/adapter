@@ -87,7 +87,6 @@ capabilities)
     command -v "$COMPOSITOR" >/dev/null 2>&1 \
         || fail "$COMPOSITOR is not installed"
     echo compositor-launch
-    echo session-identity
     echo shutdown
     serves_screencast_portal && echo screencast
     exit 0
@@ -104,7 +103,6 @@ confirm)
         || fail "$COMPOSITOR_CTL cannot reach a running compositor"
 
     echo compositor-launch
-    echo session-identity
     echo shutdown
     echo input-configuration
     echo window-control
