@@ -47,6 +47,14 @@ fail() {
 # compositor that advertises nothing. Only one of the two is about the compositor.
 REGISTRY_MARKER='interface:'
 
+# The marker alone proves the output has the shape expected, not that interface
+# names are still written where this adapter looks for them. If the tool keeps
+# its markers and changes how it prints names, every name misses and the session
+# fails naming a capability the compositor may well have. wl_compositor is the
+# anchor against that: every Wayland compositor advertises it, so failing to
+# find it means the names are not where this adapter reads them.
+REGISTRY_ANCHOR=wl_compositor
+
 registry=
 read_registry() {
     command -v wayland-info >/dev/null 2>&1 \
@@ -55,6 +63,8 @@ read_registry() {
         || fail 'wayland-info could not reach the compositor'
     printf '%s\n' "$registry" | grep -q "$REGISTRY_MARKER" \
         || fail 'wayland-info produced output this adapter does not recognise'
+    printf '%s\n' "$registry" | grep -qw "$REGISTRY_ANCHOR" \
+        || fail "wayland-info output lacks $REGISTRY_ANCHOR, so interface names are not where this adapter reads them"
 }
 
 # Whole-word match, so a longer interface name containing a shorter one cannot
@@ -84,6 +94,10 @@ capabilities)
     ;;
 confirm)
     read_registry
+    # Not redundant after reading the registry. A readable registry proves some
+    # Wayland compositor is running; it does not prove it is this one. The five
+    # capabilities below are served through the compositor's own control tool,
+    # so the session must not be told they are available on another compositor.
     command -v "$COMPOSITOR_CTL" >/dev/null 2>&1 \
         || fail "$COMPOSITOR_CTL is not installed"
     "$COMPOSITOR_CTL" version >/dev/null 2>&1 \
