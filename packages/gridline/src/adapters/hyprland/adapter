@@ -55,6 +55,46 @@ REGISTRY_MARKER='interface:'
 # find it means the names are not where this adapter reads them.
 REGISTRY_ANCHOR=wl_compositor
 
+# How long to wait for the compositor to accept clients. compositor-launch means
+# "start the compositor and report that it is ready", and a compositor is not
+# ready the instant the process exists: it has to create its control socket and
+# its Wayland socket first. Waiting for those is how this adapter observes
+# readiness, and the launcher asking too early is what made the first real
+# session fail with compositor-launch unreported.
+READY_TIMEOUT=20
+
+# Hyprland announces an instance as a directory under $XDG_RUNTIME_DIR/hypr
+# holding .socket.sock, and serves clients on a wayland-N socket beside it. Both
+# are documented locations. The adapter exports what it finds, because the
+# launcher starts the compositor in the background and therefore never inherits
+# the environment the compositor sets for itself.
+wait_for_compositor() {
+    [ -n "${XDG_RUNTIME_DIR-}" ] \
+        || fail 'XDG_RUNTIME_DIR is unset, so the compositor cannot be located'
+    waited=0
+    while [ "$waited" -lt "$READY_TIMEOUT" ]; do
+        signature=$(ls -1t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null | head -1)
+        if [ -n "$signature" ] \
+            && [ -S "$XDG_RUNTIME_DIR/hypr/$signature/.socket.sock" ]; then
+            HYPRLAND_INSTANCE_SIGNATURE=$signature
+            export HYPRLAND_INSTANCE_SIGNATURE
+            if [ -z "${WAYLAND_DISPLAY-}" ]; then
+                for socket in "$XDG_RUNTIME_DIR"/wayland-[0-9]*; do
+                    case "$socket" in *.lock) continue ;; esac
+                    [ -S "$socket" ] || continue
+                    WAYLAND_DISPLAY=$(basename "$socket")
+                    export WAYLAND_DISPLAY
+                    break
+                done
+            fi
+            [ -n "${WAYLAND_DISPLAY-}" ] && return 0
+        fi
+        waited=$((waited + 1))
+        sleep 1
+    done
+    fail "the compositor did not accept clients within ${READY_TIMEOUT}s"
+}
+
 registry=
 read_registry() {
     command -v wayland-info >/dev/null 2>&1 \
@@ -92,6 +132,7 @@ capabilities)
     exit 0
     ;;
 confirm)
+    wait_for_compositor
     read_registry
     # Not redundant after reading the registry. A readable registry proves some
     # Wayland compositor is running; it does not prove it is this one. The five
