@@ -6,10 +6,14 @@ packages and installed on top of a stock Ubuntu system.
 Select Gridline at the login screen to get a tiling desktop. Select Ubuntu to
 get GNOME. Remove the packages and the machine is exactly as it was.
 
-> **Status: specification. There is nothing to install yet.**
-> The repository currently contains documentation and specifications. No
-> package has been built, and no code has been written. See
-> [Project status](#project-status) for what exists and what comes next.
+> **Status: early development, in the open.**
+> The GDM session entry, the launcher with its capability gate, and the
+> Hyprland adapter exist and run against a real compositor in a VM, including
+> the failure path. What does not exist yet is the desktop around them:
+> configuration, theming, and the command menu. See
+> [Project status](#project-status) for the sequence.
+
+Project site: [gridline-desktop.org](https://gridline-desktop.org)
 
 ## What makes it different
 
@@ -52,7 +56,8 @@ These are constraints the project holds itself to, not aspirations:
 - **Archive packages are preferred** over third-party sources, so that what is
   installed is what Ubuntu ships.
 - **One compositor, behind a boundary.** Hyprland is the initial compositor, but
-  compositor-specific logic is isolated behind an adapter in a single location.
+  compositor-specific logic is isolated behind an adapter in a single location,
+  and a build gate fails the build if a compositor name escapes that boundary.
 
 ## The experience
 
@@ -79,17 +84,27 @@ The full inventory, including what the baseline cannot reach, is in
 
 ## Project status
 
-Development is specification-first using [OpenSpec](https://openspec.dev). Two
-changes are complete, both documentation and specifications by design:
+Development is specification-first using [OpenSpec](https://openspec.dev).
+Changes land as proposals with requirements and scenarios, get applied, and are
+archived into the durable baseline, which today holds five capabilities: session
+registration, package delivery, platform integration, session manageability,
+and the desktop session. The sequence, including what is archived and what is
+next, lives in [architecture.md](docs/architecture.md).
 
-| Change | Scope |
-| --- | --- |
-| `establish-gridline-vision` | The foundation: baseline, session model, delivery rules, four capability specifications |
-| `add-manageability-capability` | Central configuration, enforced policy, and the policy layer |
+Working now, in a VM on the Ubuntu 26.04 baseline: the session entry appears
+in GDM, the launcher gates startup on what the adapter confirms from the
+running compositor, and a failed launch names its cause in the journal and
+returns the seat to the login screen. Next in the sequence: portal
+integration, configuration defaults, session lifecycle, and the command menu.
 
-Together they specify 38 requirements across five capabilities. The next change,
-`define-debian-package-architecture`, is the first that produces something
-installable.
+The packages are not published to a PPA yet. To try the current state, build
+the source package on Ubuntu 26.04:
+
+```
+sudo apt install build-essential debhelper
+dpkg-buildpackage -us -uc -b
+sudo dpkg -i ../gridline-session_*.deb
+```
 
 Validate the specifications with:
 
