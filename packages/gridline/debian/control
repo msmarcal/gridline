@@ -9,14 +9,25 @@ Rules-Requires-Root: no
 
 Package: gridline-session
 Architecture: all
-Depends: ${misc:Depends}
-Description: Gridline session integration (no content yet)
+Depends: ${misc:Depends},
+         hyprland,
+         xdg-desktop-portal-hyprland,
+         wayland-utils
+Description: Gridline session integration
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
- package will own the session entry the display manager reads, the session
- launcher, the core integration glue, and the compositor adapter layer.
+ package owns the session entry the display manager reads, the session
+ launcher, and the compositor adapter layer.
  .
- It ships no content yet. This version establishes the directory it owns so
- that later changes install into a boundary that is already fixed.
+ Selecting Gridline at the login screen runs the launcher, which asks the
+ active adapter what the compositor provides and starts the session only when
+ every required capability is reported. A missing one ends the launch with its
+ name in the system journal and returns the user to the login screen, where
+ the stock Ubuntu session stays selectable.
+ .
+ The compositor, its portal backend and the Wayland registry tool this package
+ depends on are in the universe component. Universe carries no Canonical
+ security-update commitment. Main does. Patching them is the operator's
+ responsibility, which on a personal machine means its owner.
 
 Package: gridline-config
 Architecture: all
