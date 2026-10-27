@@ -15,7 +15,7 @@ See proposal.md for motivation. Four things are already settled and are inputs h
 | Capability | Documented interface |
 |---|---|
 | `compositor-launch`, `session-identity`, `input-configuration`, `window-control`, `shutdown` | `hyprctl` |
-| `lock-signaling` | `ext_session_lock_v1` |
+| `lock-signaling` | `ext_session_lock_manager_v1` |
 | `idle-reporting` | `ext_idle_notifier_v1` |
 | `output-management` | `zwlr_output_manager_v1` |
 | `screencast` | `zwlr_screencopy_manager_v1` and `hyprland_toplevel_export_manager_v1`, **and** the compositor's portal backend declaring `org.freedesktop.impl.portal.ScreenCast` |

@@ -27,7 +27,7 @@ PORTAL_SERVICE=/usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.hy
 # Wayland interfaces backing each protocol-served capability. These names are a
 # second copy of the table in this change's design document, which is why the
 # tasks require comparing the two rather than reading them.
-IFACE_lock_signaling=ext_session_lock_v1
+IFACE_lock_signaling=ext_session_lock_manager_v1
 IFACE_idle_reporting=ext_idle_notifier_v1
 IFACE_output_management=zwlr_output_manager_v1
 IFACE_screencast_a=zwlr_screencopy_manager_v1
