@@ -19,11 +19,12 @@
 
 ## 3. The launcher invokes the adapter
 
-- [ ] 3.1 Replace the launcher's third branch with the two-phase sequence: `capabilities`, then `start`, then `confirm`. Verify the branch that reported "cannot invoke it" is gone by grep, and that the three invocations appear in that order
-- [ ] 3.2 Gate on `confirm`, not on `capabilities`: compare `confirm`'s answer against the required set and report the first missing capability by name through the existing `gridline-session` syslog identifier. Verify with a stub whose `confirm` omits one required capability, reading `journalctl -t gridline-session`, and verify separately that a capability absent from `capabilities` but present in `confirm` does not block, since absence before launch means not yet establishable
-- [ ] 3.3 Verify an adapter whose `confirm` exits non-zero is treated as reporting nothing, using a stub that exits 1 after printing some capabilities, and verify that a non-zero exit from `capabilities` ends the launch before `start` runs, by confirming no compositor process was created
-- [ ] 3.4 Start the compositor through the adapter rather than naming it in the launcher, and verify by grep that the launcher contains no compositor name, binary or protocol
-- [ ] 3.5 Verify an unreported optional capability does not block startup, using a stub that reports every required capability and neither optional one
+- [x] 3.1 Replace the launcher's third branch with the two-phase sequence: `capabilities`, then `start`, then `confirm`. Verify the branch that reported "cannot invoke it" is gone by grep, and that the three invocations appear in that order
+- [x] 3.2 Gate on `confirm`, not on `capabilities`: compare `confirm`'s answer against the required set and report the first missing capability by name through the existing `gridline-session` syslog identifier. Verify with a stub whose `confirm` omits one required capability, reading `journalctl -t gridline-session`, and verify separately that a capability absent from `capabilities` but present in `confirm` does not block, since absence before launch means not yet establishable
+- [x] 3.3 Verify an adapter whose `confirm` exits non-zero is treated as reporting nothing, using a stub that exits 1 after printing some capabilities, and verify that a non-zero exit from `capabilities` ends the launch before `start` runs, by confirming no compositor process was created
+- [x] 3.4 Start the compositor through the adapter rather than naming it in the launcher, and verify by grep that the launcher contains no compositor name, binary or protocol
+- [x] 3.5 Verify an unreported optional capability does not block startup, using a stub that reports every required capability and neither optional one
+- [x] 3.6 Verify the launcher's required-capability list matches the required table in `docs/compositor-adapter.md` character for character, by comparing the two rather than reading them. The list is a second copy for the same reason the adapter's interface names are, and it decides which launches are refused, so a name that drifts here refuses a session for a capability the contract never required. Record which names appear in one and not the other, including none
 
 ## 4. The isolation check
 

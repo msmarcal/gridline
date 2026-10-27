@@ -51,8 +51,48 @@ if [ -z "$adapter" ]; then
         "no executable adapter under $ADAPTER_DIR"
 fi
 
-# An adapter is present but this version cannot speak the adapter contract,
-# which add-hyprland-session-baseline defines. Reaching here is still a launch
-# that cannot complete, so it is reported the same way rather than guessed at.
-report_missing "compositor adapter contract" \
-    "found $adapter but this version cannot invoke it"
+# Capabilities the session refuses to start without. This list is a second copy
+# of the required table in docs/compositor-adapter.md, because a shell launcher
+# cannot read that document at runtime. The tasks require comparing the two.
+REQUIRED_CAPABILITIES="compositor-launch session-identity output-management
+input-configuration window-control lock-signaling idle-reporting screencast
+shutdown"
+
+# Phase one. What the adapter can establish from installed files, before
+# anything starts. Its answer is not the gate for required capabilities, because
+# absence here means not yet establishable. Its exit status is the gate: an
+# adapter that already knows it cannot proceed says so while nothing is running.
+if ! "$adapter" capabilities >/dev/null 2>&1; then
+    report_missing "compositor adapter" \
+        "$adapter could not report what it provides"
+fi
+
+# Phase two. Start the compositor through the adapter, so this launcher never
+# names one. Supporting a second compositor stays a question of which adapter is
+# active, which is what the isolation requirement asks of everything out here.
+"$adapter" start &
+compositor_pid=$!
+
+# Phase three. Ask the running compositor what it actually provides. A reported
+# capability needs a documented interface behind it, and before the compositor
+# runs there is nothing to ask.
+reported=$("$adapter" confirm 2>/dev/null) || reported=
+
+stop_compositor() {
+    kill "$compositor_pid" 2>/dev/null
+    wait "$compositor_pid" 2>/dev/null
+}
+
+for required in $REQUIRED_CAPABILITIES; do
+    found=no
+    for got in $reported; do
+        [ "$got" = "$required" ] && { found=yes; break; }
+    done
+    if [ "$found" = no ]; then
+        stop_compositor
+        report_missing "compositor capability" \
+            "$required was not reported by $adapter"
+    fi
+done
+
+wait "$compositor_pid"
