@@ -52,7 +52,7 @@
 
 Execution note: this group needs a graphical console on the VM, not `lxc exec`. Open it with `lxc console gridline-vm --type=vga`, which needs a SPICE client on the host. The session either reaches a desktop or returns to the greeter, and both outcomes are observations this group records.
 
-- [ ] 6.1 Record the adapter's capability answer on the VM before selecting the session, and verify every required capability is reported, so a later failure is attributable to startup rather than to the capability check
+- [x] 6.1 Record the adapter's capability answer on the VM before selecting the session, and verify every required capability is reported, so a later failure is attributable to startup rather than to the capability check
 - [ ] 6.2 Select Gridline at the greeter and verify a tiling desktop starts and accepts keyboard and pointer input
 - [ ] 6.3 Verify the session is recorded as running for that user, by reading `loginctl` and confirming the desktop identity is the one the session entry sets rather than the compositor's own
 - [ ] 6.4 Verify screen capture resolves to the compositor's portal backend in the running session, which is testable without a capturing application: read the portal frontend's own record of which implementation it selected for `org.freedesktop.impl.portal.ScreenCast` from `journalctl --user -u xdg-desktop-portal`, and confirm it names `org.freedesktop.impl.portal.desktop.hyprland`. Record that the match happened through `Hyprland` in the desktop identity rather than through `Gridline`, since `hyprland.portal` lists no `Gridline` in `UseIn` and `gridline-portals.conf` belongs to `add-desktop-portal-integration`. A reader who finds this working must not conclude the Gridline-owned path exists
