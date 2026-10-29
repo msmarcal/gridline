@@ -24,8 +24,21 @@ Documentation=man:systemd.special(7)
 # stops at the end of the session, graphical-session.target stops with it, and
 # the units that are PartOf graphical-session.target stop in turn. A session
 # that ends leaves nothing of itself running.
+#
+# There is deliberately no Before=graphical-session.target here, and an earlier
+# version had one. A target with DefaultDependencies=yes gains an implicit After=
+# on everything it lists in Wants=, so Before= on the standard target closed a
+# cycle: this target after the agent, this target before graphical-session.target,
+# and the agent after graphical-session.target, which the archive's unit sets and
+# Gridline does not modify. systemd broke the cycle by deleting the agent's start
+# job, so the target was reached with the agent never started.
+#
+# Without the Before=, the order falls out of the dependencies already present
+# and is the one wanted anyway: graphical-session.target first, because the agent
+# is ordered after it; then the agent; then this target, through the implicit
+# After=. So a start of this target does not return until the units it wants have
+# been tried, which is what makes checking them afterwards mean anything.
 BindsTo=graphical-session.target
-Before=graphical-session.target
 
 # The components the session wants running for its whole lifetime. The screen
 # locker is not among them because it is started on demand rather than run
