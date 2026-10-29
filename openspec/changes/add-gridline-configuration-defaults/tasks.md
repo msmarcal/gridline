@@ -58,7 +58,9 @@ These come first because the rest is built on their answers. A task here that re
   The suspend route is **not** exercised, for the reason `add-session-lifecycle-integration` recorded: this machine cannot suspend. The wiring is identical to the other two and the event is documented in the daemon's manual, which is weaker than exercising it and is said so rather than implied.
 
   One thing this task did not cover and the implementation had to decide: how the idle daemon starts. The archive ships no unit for it, and putting it in `gridline-session.target`'s `Wants=` would make the launcher refuse a session without it, contradicting the recorded finding that no idle daemon is blocking. It is held by `Upholds=` instead, which systemd reports separately from `Wants=`, so the launcher's blocking check needed no change and the daemon is still kept running and restarted if it stops
-- [ ] 4.4 Verify the session locks itself after the configured period, timing it rather than assuming, and that authentication is required to return
+- [x] 4.4 Timed rather than assumed. At `18:25:12` the session was unlocked with `LockedHint=no` and `IdleHint=no` and no locker process. At `18:30:42`, after 330 seconds against the shipped timeout of 300, the locker was running and both `LockedHint=yes` and `IdleHint=yes`. Nobody invoked anything in between; the only input to the machine was none.
+
+  Authentication was required to return, which the earlier cycles in this group already exercised through the same locker and the same PAM stack, and is not reproved here
 - [x] 4.5 `LockedHint=yes` while locked, read with `loginctl show-session 28 -p LockedHint`, against the `no` that both lock verifications in the previous change recorded. The debt is closed
 - [x] 4.6 Not left true. A locker killed with `SIGKILL` leaves `LockedHint=no` through the trap, and a locker that is not installed never reaches the point where the hint is set.
 
