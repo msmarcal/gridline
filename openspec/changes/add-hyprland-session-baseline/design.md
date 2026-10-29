@@ -102,11 +102,15 @@ After the capability check passes, the launcher invokes `<adapter> start`. The l
 
 The check partitions the source tree by `packages/gridline/src/adapters/` and scans everything outside it for compositor references. Its reference list starts from what this change actually introduces: the compositor binary name, `hyprctl`, the Hyprland protocol names in the table above, and the Hyprland configuration file name. A check whose list is empty passes trivially and proves nothing.
 
-### `Depends`, not `Recommends`, for both new dependencies
+### `Depends`, not `Recommends`, for every new dependency
 
-`hyprland` and `xdg-desktop-portal-hyprland` both block session startup, so the policy in `docs/packaging.md` makes them dependencies. `xdg-desktop-portal-hyprland` is blocking for the reason `docs/compositor-adapter.md` records: without it the adapter cannot report `screencast`, and `screencast` is required because the GTK backend does not implement screen capture on Wayland.
+All three new dependencies block session startup, so the policy in `docs/packaging.md` makes them dependencies rather than recommendations.
 
-Both are in `universe`. The support gap is stated where the dependency is declared, which for a package is its long description, because that is what an administrator reads before installing.
+`hyprland` is the compositor. `xdg-desktop-portal-hyprland` is blocking for the reason `docs/compositor-adapter.md` records: without it the adapter cannot report `screencast`, and `screencast` is required because the GTK backend does not implement screen capture on Wayland. `wayland-utils` is blocking because `confirm` reads the Wayland registry through it, and without that reading no protocol-backed capability can be established at all, so every required one reads as unreported.
+
+This section was written when there were two. The third arrived when implementation showed that `hyprctl` offers no command listing the compositor's globals, which is recorded under the registry decision above.
+
+All three are in `universe`. The support gap is stated where the dependency is declared, which for a package is its long description, because that is what an administrator reads before installing.
 
 ## Risks / Trade-offs
 
