@@ -8,12 +8,12 @@ The authoritative form of these boundaries is `openspec/specs/package-delivery/s
 
 | Package | Owns | Required by capability | Status |
 |---|---|---|---|
-| `gridline-session` | The GDM session entry at `/usr/share/wayland-sessions/gridline.desktop`, the session launcher at `/usr/libexec/gridline/gridline-session`, the core integration glue, and the compositor adapter layer | `desktop-session` (the session exists and starts), `platform-integration` (the session reaches the desktop stack), `compositor-abstraction` (the adapter lives here) | **Entry and launcher shipped**; glue and adapter planned |
+| `gridline-session` | The GDM session entry at `/usr/share/wayland-sessions/gridline.desktop`, the session launcher at `/usr/libexec/gridline/gridline-session`, the session's systemd user target at `/usr/lib/systemd/user/gridline-session.target`, the core integration glue, and the compositor adapter layer | `desktop-session` (the session exists and starts), `platform-integration` (the session reaches the desktop stack), `compositor-abstraction` (the adapter lives here) | **Entry and launcher shipped**; glue and adapter planned |
 | `gridline-config` | Shipped defaults under `/etc/xdg`, default keybindings, default themes, the portal interface-to-backend mapping, `gridline-portals.conf`, the administrator's policy input, the lock declarations, and the destination of the generated configuration | `desktop-session` (session-scoped configuration), `platform-integration` (deterministic portal backend selection), `session-manageability` (policy input and locks) | Planned |
 | `gridline-tools` | The `gridline` command, `gridline doctor`, the theme and diagnostic commands, and the generator that produces the effective configuration | `platform-integration` (capability gaps are diagnosable), `compositor-abstraction` (the command surface stays compositor-neutral), `session-manageability` (the generator) | Planned |
 | `gridline-desktop` | Nothing. A metapackage that pulls in the packages making up a complete Gridline desktop | `package-delivery` (the name is reserved) | **Reserved, not delivered** |
 
-**One package description is out of date.** `debian/control` still describes `gridline-session` as shipping no content yet, which stopped being true when `add-gdm-wayland-session` shipped the session entry and the launcher. The descriptions for `gridline-config` and `gridline-tools` are still accurate, since those two ship directories and no files. Correcting it belongs to `add-hyprland-session-baseline`, the next change that edits `debian/control`, and it is recorded here so that a reader comparing this page's Status column against the package description does not conclude one of them is lying.
+**The package descriptions and this page agree.** `gridline-session` described itself as shipping no content yet until `add-hyprland-session-baseline` corrected it, and the descriptions for `gridline-config` and `gridline-tools` still say so accurately, since those two ship directories and no files. A reader comparing this page's Status column against `dpkg-deb -f <package> Description` should find the two tell the same story; if they do not, the package is the measurement and this page is the one to fix.
 
 Every binary package uses the `gridline-` prefix. See [packages/gridline/README.md](../packages/gridline/README.md) for why the prefix is a convention the build tooling relies on rather than a naming preference.
 
@@ -52,7 +52,7 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 |---|---|---|---|
 | `hyprland` | 0.53.3+ds-4 | **universe** | Compositor |
 | `swaylock` | 1.8.4-1 | **universe** | Screen locker |
-| `swayidle` | 1.9.0-1 | **universe** | Idle daemon |
+| `swayidle` | 1.9.0-1 | **universe** | Idle daemon candidate |
 | `hyprpaper` | 0.8.3-1 | **universe** | Wallpaper candidate |
 | `hyprpolkitagent` | 0.1.3-1 | **universe** | polkit authentication agent |
 | `xdg-desktop-portal-hyprland` | 1.3.11-1build2 | **universe** | Compositor portal backend |
@@ -88,7 +88,9 @@ The two answer different questions and are worth running together: `policy` repo
 
 These rows were confirmed against the archive by `define-supported-ubuntu-integration`. Re-checking them is not owned by a single change, because they move with the archive rather than with the project: any change that adds, removes or alters a dependency re-checks the rows it touches, using the procedure above. If an automated check is ever built, `add-ci-vm-smoke-tests` is where it belongs, since that is the change that owns running things against a baseline machine.
 
-**[component-ownership.md](component-ownership.md) is authoritative for component facts.** Where that page and this one carry the same version or archive component, it wins, because it is the one organized by component and it carries what each component's absence does. This table is the packaging-side view of the same measurement. One package appears here and not there: `hyprpaper` is a candidate no requirement rests on yet, so giving it a row there would record a dependency the project has not taken.
+**[component-ownership.md](component-ownership.md) is authoritative for component facts.** Where that page and this one carry the same version or archive component, it wins, because it is the one organized by component and it carries what each component's absence does. This table is the packaging-side view of the same measurement.
+
+**Two rows are candidates rather than dependencies**, marked as such in the Role column: `hyprpaper` for the wallpaper and `swayidle` for the idle daemon. No requirement rests on either, so neither is in any package's `Depends`, and `add-gridline-configuration-defaults` owns both choices. `swayidle` was a declared dependency of `gridline-session` for the length of one change and is not one now; `component-ownership.md` records why, under the blocking components.
 
 **One universe package is not Hypr-ecosystem.** `wayland-utils` comes from freedesktop and is the only non-Hypr entry in the table carrying the universe gap, so the claim below remains true as written rather than being stretched to cover it. The adapter depends on it because the compositor publishes its protocols through the Wayland registry and offers no command that lists them.
 

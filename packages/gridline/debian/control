@@ -15,7 +15,6 @@ Depends: ${misc:Depends},
          wayland-utils,
          xwayland,
          swaylock,
-         swayidle,
          hyprpolkitagent
 Description: Gridline session integration
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
@@ -29,9 +28,16 @@ Description: Gridline session integration
  the stock Ubuntu session stays selectable.
  .
  The session refuses to start without the components it records as blocking:
- the compositor, its portal backend, the screen locker and the polkit
- authentication agent. A desktop that cannot lock must not run, and privileged
- actions that fail with no prompt are worse than a session that declines.
+ the compositor, its portal backend, the Wayland registry query the adapter
+ asks through, the screen locker and the polkit authentication agent. A desktop
+ that cannot lock must not run, and privileged actions that fail with no prompt
+ are worse than a session that declines.
+ .
+ The polkit agent is a systemd user unit the archive ships disabled, so this
+ package also owns a user target that wants it and that pulls in
+ graphical-session.target, which no session may start directly. Gridline wants
+ the unit in its own target rather than enabling it, so installing Gridline
+ changes nothing about a GNOME session on the same machine.
  .
  Every package this one depends on except xwayland is in the universe
  component. Universe carries no Canonical security-update commitment. Main

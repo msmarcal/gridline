@@ -44,9 +44,11 @@ Two consequences follow, and both are structural rather than cosmetic:
 - **A user file wins outright.** A `~/.config/hypr/<program>.conf` does not override individual keys from an administrator file; it replaces the administrator file entirely. A setting placed in `/etc/xdg` disappears the moment a user writes their own config, and nothing reports that it happened.
 - **CIS 1.7.5 has no counterpart.** "Ensure screen locks cannot be overridden" cannot be satisfied by configuration alone, because the mechanism the control audits is absent from these tools.
 
-**The lock path was kept out of this.** `add-session-lifecycle-integration` selected `swaylock` and `swayidle`, neither of which links `libhyprlang`, measured against the archive packages. The analysis above therefore describes the compositor's own configuration and not the screen lock, which was the point of choosing that way: building the fail-safe component on the model this section identifies as the obstacle would have been a choice, not an inheritance.
+**The lock path was kept out of this.** `add-session-lifecycle-integration` selected `swaylock`, which does not link `libhyprlang`, measured against the archive package. The analysis above therefore describes the compositor's own configuration and not the screen lock, which was the point of choosing that way: building the fail-safe component on the model this section identifies as the obstacle would have been a choice, not an inheritance.
 
-What the selected components do instead is recorded rather than assumed. `swayidle` reads only user paths, `$XDG_CONFIG_HOME/swayidle/config` and `$HOME/.swayidle/config`, with no system path at all, and its manual states that events given in the config and as arguments are not mutually exclusive, so the two combine rather than one replacing the other. That is a different shape of problem from `findConfig`, not an absent one: a user can still add events, and the manageability capability still owns making a setting unoverridable. `swaylock`'s own configuration model has not been read with the same care and is not claimed here.
+`swaylock`'s own configuration model has not been read with the same care, and nothing is claimed about it here.
+
+**The other half of lock policy has no component yet.** Deciding *when* to lock needs an idle daemon, and none is selected: `add-gridline-configuration-defaults` owns that choice along with the policy it serves. One candidate was measured far enough to be worth recording, because it shows the shape of the problem is different rather than absent: `swayidle` reads only user paths, `$XDG_CONFIG_HOME/swayidle/config` and `$HOME/.swayidle/config`, with no system path at all, and its manual states that events given in the config and as arguments are not mutually exclusive, so the two combine rather than one replacing the other. A user can still add events, and the manageability capability still owns making a setting unoverridable.
 
 This is the same class of problem as the portal configuration file, and it has the same shape: the archive provides the component but not the policy surface, so enforcement has to come from something Gridline owns. It is a **deliverable**, not a default.
 
@@ -83,7 +85,7 @@ The second row is the one to read carefully. The control is satisfiable, but onl
 `swaylock` ships `/etc/pam.d/swaylock` containing `auth include login`, so authentication works with no packaging effort. The rejected candidate shipped the identical stack, so the observation transfers rather than being discarded:
 
 - `include login` is broader than a locker requires. GDM uses a narrower stack. This is a security-review item, not a defect, and it belongs to whichever change hardens the lock path.
-- Screen-lock policy spans two components: `swayidle` decides when to lock, `swaylock` decides what unlocking requires. A policy claim about lock timeout is a claim about both, and the diagnostic must check both.
+- Screen-lock policy spans two components: an idle daemon decides when to lock, `swaylock` decides what unlocking requires. A policy claim about lock timeout is a claim about both, and the diagnostic must check both. Only one of the two is selected, so a timeout claim cannot be made at all yet, which is a more useful thing to know than a claim resting on a component nobody chose.
 
 ## Screen capture cuts both ways
 

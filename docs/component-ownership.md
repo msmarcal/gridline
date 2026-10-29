@@ -13,7 +13,7 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 - **Component** is the archive component the package sits in. Universe carries **no Canonical security-update commitment**. Main does. Every Hypr-ecosystem package Gridline depends on is in `universe`, which is recorded here because it is a support fact rather than packaging trivia, and every row below that names `universe` is a row carrying that gap.
 - **Gridline ownership** names what Gridline itself owns. "Integration only" means Gridline owns how the session reaches the component and nothing about the component.
 - **Fallback** is the behavior when the component is absent or fails. Every Ubuntu-provided component falls into exactly one of three categories, and the cell says which:
-  - **Session does not start.** The component's absence blocks startup. Five rows on this page carry it.
+  - **Session does not start.** The component's absence blocks startup. Six rows on this page carry it, and the table under [The blocking components](#the-blocking-components-and-who-declares-each) lists the same six.
   - **Session starts**, followed by the capability that is lost. The component's absence degrades the session. Nine rows carry it, and each names what degrades rather than saying the session degrades generally.
   - **Not applicable.** A deliberate category, not a missing entry: it marks a component that cannot be absent without the baseline itself being broken, so there is no Gridline-side degradation path to describe. Each such row states why.
 
@@ -89,11 +89,13 @@ These two are different in kind. Their absence **blocks session startup** rather
 | Screen locker | swaywm | `swaylock` 1.8.4-1 | **universe** | Integration only: the session requires it to be present before starting | **Session does not start.** A desktop that cannot lock must not run, because the failure surfaces as an unlocked unattended machine. The user returns to GDM with the component named |
 | polkit authentication agent | polkit, plus Hyprland for the agent | `policykit-1` 127-2ubuntu1.1, binary `polkitd` (main); `hyprpolkitagent` 0.1.3-1 | main / **universe** | Integration only: the session requires the agent to be present before starting | **Session does not start.** Without an agent, privileged actions fail with no prompt and no explanation. The user returns to GDM with the component named |
 
-Both candidates exist on the baseline and neither selection is final; `add-session-lifecycle-integration` still owns the choice. Two facts from the archive constrain it:
+Both selections were made by `add-session-lifecycle-integration` and are recorded above. Three facts from the archive shaped them, and all three were read from the packages:
 
 **The selected locker authenticates out of the box.** `swaylock` ships `/etc/pam.d/swaylock` containing `auth include login`, so no PAM work is needed to make locking function. That stack is broader than a locker strictly needs, GDM uses a narrower one, which is a security review item rather than a defect. The rejected candidate ships an identical stack, so the observation is about the convention and not about either package.
 
 **The archive units cannot refuse startup.** `hyprpolkitagent.service` and `xdg-desktop-portal-hyprland.service` are systemd user units with `PartOf=graphical-session.target`, `ConditionEnvironment=WAYLAND_DISPLAY` and `Restart=on-failure`. A failing unit restarts quietly and the session comes up regardless. The blocking rule in [architecture.md](architecture.md) therefore needs a Gridline-owned startup check to be enforceable at all; systemd alone will not enforce it.
+
+**The archive ships those units without enabling them.** `hyprpolkitagent` installs `/usr/lib/systemd/user/hyprpolkitagent.service` and nothing else: `dpkg -L` lists no symlink, and `graphical-session.target.wants` on a stock machine holds only `spice-vdagent.service` and the two update-notifier paths. The `[Install] WantedBy=graphical-session.target` in the unit is therefore inert, because nothing ran `systemctl --user enable`. A session that merely reaches `graphical-session.target` starts no agent at all, which is why the start mechanism below exists rather than being left to the units.
 
 ### How the lifecycle components were chosen
 
@@ -109,25 +111,46 @@ Every candidate for a screen locker and a polkit authentication agent on this ba
 | `lxqt-policykit` | none | **yes**, `lxqt-session` | n/a |
 | `mate-polkit` | none | **yes**, MATE components | n/a |
 
-**The locker and the idle daemon were chosen for what they do not link.** `libhyprlang` is the compositor's own configuration language, and [security-and-manageability.md](security-and-manageability.md) records the consequence: its `findConfig` returns the first file it finds and stops, with no merge and no lock, which is why the manageability capability had to exist. Putting that model in the fail-safe path would take the obstacle the project already identified and build the lock on top of it. `swaylock` and `swayidle` link none of those libraries and speak the same protocols.
+**The locker was chosen for what it does not link.** `libhyprlang` is the compositor's own configuration language, and [security-and-manageability.md](security-and-manageability.md) records the consequence: its `findConfig` returns the first file it finds and stops, with no merge and no lock, which is why the manageability capability had to exist. Putting that model in the fail-safe path would take the obstacle the project already identified and build the lock on top of it. `swaylock` links none of those libraries and speaks the same protocol as the candidate that does.
+
+**The idle daemon is not selected here, and the rows for it are candidates.** No requirement names an idle daemon as a component that must be running. `session-manageability` treats idle timeout and lock behaviour as one **policy**, and the `idle-reporting` entry in [compositor-adapter.md](compositor-adapter.md) is a required **capability**: a statement that the compositor advertises `ext_idle_notifier_v1`, not that a daemon exists to listen. Selecting one therefore belongs to `add-gridline-configuration-defaults`, which owns the policy that would decide what it does. The measurements above are kept so that change starts from evidence rather than repeating the work, and because `swayidle` was briefly declared a dependency here before the blocking list was counted and found not to name it.
 
 **The polkit agent was chosen for the same reason the locker was not.** `hyprpolkitagent` is the only candidate that pulls no desktop environment, and it carries no Hyprland library despite its name. What makes a component compositor-specific is what it links and requires, not what it is called, and the same test that rejected `hyprlock` accepts this one.
 
 **One package description is out of date and the binary settles it.** `swayidle`'s description says it is compatible with the KDE idle protocol. Its binary references `ext_idle_notifier_v1`, which is what the compositor advertises and what the adapter reports, so the description describes an older version than the one the archive ships.
 
-## The five blocking components, and who declares each
+## The blocking components, and who declares each
+
+Six, which is the count the fallback column above gives. An earlier version of this section listed five and omitted the registry query, while the reading guide said five as well, so the two agreed with each other and both disagreed with the table they describe. Counting the rows is what settled it.
 
 | Blocking component | Package | Declared by |
 |---|---|---|
 | Hyprland | `hyprland` | `gridline-session`, by `add-hyprland-session-baseline` |
 | Compositor portal backend | `xdg-desktop-portal-hyprland` | `gridline-session`, by `add-hyprland-session-baseline` |
+| Wayland registry query | `wayland-utils` | `gridline-session`, by `add-hyprland-session-baseline` |
 | Screen locker | `swaylock` | `gridline-session`, by `add-session-lifecycle-integration` |
 | polkit authentication agent | `hyprpolkitagent` | `gridline-session`, by `add-session-lifecycle-integration` |
 | Compositor adapter | none, it is Gridline's own | ships in `gridline-session` |
 
 Nothing on this list is deferred any longer. The section this replaces existed to keep two situations apart, a dependency missing because nobody got to it and one missing because the decision it encodes had not been made, and it is kept in the archived artifacts of the changes that needed the distinction.
 
+**No idle daemon is on this list**, and that absence is what it looks like: nothing the project records requires one to be running. It is recorded here because `swayidle` was declared a dependency of `gridline-session` for the length of one change before the list was counted.
+
 **Declaring a blocking component is not the same as enforcing it.** The archive's user units carry `PartOf=graphical-session.target`, `ConditionEnvironment=WAYLAND_DISPLAY` and `Restart=on-failure`, so a failing one restarts quietly and the session comes up regardless. Systemd will not refuse a session for a missing lock component. The session launcher checks for these components itself before starting anything, which is what makes the classification on this page mean something at runtime.
+
+### How the components that run for the session get started
+
+Two of the six are not programs the session launches: the portal backend and the polkit agent are systemd user units, activated for a graphical session rather than started by hand. The archive gives them `PartOf=graphical-session.target` and an `[Install] WantedBy=` the same target, and leaves them disabled. So three things had to be true at once and none of them was:
+
+- Something has to want the units, because the `[Install]` section is inert without an `enable`.
+- Something has to activate `graphical-session.target`, which `RefuseManualStart=yes` keeps the session from starting directly.
+- Something has to put `WAYLAND_DISPLAY` in the user manager's environment, because the units are conditioned on it and a failed condition is a skip rather than an error.
+
+`gridline-session` ships `/usr/lib/systemd/user/gridline-session.target` for the first two. It wants the units, and it is `BindsTo=graphical-session.target` and `Before=` it, so starting the session target pulls the standard target in as a dependency, which `RefuseManualStart` permits. Stopping it at the end of the session takes `graphical-session.target` down with it and everything `PartOf` that stops in turn.
+
+The launcher does the third, and does it after the compositor confirms itself, because until then there is no socket to name. It then starts the session target and checks that each unit the target wants is actually running, reading the list back from the target so the set of units is declared in one file rather than two.
+
+**Gridline wants these units in its own target rather than enabling them.** An enable symlink lives under `graphical-session.target.wants`, which is every graphical session's target, so enabling the agent would start it under GNOME too. Installing Gridline must leave the fallback desktop as it was, which is the guarantee that makes removing Gridline safe.
 
 The degrading components carry no declaration, which is a different situation again: a session missing one of them starts, reports the gap, and remains usable.
 

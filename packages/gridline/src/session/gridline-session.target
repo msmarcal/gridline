@@ -1,0 +1,51 @@
+# The Gridline session, as the systemd user manager sees it.
+#
+# The archive ships a user unit for the session components but enables none of
+# them, so nothing sits in graphical-session.target.wants and the components
+# never start on their own. Something has to want them, and that something is
+# this target.
+#
+# Shipping the enable symlink instead was rejected: graphical-session.target is
+# every graphical session's target, so a symlink under it would start these
+# components under GNOME too. The fallback desktop must be unaffected by
+# Gridline being installed, which is the guarantee that makes removal safe.
+
+[Unit]
+Description=Gridline graphical session
+Documentation=man:systemd.special(7)
+
+# graphical-session.target carries RefuseManualStart=yes, so the session cannot
+# start it and neither can anything else outside a dependency. Pulling it in as
+# a dependency is the documented way, and it has to be pulled in: the archive's
+# units are ordered After it and are PartOf it, so without it they have nothing
+# to order against and nothing to stop them.
+#
+# BindsTo rather than Wants, in both directions that matters: when this target
+# stops at the end of the session, graphical-session.target stops with it, and
+# the units that are PartOf graphical-session.target stop in turn. A session
+# that ends leaves nothing of itself running.
+BindsTo=graphical-session.target
+Before=graphical-session.target
+
+# The components the session wants running for its whole lifetime. The screen
+# locker is not among them because it is started on demand rather than run
+# continuously; the launcher checks it is installed, which is a different
+# obligation from running it.
+#
+# Wants rather than Requires: a component that fails to start must not take the
+# target down, because the target going down takes graphical-session.target and
+# the rest of the session with it. Whether a failure here refuses the session is
+# the launcher's decision, made after this target is up, where the answer can be
+# reported with the component named.
+#
+# The agent's name reads as compositor-specific and is not. A component is
+# compositor-specific because of what it links and what it requires, not because
+# of what it is called, and docs/component-ownership.md records that measurement
+# for every candidate considered. That is why this line sits outside the adapter
+# layer and why the isolation check's reference list does not carry the name.
+#
+# The isolation check surfaced an earlier version of this very comment, which
+# restated the measurement and so wrote a compositor's name here. Pointing at
+# the document instead is the better shape anyway: the reasoning lives in one
+# place rather than two that can drift.
+Wants=hyprpolkitagent.service

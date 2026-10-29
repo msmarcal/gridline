@@ -26,27 +26,36 @@ See proposal.md for motivation. Four measurements shape the approach.
 
 **Goals:**
 
-- Select the locker, the idle daemon and the polkit agent, with the comparison that decided each on record.
+- Select the locker and the polkit agent, with the comparison that decided each on record.
+- Give the selected component that is a systemd user unit a way to start, since declaring it installed is not starting it.
 - Make the blocking classification enforceable, so a component the project calls blocking actually blocks.
 - Verify what the machine can verify, and say plainly what it cannot.
 
 **Non-Goals:**
 
-- Lock policy. When the screen locks and after how long is `add-gridline-configuration-defaults` and the policy layer `session-manageability` specifies.
+- Lock policy, and with it the idle daemon. When the screen locks and after how long is `add-gridline-configuration-defaults` and the policy layer `session-manageability` specifies, and the component that would enforce a timeout is chosen there, alongside the policy it serves.
 - Reporting a missing component after the fact. `add-session-health-check` owns the diagnostic surface; refusing to start is a different mechanism.
 - Implementing power management. `systemd-logind` and `upower` provide it; Gridline's obligation is to not break it and to show that it did not.
 
 ## Decisions
 
-### `swaylock` and `swayidle` over the candidates the matrix named
+### `swaylock` over the candidate the matrix named
 
-`docs/component-ownership.md` names `hyprlock` and `hypridle` as candidates, and `docs/security-and-manageability.md` analyses `hyprlock`'s PAM stack at some length. The measurement above says to choose differently.
+`docs/component-ownership.md` names `hyprlock` as a candidate, and `docs/security-and-manageability.md` analyses its PAM stack at some length. The measurement above says to choose differently.
 
-`hyprlock` links three Hyprland libraries and `hypridle` links two, among them `libhyprlang`, which is the compositor's own configuration language. `swaylock` and `swayidle` link none. All of them speak the same session lock protocol and none of them depends on its namesake compositor, so the name is branding rather than coupling in every case; what differs is the libraries.
+`hyprlock` links three Hyprland libraries, among them `libhyprlang`, which is the compositor's own configuration language. `swaylock` links none. Both speak the same session lock protocol and neither depends on its namesake compositor, so the name is branding rather than coupling in both cases; what differs is the libraries.
 
 That difference is not cosmetic for this project. `docs/security-and-manageability.md` already documents the consequence of `libhyprlang`'s `findConfig`: it returns the first configuration file it finds and stops, with no merge and no lock, which is why the manageability capability had to exist at all and why the CIS control on unoverridable screen locks has no counterpart. Selecting components that carry that library would take the configuration model the project already identified as the obstacle and put it in the fail-safe path.
 
 The cost is that two live documents name candidates this change does not select, and both are corrected rather than left to contradict the selection.
+
+### No idle daemon is selected, and that was a correction
+
+The proposal and an earlier draft of this design selected one, and the implementation declared `swayidle` a dependency of `gridline-session` and added it to the launcher's blocking-component check. Counting the blocking components showed the project records six and that no idle daemon is among them. Nothing in any requirement names one: `session-manageability` treats idle timeout and lock behaviour as one **policy**, and `compositor-adapter.md` requires the `idle-reporting` **capability**, which is a statement that the compositor advertises `ext_idle_notifier_v1` rather than that a daemon is listening for it.
+
+So the selection was scope this change added to itself. It is removed: the dependency, the launcher entry, and the live-document passages that presented `swayidle` as chosen. The measurements stay on record in `docs/component-ownership.md` as candidate evidence, so `add-gridline-configuration-defaults` starts from them instead of repeating the work, and that change owns the choice because it owns the policy the daemon would enforce.
+
+The reasoning that argued for one is still sound and is not what was wrong: manual-only locking is not locking in any useful sense. But it argues for automatic locking, which is policy plus a daemon, and policy is not this change.
 
 ### `hyprpolkitagent` despite its name
 
@@ -68,15 +77,39 @@ The adapter reports `lock-signaling` when the compositor advertises `ext_session
 
 Keeping the two checks separate keeps the failure messages honest: an absent locker is named as an absent locker, not as a missing capability, and a compositor that does not implement the protocol is named as that.
 
+### A Gridline-owned user target, because declaring a unit is not starting it
+
+Declaring `hyprpolkitagent` a dependency puts the file on disk. Three separate things then stop it from running, and all three were measured on the baseline VM rather than assumed:
+
+- **The unit is shipped disabled.** `dpkg -L hyprpolkitagent` lists `/usr/lib/systemd/user/hyprpolkitagent.service` and no symlink, and `graphical-session.target.wants` on a stock machine holds only `spice-vdagent.service` and two update-notifier paths. The unit's `[Install] WantedBy=graphical-session.target` is inert without an `enable` that nothing runs.
+- **`graphical-session.target` cannot be started.** It carries `RefuseManualStart=yes`, so the launcher cannot start it and neither can anything else except a dependency.
+- **The unit is conditioned on `WAYLAND_DISPLAY`**, which the systemd user manager does not have: it inherits nothing from the display manager. A failed `ConditionEnvironment` is a **skip**, not a failure, so the component would quietly not run and nothing would be marked wrong.
+
+`gridline-session` therefore ships `/usr/lib/systemd/user/gridline-session.target`. It `Wants=` the units the session needs running, and it is `BindsTo=graphical-session.target` and `Before=` it, so starting the session target pulls the standard target in as a dependency, which `RefuseManualStart` permits. The launcher sets `WAYLAND_DISPLAY` in the user manager, starts the session target, and then checks that each unit the target wants is running.
+
+Three alternatives were weighed:
+
+- **Ship the enable symlink** under `graphical-session.target.wants`. Rejected: that target belongs to every graphical session, so the agent would start under GNOME too. Installing Gridline must leave the fallback desktop exactly as it was, which is what makes removal safe.
+- **Have the launcher start `/usr/libexec/hyprpolkitagent` directly.** Rejected: it reimplements supervision the archive's unit already provides, and it means that when the next component arrives there is still no mechanism for it.
+- **Repeat the unit names in the launcher** so it knows what to check. Rejected: the target already declares them, and a blocking classification with two sources of truth is the shape of defect this project keeps finding. The launcher reads the list back with `systemctl --user show -p Wants --value`, which reports exactly the `Wants=` entries and keeps `BindsTo=` separate, confirmed on the VM.
+
+The launcher reads unit state to do that check, which the pre-flight component check deliberately does not. The two questions are different and so is the moment: before anything runs, unit state is no evidence a component is installed, because `Restart=on-failure` makes a broken one look alive; after the target has been started, unit state is the only thing that says whether the component is running.
+
+**The target names a component outside the adapter layer**, and the isolation check does not flag it, which is the recorded rule rather than an exception: a component is compositor-specific because of what it links and requires, and `hyprpolkitagent` links no Hyprland library and pulls no desktop environment. The check did fire once here, on an earlier version of the target's own comment that restated the measurement and so wrote the compositor's name. The comment now points at the document instead, which is the better shape anyway.
+
 ## Risks / Trade-offs
 
 - **The selection contradicts two live documents.** → Both are corrected in this change rather than left to disagree with the packages. A document naming a candidate the project did not choose is worse than one naming nothing.
 - **`swaylock`'s PAM stack has not been analysed the way `hyprlock`'s was.** → It ships `/etc/pam.d/swaylock`, and reading it is part of the work rather than an assumption. If it is as broad as `hyprlock`'s `auth include login`, that is a security-review item recorded the same way.
 - **Two power scenarios cannot be exercised on the verification machine.** → Battery observability and lid handling need hardware the VM does not have. They are recorded as unexercised with what would exercise them, rather than marked verified on a machine that cannot show it.
 - **Blocking on components makes a missing package fatal rather than degrading.** → That is the classification the matrix already carries, and the reason is recorded there: a desktop that cannot lock must not run, and privileged actions that fail with no prompt are worse than a session that refuses.
+- **The launcher now refuses the session when a unit fails to start, not only when a file is missing.** → That is the same classification applied one step later, and without it the blocking rule is unenforced again for the component that is a unit rather than a program. The failure names the unit, and `Wants=` rather than `Requires=` keeps a failing unit from taking `graphical-session.target` down before the launcher can say which one it was.
+- **Gridline now owns a systemd unit, which the proposal said it would not.** → The proposal was written before the agent's unit was read, and it turned out that declaring the dependency started nothing at all. Shipping a target is the smallest mechanism that fixes it without touching an archive unit or enabling one, and the rule the proposal was protecting, that Gridline modifies no system configuration outside paths it owns, is intact: the target is a new file under a Gridline-specific name.
 
 ## Migration Plan
 
-Installing this version adds three `universe` dependencies and makes the session refuse to start if any is removed afterwards. That is a behaviour change for an installed system: a session that started yesterday with no locker will not start today. The change is what the blocking classification always meant, and the failure names the component rather than leaving the user to guess.
+Installing this version adds two `universe` dependencies and makes the session refuse to start if either is removed afterwards. That is a behaviour change for an installed system: a session that started yesterday with no locker will not start today. The change is what the blocking classification always meant, and the failure names the component rather than leaving the user to guess.
 
-Rollback is the previous package version, whose launcher gates only on adapter capabilities.
+It also adds a file under `/usr/lib/systemd/user/`, which the user manager picks up without any maintainer script: a target that is only started by the launcher has nothing to enable, so the package installs no symlink and runs no `systemctl`.
+
+Rollback is the previous package version, whose launcher gates only on adapter capabilities and which starts no target. Nothing in the archive was modified, so rolling back leaves no trace.

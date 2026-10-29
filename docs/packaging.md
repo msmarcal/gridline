@@ -76,7 +76,7 @@ A package declares what it owns in its `debian/<package>.dirs` and `debian/<pack
 | `gridline-config` | `/etc/xdg/gridline/`, `/etc/xdg/gridline/generated/` |
 | `gridline-tools` | `/usr/share/gridline/` |
 
-**No shared system directory is declared.** `/usr/share/wayland-sessions`, `/usr/share/xdg-desktop-portal`, `/etc/xdg` and `/usr/libexec` all belong to archive packages already, and Gridline declares none of them. Files land in them later as Gridline-named drop-ins; the directories stay theirs.
+**No shared system directory is declared.** `/usr/share/wayland-sessions`, `/usr/share/xdg-desktop-portal`, `/usr/lib/systemd/user`, `/etc/xdg` and `/usr/libexec` all belong to archive packages already, and Gridline declares none of them. Files land in them later as Gridline-named drop-ins; the directories stay theirs.
 
 The reason is not conflict avoidance, because there is no conflict to avoid: a directory in Debian is shared ownership, so declaring one installs cleanly and reports nothing. That is what makes it an easy mistake. The reason is the fallback guarantee. A Gridline package that declared `/etc/xdg` would be a Gridline package whose removal could touch a directory the stock session reads.
 

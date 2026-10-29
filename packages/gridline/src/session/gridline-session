@@ -14,6 +14,7 @@ set -u
 
 JOURNAL_IDENTIFIER=gridline-session
 ADAPTER_DIR=/usr/libexec/gridline/adapters
+SESSION_TARGET=gridline-session.target
 
 # Report a missing required component on stderr and in the journal, then end
 # the launch. stderr reaches the display manager's own log; the journal record
@@ -45,7 +46,6 @@ report_missing() {
 # outside PATH, and what matters is that the component is installed rather than
 # that a name resolves in whatever environment the display manager handed over.
 REQUIRED_COMPONENTS="/usr/bin/swaylock
-/usr/bin/swayidle
 /usr/libexec/hyprpolkitagent"
 
 for component in $REQUIRED_COMPONENTS; do
@@ -103,6 +103,11 @@ stop_compositor() {
     wait "$compositor_pid" 2>/dev/null
 }
 
+stop_session() {
+    systemctl --user stop "$SESSION_TARGET" 2>/dev/null
+    stop_compositor
+}
+
 for required in $REQUIRED_CAPABILITIES; do
     found=no
     for got in $reported; do
@@ -115,4 +120,71 @@ for required in $REQUIRED_CAPABILITIES; do
     fi
 done
 
+# The name of the Wayland socket, for the systemd user manager. The manager
+# inherits nothing from the display manager, and the archive's units for the
+# session components carry ConditionEnvironment=WAYLAND_DISPLAY: with the
+# variable unset they are skipped as unsatisfied rather than failed, which is
+# the quietest way there is for a blocking component not to start.
+#
+# The socket name follows the Wayland convention, wayland-N in XDG_RUNTIME_DIR,
+# which is freedesktop's and belongs to no compositor. The adapter knows it too,
+# but its wire format is a list of capabilities, and widening that to carry
+# environment would move session plumbing into the compositor-specific layer.
+wayland_display() {
+    for socket in "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"/wayland-[0-9]*; do
+        [ -S "$socket" ] || continue
+        basename "$socket"
+        return 0
+    done
+    return 1
+}
+
+# Phase four. Bring up the session's own target, which is what wants the
+# components that run for the session's lifetime. It is started here rather than
+# before the compositor because the units it wants are conditioned on a Wayland
+# display that does not exist until the compositor is up and confirmed.
+display=$(wayland_display) || {
+    stop_compositor
+    report_missing "session component" \
+        "no Wayland socket in ${XDG_RUNTIME_DIR:-/run/user/$(id -u)} after the compositor confirmed itself"
+}
+
+systemctl --user set-environment "WAYLAND_DISPLAY=$display" 2>/dev/null
+systemctl --user import-environment XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null
+
+if ! systemctl --user start "$SESSION_TARGET" 2>/dev/null; then
+    stop_compositor
+    report_missing "session target" \
+        "$SESSION_TARGET did not start, so nothing wants the session components"
+fi
+
+# The target wants its components rather than requiring them, because a target
+# that fails takes graphical-session.target and the rest of the session down
+# with it. So systemd brings the session up whether or not they started, and
+# whether that is acceptable is decided here, with the component named.
+#
+# This reads unit state, which the pre-flight check above deliberately does not.
+# The two answer different questions at different times: before anything runs,
+# unit state is no evidence a component is installed, because a unit that
+# restarts on failure looks alive either way. After the target has been started,
+# unit state is the only thing that says whether the component is running.
+#
+# The list is read back from the target instead of repeated here, so the units
+# the session depends on are declared in exactly one place.
+for unit in $(systemctl --user show -p Wants --value "$SESSION_TARGET" 2>/dev/null); do
+    systemctl --user is-active --quiet "$unit" && continue
+    stop_session
+    report_missing "session component" \
+        "$unit is installed but is not running after $SESSION_TARGET started"
+done
+
 wait "$compositor_pid"
+compositor_status=$?
+
+# The session ended. Stopping the target stops graphical-session.target with it,
+# through BindsTo, and that stops everything PartOf it. A session that ends
+# leaves nothing of itself running for the next one to inherit.
+systemctl --user stop "$SESSION_TARGET" 2>/dev/null
+systemctl --user unset-environment WAYLAND_DISPLAY 2>/dev/null
+
+exit "$compositor_status"

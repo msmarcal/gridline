@@ -49,7 +49,7 @@ The difference is not a detail of ordering. It changes what a user file does:
 | Administrator can enforce a value | Only if the user has not set it | Not by file placement at all |
 | Unapplied policy is visible | Values are traceable per source | Indistinguishable from policy being absent |
 
-So the sentence that would be natural here - that a user override wins over a shipped default - is true for the first column and misleading for the second. A user who writes any `~/.config/hypr/hyprland.conf` does not override a Gridline default; they replace the only file that would have been read. The example is the compositor's own configuration because that is where the model applies: the screen locker and the idle daemon Gridline selected do not use it.
+So the sentence that would be natural here - that a user override wins over a shipped default - is true for the first column and misleading for the second. A user who writes any `~/.config/hypr/hyprland.conf` does not override a Gridline default; they replace the only file that would have been read. The example is the compositor's own configuration because that is where the model applies: the screen locker Gridline selected does not use it.
 
 ### Why policy is a separate layer
 
