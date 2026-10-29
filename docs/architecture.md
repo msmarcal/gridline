@@ -78,7 +78,19 @@ The policy layer is the exception that proves the rule: it was added because a c
 
 ## Required session components
 
-Most components degrade the session when absent. Five do not: their absence **blocks session startup**.
+Most components degrade the session when absent. Five rows below do not: their absence **blocks session startup**.
+
+**This table counts five and [component-ownership.md](component-ownership.md) counts six, and both are right**, because they decompose the same set along different lines. This page lists what the launcher refuses on and why, so one row covers the whole capability check. That page lists components package by package, so the things the capability check depends on get rows of their own:
+
+| This page | component-ownership.md |
+|---|---|
+| Screen locker | Screen locker |
+| polkit authentication agent | polkit authentication agent |
+| Compositor, via the adapter | Hyprland, and the compositor adapter |
+| Required adapter capabilities | Wayland registry query, which is how any of them is confirmed |
+| Compositor portal backend | Compositor portal backend |
+
+Where the two disagree about a fact rather than a decomposition, that page wins: it is the one organized by component and it carries each absence's consequence. Counting the blocking components means counting its rows, not the rows here.
 
 | Component | Blocks startup | Why |
 |---|---|---|
@@ -98,6 +110,12 @@ The table uses two distinct reasons to block, and they are worth keeping apart b
 Everything else degrades: the component is absent, the corresponding feature is unavailable, and the condition is reported as a named capability gap.
 
 A blocked startup returns the user to GDM with the cause in the journal, where GNOME is still selectable, so the cost of refusing to start is one session selection rather than an unusable machine. See [recovery.md](recovery.md).
+
+**Requiring a component is not starting one.** Two of these are systemd user units rather than programs the launcher runs, and they reach the session by different routes, which is worth keeping apart because only one of them needed anything built.
+
+The compositor's portal backend is `Type=dbus` and ships a D-Bus activation file, with no `[Install]` section at all, so it starts when the portal frontend asks for its bus name and nothing has to want it.
+
+The polkit agent is not activatable. Its unit carries `[Install] WantedBy=graphical-session.target` and the archive ships it disabled, ordered after a target no session may start directly, and conditioned on a variable the user manager does not have. Declaring it as a dependency therefore puts it on disk and starts nothing. `gridline-session` owns a user target that closes that gap, and [component-ownership.md](component-ownership.md) records the mechanism under "How the components that run for the session get started", along with what the launcher's check of it can and cannot establish.
 
 XWayland is the case that sits closest to the line. A session without it cannot run X11 applications, and `specs/platform-integration/spec.md` has an active scenario for exactly that. It degrades rather than blocks because the functional-impossibility reason is scoped to what the session itself must be able to do, not to every requirement a missing package can affect: a Gridline session without XWayland is still a working Wayland desktop, and the applications that break are the ones that were never Wayland applications. The boundary is arguable, and it is written down here so that a later change arguing the other way has something specific to argue against.
 

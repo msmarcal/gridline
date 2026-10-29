@@ -95,7 +95,7 @@ Both selections were made by `add-session-lifecycle-integration` and are recorde
 
 **The archive units cannot refuse startup.** `hyprpolkitagent.service` and `xdg-desktop-portal-hyprland.service` are systemd user units with `PartOf=graphical-session.target`, `ConditionEnvironment=WAYLAND_DISPLAY` and `Restart=on-failure`. A failing unit restarts quietly and the session comes up regardless. The blocking rule in [architecture.md](architecture.md) therefore needs a Gridline-owned startup check to be enforceable at all; systemd alone will not enforce it.
 
-**The archive ships those units without enabling them.** `hyprpolkitagent` installs `/usr/lib/systemd/user/hyprpolkitagent.service` and nothing else, which `dpkg -L` settles: no symlink is in the package. The `[Install] WantedBy=graphical-session.target` in the unit is therefore inert, because nothing ran an `enable`. A session that merely reaches `graphical-session.target` starts no agent at all, which is why the start mechanism below exists rather than being left to the units.
+**The archive ships the agent's unit without enabling it.** This is about `hyprpolkitagent` alone; the portal backend's unit is D-Bus activated and has no `[Install]` section to enable, as the start mechanism below records. `hyprpolkitagent` installs `/usr/lib/systemd/user/hyprpolkitagent.service` and nothing else, which `dpkg -L` settles: no symlink is in the package. The `[Install] WantedBy=graphical-session.target` in the unit is therefore inert, because nothing ran an `enable`. A session that merely reaches `graphical-session.target` starts no agent at all, which is why the start mechanism below exists rather than being left to the units.
 
 Checking that by hand means listing **both** unit roots, `/usr/lib/systemd/user/graphical-session.target.wants/` and `/etc/systemd/user/graphical-session.target.wants/`. An `enable` writes into the second, so reading only the first answers a different question than the one asked, and reads as proof of the right answer. On a stock machine the first holds `spice-vdagent.service` and the two update-notifier paths, and the second holds `spice-vdagent.service`.
 
@@ -142,7 +142,11 @@ Nothing on this list is deferred any longer. The section this replaces existed t
 
 ### How the components that run for the session get started
 
-Two of the six are not programs the session launches: the portal backend and the polkit agent are systemd user units, activated for a graphical session rather than started by hand. The archive gives them `PartOf=graphical-session.target` and an `[Install] WantedBy=` the same target, and leaves them disabled. So three things had to be true at once and none of them was:
+Two of the six are not programs the session launches: the portal backend and the polkit agent are systemd user units. They reach the session by different routes, and only one of them needed anything built.
+
+**The portal backend starts itself.** Its unit is `Type=dbus` with `BusName=org.freedesktop.impl.portal.desktop.hyprland`, and the package ships `/usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.hyprland.service` alongside it. The unit has **no `[Install]` section at all**, so there is nothing to enable: it starts when the portal frontend asks for that bus name. Measured in a running session, it is `active` with `WantedBy=` and `TriggeredBy=` both empty, which is what on-demand activation looks like from the outside.
+
+**The polkit agent cannot start itself.** Its unit has an `[Install] WantedBy=graphical-session.target` and the archive ships it disabled. So three things had to be true at once and none of them was:
 
 - Something has to want the units, because the `[Install]` section is inert without an `enable`.
 - Something has to activate `graphical-session.target`, which `RefuseManualStart=yes` keeps the session from starting directly.

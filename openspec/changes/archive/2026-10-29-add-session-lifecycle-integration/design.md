@@ -81,11 +81,13 @@ Keeping the two checks separate keeps the failure messages honest: an absent loc
 
 Declaring `hyprpolkitagent` a dependency puts the file on disk. Three separate things then stop it from running, and all three were measured on the baseline VM rather than assumed:
 
-- **The unit is shipped disabled.** `dpkg -L hyprpolkitagent` lists `/usr/lib/systemd/user/hyprpolkitagent.service` and no symlink, and `graphical-session.target.wants` on a stock machine holds only `spice-vdagent.service` and two update-notifier paths. The unit's `[Install] WantedBy=graphical-session.target` is inert without an `enable` that nothing runs.
+- **The unit is shipped disabled.** `dpkg -L hyprpolkitagent` lists `/usr/lib/systemd/user/hyprpolkitagent.service` and no symlink, so the unit's `[Install] WantedBy=graphical-session.target` is inert without an `enable` that nothing runs. Confirming that by hand means listing **both** unit roots, `/usr/lib/systemd/user/graphical-session.target.wants/` and `/etc/systemd/user/graphical-session.target.wants/`, because an `enable` writes into the second. A first pass read only the first and missed a stale experimental enable sitting in the second, which is what invalidated the first run of task 7.6.
 - **`graphical-session.target` cannot be started.** It carries `RefuseManualStart=yes`, so the launcher cannot start it and neither can anything else except a dependency.
 - **The unit is conditioned on `WAYLAND_DISPLAY`**, which the systemd user manager does not have: it inherits nothing from the display manager. A failed `ConditionEnvironment` is a **skip**, not a failure, so the component would quietly not run and nothing would be marked wrong.
 
-`gridline-session` therefore ships `/usr/lib/systemd/user/gridline-session.target`. It `Wants=` the units the session needs running, and it is `BindsTo=graphical-session.target` and `Before=` it, so starting the session target pulls the standard target in as a dependency, which `RefuseManualStart` permits. The launcher sets `WAYLAND_DISPLAY` in the user manager, starts the session target, and then checks that each unit the target wants is running.
+**Only the agent needs this.** The other unit among the blocking components, the compositor's portal backend, is `Type=dbus` with a D-Bus activation file and **no `[Install]` section at all**, so it starts when the portal frontend asks for its bus name. Measured in a running session it is `active` with `WantedBy=` and `TriggeredBy=` both empty. The target therefore wants one unit rather than two, and a verification pass that assumed the two units behaved alike was wrong about the portal backend.
+
+`gridline-session` therefore ships `/usr/lib/systemd/user/gridline-session.target`. It `Wants=` the unit the session needs running, and it is `BindsTo=graphical-session.target` and `Before=` it, so starting the session target pulls the standard target in as a dependency, which `RefuseManualStart` permits. The launcher sets `WAYLAND_DISPLAY` in the user manager, starts the session target, and then checks that each unit the target wants is running.
 
 Three alternatives were weighed:
 
