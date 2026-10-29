@@ -28,18 +28,20 @@ These come first because the rest is built on their answers. A task here that re
 
 ## 2. The defaults themselves
 
-- [ ] 2.0 Declare a terminal emulator as a dependency of `gridline-session` and bind the keymap to `xdg-terminal-exec` rather than to its name. Verify with `dpkg-deb -f` on the built package, and verify by grep that no Gridline configuration file names a terminal, since the point of the indirection is that the choice can change without the keymap changing
-- [ ] 2.1 Author the compositor defaults under `src/adapters/<compositor>/`, covering tiling, workspaces, focus movement, window placement and the Super-centric keymap. Verify the file is inside the adapter path by running the isolation check, which must still report zero references outside it
-- [ ] 2.2 Author the loader that sits at the compositor's search path and sources the defaults. Verify on the VM that a session started with no user configuration has the defaults in effect, using the answer from 1.2 rather than inference
-- [ ] 2.3 Ship both through `gridline-config` rather than `gridline-session`, and verify with `dpkg -L` on the built package that the installed paths belong to the package `package-delivery` names, not the one whose source tree holds the file
-- [ ] 2.4 Verify the two gates pass and account for the ownership gate's file count, which must rise by the number of files this change ships and by no more
-- [ ] 2.5 Register the shipped defaults as conffiles and verify with `dpkg-query -W -f='${Conffiles}'` on the built package, since an administrator is expected to edit them
+- [x] 2.0 Declared `foot` and `xdg-terminal-exec`, confirmed by `dpkg-deb -f` on the built package: `hyprland, xdg-desktop-portal-hyprland, wayland-utils, xwayland, swaylock, swayidle, hyprpolkitagent, xdg-terminal-exec, foot`. A grep of `src/` for every terminal name considered returns nothing, so the keymap names none. On the VM the three new dependencies resolved from the archive alone
+- [x] 2.1 Authored at `src/adapters/hyprland/defaults.conf`. The isolation check reports 4 files inside `src/adapters`, 5 outside, 0 references found. A duplicate-binding check caught a real conflict before the file was ever built: `$mod, L` was bound to both the screen lock and focus-right, because the vim keys take H, J, K and L and the mnemonic for lock is the same letter. The lock moved to `$mod, Escape`, leaving `$mod SHIFT, L` free for the vim-style move-window bindings a later change will want
+- [x] 2.2 The loader is `src/adapters/hyprland/hyprland.conf`, installed to `/etc/xdg/hypr/`. It was first written as neutral content in `src/config/`, and that was wrong: `dh_install` does not rename, and the compositor requires the name `hyprland.conf` in a directory named `hypr`. Its installed path, its filename and its `source =` syntax are all this compositor's vocabulary, so nothing about the loader is neutral and it belongs inside the adapter. `debian/` bridges the two, which is the arrangement the design already describes.
+
+  Verified from a real login with the user's own configuration moved aside: `general:gaps_in` reads `4`, which only the sourced defaults set, and `GRIDLINE_CONFIG=1` is in the environment of a process the compositor launched, which is the marker 1.2 established. `hyprctl configerrors` is empty, so the whole file parses
+- [x] 2.3 `dpkg -c` on `gridline-config` lists `/etc/xdg/gridline/compositor/defaults.conf` and `/etc/xdg/hypr/hyprland.conf`. Both are authored inside the adapter path, which `gridline-session` owns in the source tree, and both install through `gridline-config`, which `package-delivery` names as the owner of shipped defaults. That split is the design decision, exercised rather than asserted
+- [x] 2.4 Both gates pass. The ownership gate reports 13 files against 11 before, which is exactly the two this change ships
+- [x] 2.5 Both are registered, read with `dpkg-deb -I <package> conffiles`: `/etc/xdg/gridline/compositor/defaults.conf` and `/etc/xdg/hypr/hyprland.conf`. No work was needed, since `dh_installdeb` registers files under `/etc` automatically, and the task was worth keeping because the alternative was assuming it
 
 ## 3. The isolation gate matches names as well as contents
 
-- [ ] 3.1 Extend `tools/check-adapter-isolation` to match the reference list against file names as well as contents. Verify by planting a file named for a compositor outside the adapter path, with contents that match no reference, and confirming the build fails
-- [ ] 3.2 Verify the extension does not break the existing check, by planting each of the eleven references as content outside the adapter path one at a time and confirming the build still fails for every one
-- [ ] 3.3 Record in the check's own comments what it still cannot catch, since a compositor configuration under a neutral name passes both halves
+- [x] 3.1 Extended. Verified by planting `src/config/hyprland.conf` whose contents are `bind = SUPER, Q, killactive` and a `general` block, matching none of the eleven references: the check now reports `src/config/hyprland.conf is named for hyprland` and exits 1, where before the change it passed. One file can produce more than one finding, since both `hyprland` and `hyprland.conf` match that name, which is the same behaviour the content half already had
+- [x] 3.2 Eleven tested, eleven caught, none missed, each planted as content in a file with a neutral name so only the content half could fire. A first run of this loop reported "0 of 11 caught, 0 missed" and that was not a result: a `cd` into the directory already current failed, the `&&` after it meant the reference list was never assigned, and the loop iterated zero times. A count of zero caught out of zero tested reads like a pass only if nobody looks at the second number
+- [x] 3.3 Recorded in the check's own header: contents catch a program reaching for a compositor, names catch a configuration file, and neither catches a compositor configuration under a neutral name. The comment says why the answer to that gap is the path arrangement rather than a cleverer pattern, since the check's whole rule is that the path decides
 
 ## 4. Locking happens without being asked
 
@@ -52,7 +54,7 @@ These come first because the rest is built on their answers. A task here that re
 
 ## 5. Recovery from a dead locker
 
-- [ ] 5.1 Ship a default for `misc:allow_session_lock_restore` and verify the setting is in effect on a running session by reading it back from the compositor
+- [x] 5.1 Shipped in the defaults and read back from a running session as `int: 1`, from a startup that loaded the packaged loader rather than anything injected at runtime
 - [ ] 5.2 Verify the measured lock-failure state is now recoverable from the machine itself: lock, kill the locker, and confirm a working lock screen can be restored and the session returned to, without another machine and without ending the session
 - [ ] 5.3 Verify the session is still held locked throughout that recovery, since the scenario this serves is about not exposing the session and a recovery path that exposes it is worse than none
 

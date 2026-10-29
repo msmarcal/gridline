@@ -143,3 +143,44 @@ If supporting a second compositor turns out to require work outside the adapter 
 With one adapter, the boundary may encode assumptions from that one compositor that nobody notices. Defining the capability set in Gridline's own terms, rather than by generalizing Hyprland's interface, is the mitigation. It is not a proof. The risk retires when a second adapter exists, and not before.
 
 A second risk is narrower and worth naming: the required capability set is this document's judgment, not a derivation from the specifications. Each entry above is justified against an active requirement, but the set as a whole was chosen rather than computed, and `add-hyprland-session-baseline` will be built against it. If a capability turns out to be unnecessary, or one is missing, that change is the right place to discover it and this document is what gets corrected.
+
+## Open finding: the compositor objects to how the session starts it
+
+The adapter's `start` verb runs the compositor binary directly. The compositor
+says, on every login, that this is wrong:
+
+```
+WARNING: Hyprland is being launched without start-hyprland.
+         This is highly advised against.
+```
+
+It renders that as an error box at the top of the screen, which is the first
+thing a user sees on a freshly installed session. `start-hyprland` ships in the
+same archive package and describes itself as "a binary to properly start
+Hyprland via a watchdog process".
+
+**This is not only cosmetic, and that is why it is recorded rather than fixed in
+passing.** A watchdog exists to restart what it watches, and
+`specs/desktop-session/spec.md` requires the opposite: when the compositor exits
+unexpectedly the session must end rather than leave a seat with no desktop, with
+the user returned to the login screen. A watchdog that restarts the compositor
+would prevent the behaviour an active requirement asks for. The session
+launcher's `wait` would also be waiting on the watchdog rather than on the
+compositor, which changes what "the compositor exited" means to the one piece of
+code that decides whether the session is over.
+
+Three things need measuring before anything changes, and none of them is a
+configuration question:
+
+- whether the watchdog restarts the compositor after a failure, and under what
+  conditions
+- what the launcher would then be waiting on, and whether its teardown still
+  runs when the compositor exits
+- whether the requirement above and the watchdog can both be satisfied, or
+  whether one of them has to give
+
+**Owner:** a change against the adapter contract, not a configuration change.
+`add-gridline-configuration-defaults` found this while verifying a first login
+and deliberately left it, because changing how the session starts the compositor
+is `compositor-abstraction`'s territory and reconciling it with an existing
+requirement is larger than removing a banner.

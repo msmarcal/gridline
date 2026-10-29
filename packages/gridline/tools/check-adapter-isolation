@@ -30,6 +30,18 @@ self=tools/check-adapter-isolation
 # this change introduces; a check whose list is empty passes trivially and
 # proves nothing. The change that adds a compositor-specific mechanism extends
 # it, and add-ci-vm-smoke-tests re-runs the whole check.
+#
+# Each reference is matched against a file's name and against its contents, for
+# different reasons. Contents catch a program that reaches for a compositor.
+# Names catch a configuration file, which is the case contents are blindest to:
+# a compositor's configuration is written entirely in that compositor's
+# vocabulary and still contains none of these strings.
+#
+# What neither half catches: a compositor configuration file under a neutral
+# name. That is a real gap and the answer to it is not a cleverer pattern. This
+# check's rule is that the path decides, so compositor configuration belongs
+# inside the adapter path, and docs/component-ownership.md records why that is
+# compatible with gridline-config owning the installed file.
 references='Hyprland
 hyprland
 hyprctl
@@ -64,7 +76,20 @@ for file in $(find src tools -type f | sort); do
     *.desktop) continue ;;
     esac
     outside=$((outside + 1))
+    base=$(basename "$file")
     for ref in $references; do
+        # Names as well as contents. A compositor's configuration file is the
+        # most compositor-specific content this project ships and contains none
+        # of these strings: "bind = SUPER, Q, killactive" matches nothing in the
+        # list while being entirely this compositor's vocabulary. Checking the
+        # name catches the file the content check is blindest to, because such a
+        # file has to be named for the compositor that reads it.
+        case "$base" in
+        *"$ref"*)
+            printf 'adapter isolation: %s is named for %s\n' "$file" "$ref" >> "$report"
+            continue
+            ;;
+        esac
         if grep -qw -- "$ref" "$file" 2>/dev/null; then
             printf 'adapter isolation: %s references %s\n' "$file" "$ref" >> "$report"
         fi
