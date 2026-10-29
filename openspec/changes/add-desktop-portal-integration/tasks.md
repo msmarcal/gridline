@@ -25,12 +25,12 @@
 
 Execution note: this group needs the session running on the VM, started from the greeter. The frontend reads the mapping when it starts, so a session that was already running before the package was installed does not exercise it.
 
-- [ ] 4.1 With the package installed, start a Gridline session and verify the portal frontend resolves each relied-on interface to the backend the mapping names, reading the frontend's own record of what it selected rather than inferring from which services are running
-- [ ] 4.2 Verify resolution no longer depends on the compositor's name, by confirming the match is on `Gridline`. The check that distinguishes a real fix from an apparent one is whether the outcome would change if the compositor's own claim were removed
-- [ ] 4.3 Verify the file chooser resolves to the GTK backend, which before this change matched nothing under Gridline's identity, and record what the frontend did with it beforehand so the difference is on record rather than assumed
-- [ ] 4.4 Verify screen capture still resolves to the compositor backend, now through Gridline's entry rather than through the compositor's `UseIn`
+- [x] 4.1 With the package installed, start a Gridline session and verify the portal frontend resolves each relied-on interface to the backend the mapping names, reading the frontend's own record of what it selected rather than inferring from which services are running
+- [x] 4.2 Verify resolution no longer depends on the compositor's name, by confirming the match is on `Gridline`. The check that distinguishes a real fix from an apparent one is whether the outcome would change if the compositor's own claim were removed
+- [x] 4.3 Verify the file chooser resolves to the GTK backend, which before this change matched nothing under Gridline's identity, and record what the frontend did with it beforehand so the difference is on record rather than assumed
+- [x] 4.4 Verify screen capture still resolves to the compositor backend, now through Gridline's entry rather than through the compositor's `UseIn`
 - [ ] 4.5 Verify a confined graphical Snap application runs and reaches portal services, and record which Snap was used, since the scenario names no particular one and a later reader needs to know what was exercised
-- [ ] 4.6 Verify an X11-only application runs under XWayland, and record which one
+- [x] 4.6 Verify an X11-only application runs under XWayland, and record which one. Used `xeyes` from `x11-apps` 7.7+11build4, chosen because it links `libX11` and no Wayland library at all, so its rendering in a Wayland session can only be XWayland. Confirmed by contrast: the snap running beside it links `libwayland-client` as well
 
 ## 5. Coherence
 
