@@ -10,10 +10,10 @@
 
 ## 2. The components are declared
 
-- [ ] 2.1 Declare `swaylock`, `swayidle` and `hyprpolkitagent` as `Depends` of `gridline-session`, and verify with `dpkg-deb -f` on the built package rather than by reading the control file
-- [ ] 2.2 State the `universe` support gap for the three in the `gridline-session` long description, using the sentence the live documents already carry, and verify the wording is identical by comparing against `docs/component-ownership.md`
-- [ ] 2.3 Build and verify both gates pass and the ownership gate's file count is unchanged, since this change ships no new file into a package
-- [ ] 2.4 Install on the baseline VM and verify the three resolve from the archive alone, recording how many packages apt fetched
+- [x] 2.1 Declare `swaylock`, `swayidle` and `hyprpolkitagent` as `Depends` of `gridline-session`, and verify with `dpkg-deb -f` on the built package rather than by reading the control file
+- [x] 2.2 State the `universe` support gap for the three in the `gridline-session` long description, using the sentence the live documents already carry, and verify the wording is identical by comparing against `docs/component-ownership.md`
+- [x] 2.3 Build and verify both gates pass and the ownership gate's file count is unchanged, since this change ships no new file into a package
+- [x] 2.4 Install on the baseline VM and verify the three resolve from the archive alone, recording how many packages apt fetched
 
 ## 3. The launcher gates on components
 
@@ -25,8 +25,8 @@
 
 ## 4. The gate's reference list
 
-- [ ] 4.1 Correct `ext_session_lock_v1` to `ext_session_lock_manager_v1` in the isolation check's reference list. The adapter was corrected when a live registry disproved the first name; the gate's copy was not, so it has been scanning for a string nothing can contain. Verify by planting the correct name outside the adapter path and confirming the build fails, then removing it and confirming the build passes
-- [ ] 4.2 Verify every other protocol name in the gate's list appears in the adapter, by comparing the two in both directions and recording any name in one and not the other, including none
+- [x] 4.1 Correct `ext_session_lock_v1` to `ext_session_lock_manager_v1` in the isolation check's reference list, and verify by planting each reference outside the adapter path one at a time and confirming the build fails for every one. Correcting the name exposed a second defect: the check scanned twice, printing in one pass and counting in the other, and with `set -e` a grep that does not match ended the counting loop's body non-zero, so the subshell exited at the first file holding no reference. The summary read zero while the lines above it named a leak, and the build passed. Counting and reporting now come from one pass
+- [x] 4.2 Verify every other protocol name in the gate's list appears in the adapter, by comparing the two in both directions and recording any name in one and not the other, including none
 
 ## 5. Verification in a session
 

@@ -34,7 +34,7 @@ references='Hyprland
 hyprland
 hyprctl
 hyprland.conf
-ext_session_lock_v1
+ext_session_lock_manager_v1
 ext_idle_notifier_v1
 zwlr_output_manager_v1
 zwlr_screencopy_manager_v1
@@ -44,9 +44,18 @@ zwp_pointer_gestures_v1'
 
 cd "$root"
 
+# One pass. An earlier version scanned twice, printing in the first pass and
+# counting in the second, and the counting pass was wrong: with set -e, a
+# grep that does not match ends the loop body with a non-zero status and the
+# subshell exits at the first file that holds no reference. The summary then
+# reported zero while the detail lines above it named a leak, and the build
+# passed. Counting and reporting from the same pass removes the possibility.
 inside=0
 outside=0
 hits=0
+
+report=$(mktemp)
+trap 'rm -f "$report"' EXIT INT TERM
 
 for file in $(find src tools -type f | sort); do
     case "$file" in
@@ -55,24 +64,15 @@ for file in $(find src tools -type f | sort); do
     *.desktop) continue ;;
     esac
     outside=$((outside + 1))
-    printf '%s\n' "$references" | while IFS= read -r ref; do
+    for ref in $references; do
         if grep -qw -- "$ref" "$file" 2>/dev/null; then
-            printf 'adapter isolation: %s references %s\n' "$file" "$ref" >&2
+            printf 'adapter isolation: %s references %s\n' "$file" "$ref" >> "$report"
         fi
     done
 done
 
-# The loop above runs in a subshell, so count the hits in one pass here.
-hits=$(for file in $(find src tools -type f | sort); do
-    case "$file" in
-    "$adapter_path"/*) continue ;;
-    "$self") continue ;;
-    *.desktop) continue ;;
-    esac
-    printf '%s\n' "$references" | while IFS= read -r ref; do
-        grep -qw -- "$ref" "$file" 2>/dev/null && printf 'x\n'
-    done
-done | wc -l)
+hits=$(wc -l < "$report")
+[ "$hits" -eq 0 ] || cat "$report" >&2
 
 printf 'adapter isolation: %s files inside %s, %s outside, %s references found\n' \
     "$inside" "$adapter_path" "$outside" "$hits"
