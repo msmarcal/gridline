@@ -86,40 +86,50 @@ These two are different in kind. Their absence **blocks session startup** rather
 
 | Component | Upstream | Ubuntu source | Component | Gridline ownership | Fallback |
 |---|---|---|---|---|---|
-| Screen locker | Hyprland (candidate: `hyprlock`); selection owned by `add-session-lifecycle-integration` | `hyprlock` 0.9.2-1build4 | **universe** | Integration only, once chosen | **Session does not start.** A desktop that cannot lock must not run, because the failure surfaces as an unlocked unattended machine. The user returns to GDM with the cause named |
-| polkit authentication agent | polkit, plus the chosen agent (candidate: `hyprpolkitagent`); selection owned by `add-session-lifecycle-integration` | `policykit-1` 127-2ubuntu1.1, binary `polkitd` (main); `hyprpolkitagent` 0.1.3-1 | main / **universe** | Integration only, once chosen | **Session does not start.** Without an agent, privileged actions fail with no prompt and no explanation. Reported with the missing agent named |
+| Screen locker | swaywm | `swaylock` 1.8.4-1 | **universe** | Integration only: the session requires it to be present before starting | **Session does not start.** A desktop that cannot lock must not run, because the failure surfaces as an unlocked unattended machine. The user returns to GDM with the component named |
+| polkit authentication agent | polkit, plus Hyprland for the agent | `policykit-1` 127-2ubuntu1.1, binary `polkitd` (main); `hyprpolkitagent` 0.1.3-1 | main / **universe** | Integration only: the session requires the agent to be present before starting | **Session does not start.** Without an agent, privileged actions fail with no prompt and no explanation. The user returns to GDM with the component named |
 
 Both candidates exist on the baseline and neither selection is final; `add-session-lifecycle-integration` still owns the choice. Two facts from the archive constrain it:
 
-**`hyprlock` authenticates out of the box.** It ships `/etc/pam.d/hyprlock` containing `auth include login`, so no PAM work is needed to make locking function. That stack is broader than a locker strictly needs - GDM uses a narrower one - which is a security review item for the change that adopts it, not a defect.
+**The selected locker authenticates out of the box.** `swaylock` ships `/etc/pam.d/swaylock` containing `auth include login`, so no PAM work is needed to make locking function. That stack is broader than a locker strictly needs, GDM uses a narrower one, which is a security review item rather than a defect. The rejected candidate ships an identical stack, so the observation is about the convention and not about either package.
 
-**The archive units cannot refuse startup.** `hyprpolkitagent.service`, `hypridle.service` and `xdg-desktop-portal-hyprland.service` are systemd user units with `PartOf=graphical-session.target`, `ConditionEnvironment=WAYLAND_DISPLAY` and `Restart=on-failure`. A failing unit restarts quietly and the session comes up regardless. The blocking rule in [architecture.md](architecture.md) therefore needs a Gridline-owned startup check to be enforceable at all; systemd alone will not enforce it.
+**The archive units cannot refuse startup.** `hyprpolkitagent.service` and `xdg-desktop-portal-hyprland.service` are systemd user units with `PartOf=graphical-session.target`, `ConditionEnvironment=WAYLAND_DISPLAY` and `Restart=on-failure`. A failing unit restarts quietly and the session comes up regardless. The blocking rule in [architecture.md](architecture.md) therefore needs a Gridline-owned startup check to be enforceable at all; systemd alone will not enforce it.
 
-## Dependencies not yet declared
+### How the lifecycle components were chosen
 
-Five components block session startup, and no Gridline package declares any of them today. All three binary packages carry `Depends: ${misc:Depends}` and nothing else. That is the correct state rather than an oversight, and this section exists so the two cannot be confused: a dependency that is missing because nobody got to it looks exactly like one that is missing because the decision it encodes has not been made.
+Every candidate for a screen locker and a polkit authentication agent on this baseline is in `universe`, so the support gap applies whichever is chosen and the choice rests on other evidence. Read from the archive packages without installing them:
 
-| Blocking component | Why it cannot be declared yet | Change that owns the declaration |
+| Package | Hyprland libraries | Pulls a desktop environment | Idle or lock protocol |
+|---|---|---|---|
+| `swaylock` | none | no | `ext_session_lock_manager_v1` |
+| `hyprlock` | `libhyprgraphics4`, `libhyprlang2`, `libhyprutils10` | no | `ext_session_lock_manager_v1` |
+| `swayidle` | none | no | `ext_idle_notifier_v1` |
+| `hypridle` | `libhyprlang2`, `libhyprutils10` | no | `ext_idle_notifier_v1` |
+| `hyprpolkitagent` | none | no | n/a |
+| `lxqt-policykit` | none | **yes**, `lxqt-session` | n/a |
+| `mate-polkit` | none | **yes**, MATE components | n/a |
+
+**The locker and the idle daemon were chosen for what they do not link.** `libhyprlang` is the compositor's own configuration language, and [security-and-manageability.md](security-and-manageability.md) records the consequence: its `findConfig` returns the first file it finds and stops, with no merge and no lock, which is why the manageability capability had to exist. Putting that model in the fail-safe path would take the obstacle the project already identified and build the lock on top of it. `swaylock` and `swayidle` link none of those libraries and speak the same protocols.
+
+**The polkit agent was chosen for the same reason the locker was not.** `hyprpolkitagent` is the only candidate that pulls no desktop environment, and it carries no Hyprland library despite its name. What makes a component compositor-specific is what it links and requires, not what it is called, and the same test that rejected `hyprlock` accepts this one.
+
+**One package description is out of date and the binary settles it.** `swayidle`'s description says it is compatible with the KDE idle protocol. Its binary references `ext_idle_notifier_v1`, which is what the compositor advertises and what the adapter reports, so the description describes an older version than the one the archive ships.
+
+## The five blocking components, and who declares each
+
+| Blocking component | Package | Declared by |
 |---|---|---|
-| Hyprland | The adapter that drives a compositor does not exist, so declaring one would install software the launcher cannot use | `add-hyprland-session-baseline` |
-| `xdg-desktop-portal-hyprland` | Follows the compositor: the backend is only required once the adapter reports the `screencast` capability | `add-hyprland-session-baseline` |
-| Screen locker | The component is not selected. `hyprlock` is a candidate, not a choice | `add-session-lifecycle-integration` |
-| polkit authentication agent | The agent is not selected. `hyprpolkitagent` is a candidate, not a choice | `add-session-lifecycle-integration` |
-| Compositor adapter | Not deferred and not third-party. It is Gridline's own and ships in `gridline-session` | n/a |
+| Hyprland | `hyprland` | `gridline-session`, by `add-hyprland-session-baseline` |
+| Compositor portal backend | `xdg-desktop-portal-hyprland` | `gridline-session`, by `add-hyprland-session-baseline` |
+| Screen locker | `swaylock` | `gridline-session`, by `add-session-lifecycle-integration` |
+| polkit authentication agent | `hyprpolkitagent` | `gridline-session`, by `add-session-lifecycle-integration` |
+| Compositor adapter | none, it is Gridline's own | ships in `gridline-session` |
 
-The degrading components carry no declaration either, for a different reason: the session cannot run at all yet, so a recommendation would describe a desktop that does not start. The change that makes the session start is the one that can state what it recommends.
+Nothing on this list is deferred any longer. The section this replaces existed to keep two situations apart, a dependency missing because nobody got to it and one missing because the decision it encodes had not been made, and it is kept in the archived artifacts of the changes that needed the distinction.
 
-## Session entries the dependency brought
+**Declaring a blocking component is not the same as enforcing it.** The archive's user units carry `PartOf=graphical-session.target`, `ConditionEnvironment=WAYLAND_DISPLAY` and `Restart=on-failure`, so a failing one restarts quietly and the session comes up regardless. Systemd will not refuse a session for a missing lock component. The session launcher checks for these components itself before starting anything, which is what makes the classification on this page mean something at runtime.
 
-Depending on the compositor installs session entries the compositor's own package owns. On the baseline, `hyprland` ships `hyprland.desktop` and `hyprland-uwsm.desktop` into `/usr/share/wayland-sessions/`.
-
-One is withheld: `hyprland-uwsm.desktop` names `uwsm` in `TryExec`, which the baseline does not install, so the display manager does not offer it. That is the same mechanism Gridline relies on for its own entry, working here for another package.
-
-The other is offered. Selecting it reaches the compositor directly, with no capability check, no failure record under Gridline's syslog identifier, and none of the guarantees the Gridline session entry carries. A user who picks it has not started Gridline.
-
-**Gridline does not own either file and must not modify or remove them.** Archive packages own their own files, and a package that deletes another's entry would break that package on its own terms. What Gridline owns is having introduced them, by declaring the dependency that installs them.
-
-**The offered entry has a row above, decided after the session was observed starting.** The login screen offers three sessions, Gridline, Hyprland and Ubuntu, and nothing on screen distinguishes the first two: both run the same compositor with its own defaults, down to the same startup banner. During verification the compositor's entry was selected twice by someone who knew both existed and was checking for exactly this. A reader who does not know cannot do better, which is why the row exists: not to claim ownership Gridline does not have, but to record a component the project put in front of its users and the consequence of choosing it.
+The degrading components carry no declaration, which is a different situation again: a session missing one of them starts, reports the gap, and remains usable.
 
 ## Security and updates
 

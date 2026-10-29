@@ -51,10 +51,10 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 | Source package | Version on the baseline | Component | Role |
 |---|---|---|---|
 | `hyprland` | 0.53.3+ds-4 | **universe** | Compositor |
-| `hyprlock` | 0.9.2-1build4 | **universe** | Screen locker candidate |
-| `hypridle` | 0.1.7-2 | **universe** | Idle daemon candidate |
+| `swaylock` | 1.8.4-1 | **universe** | Screen locker |
+| `swayidle` | 1.9.0-1 | **universe** | Idle daemon |
 | `hyprpaper` | 0.8.3-1 | **universe** | Wallpaper candidate |
-| `hyprpolkitagent` | 0.1.3-1 | **universe** | polkit agent candidate |
+| `hyprpolkitagent` | 0.1.3-1 | **universe** | polkit authentication agent |
 | `xdg-desktop-portal-hyprland` | 1.3.11-1build2 | **universe** | Compositor portal backend |
 | `xdg-desktop-portal` | 1.21.1+ds-1ubuntu3.1 | main | Portal frontend |
 | `xdg-desktop-portal-gtk` | 1.15.3-2ubuntu1 | main | GTK portal backend |
@@ -88,7 +88,7 @@ The two answer different questions and are worth running together: `policy` repo
 
 These rows were confirmed against the archive by `define-supported-ubuntu-integration`. Re-checking them is not owned by a single change, because they move with the archive rather than with the project: any change that adds, removes or alters a dependency re-checks the rows it touches, using the procedure above. If an automated check is ever built, `add-ci-vm-smoke-tests` is where it belongs, since that is the change that owns running things against a baseline machine.
 
-**[component-ownership.md](component-ownership.md) is authoritative for component facts.** Where that page and this one carry the same version or archive component, it wins, because it is the one organized by component and it carries what each component's absence does. This table is the packaging-side view of the same measurement. Two packages appear here and not there: `hypridle` and `hyprpaper` are candidates no requirement rests on yet, so giving them a row there would record a dependency the project has not taken.
+**[component-ownership.md](component-ownership.md) is authoritative for component facts.** Where that page and this one carry the same version or archive component, it wins, because it is the one organized by component and it carries what each component's absence does. This table is the packaging-side view of the same measurement. One package appears here and not there: `hyprpaper` is a candidate no requirement rests on yet, so giving it a row there would record a dependency the project has not taken.
 
 **One universe package is not Hypr-ecosystem.** `wayland-utils` comes from freedesktop and is the only non-Hypr entry in the table carrying the universe gap, so the claim below remains true as written rather than being stretched to cover it. The adapter depends on it because the compositor publishes its protocols through the Wayland registry and offers no command that lists them.
 

@@ -30,7 +30,7 @@ Any Gridline material that claims suitability for a regulated environment withou
 
 An enterprise desktop must let an administrator set a policy the user cannot override. On GNOME this is dconf: system databases under `/etc/dconf/db/`, a profile naming their precedence, and a `locks/` subdirectory that makes specific keys unwritable by the user. CIS controls 1.7.4 and 1.7.5 are written directly against that mechanism - 1.7.4 sets `idle-delay` and `lock-delay`, and 1.7.5 locks both so a user cannot change them.
 
-**The Hypr tools do not use dconf.** Verified against the baseline binaries: `hypridle` and `hyprlock` link `libhyprlang` and resolve configuration through `Hyprutils::Path::findConfig`, with no dconf or GSettings symbols at all. The search order that function implements, read from `hyprutils` source, is:
+**The compositor does not use dconf.** Verified against the baseline binaries: Hyprland and the tools built on it link `libhyprlang` and resolve configuration through `Hyprutils::Path::findConfig`, with no dconf or GSettings symbols at all. The search order that function implements, read from `hyprutils` source, is:
 
 1. `$XDG_CONFIG_HOME/hypr/<program>.conf`
 2. `$HOME/.config/hypr/<program>.conf`
@@ -41,8 +41,12 @@ It returns the **first** file it finds and stops. There is no merge, no layering
 
 Two consequences follow, and both are structural rather than cosmetic:
 
-- **A user file wins outright.** A `~/.config/hypr/hyprlock.conf` does not override individual keys from an administrator file; it replaces the administrator file entirely. A lock timeout set in `/etc/xdg` disappears the moment a user writes their own config, and nothing reports that it happened.
+- **A user file wins outright.** A `~/.config/hypr/<program>.conf` does not override individual keys from an administrator file; it replaces the administrator file entirely. A setting placed in `/etc/xdg` disappears the moment a user writes their own config, and nothing reports that it happened.
 - **CIS 1.7.5 has no counterpart.** "Ensure screen locks cannot be overridden" cannot be satisfied by configuration alone, because the mechanism the control audits is absent from these tools.
+
+**The lock path was kept out of this.** `add-session-lifecycle-integration` selected `swaylock` and `swayidle`, neither of which links `libhyprlang`, measured against the archive packages. The analysis above therefore describes the compositor's own configuration and not the screen lock, which was the point of choosing that way: building the fail-safe component on the model this section identifies as the obstacle would have been a choice, not an inheritance.
+
+What the selected components do instead is recorded rather than assumed. `swayidle` reads only user paths, `$XDG_CONFIG_HOME/swayidle/config` and `$HOME/.swayidle/config`, with no system path at all, and its manual states that events given in the config and as arguments are not mutually exclusive, so the two combine rather than one replacing the other. That is a different shape of problem from `findConfig`, not an absent one: a user can still add events, and the manageability capability still owns making a setting unoverridable. `swaylock`'s own configuration model has not been read with the same care and is not claimed here.
 
 This is the same class of problem as the portal configuration file, and it has the same shape: the archive provides the component but not the policy surface, so enforcement has to come from something Gridline owns. It is a **deliverable**, not a default.
 
@@ -76,10 +80,10 @@ The second row is the one to read carefully. The control is satisfiable, but onl
 
 ## Lock screen and idle policy
 
-`hyprlock` ships `/etc/pam.d/hyprlock` containing `auth include login`, so authentication works with no packaging effort. Two notes for whichever change adopts it:
+`swaylock` ships `/etc/pam.d/swaylock` containing `auth include login`, so authentication works with no packaging effort. The rejected candidate shipped the identical stack, so the observation transfers rather than being discarded:
 
-- `include login` is broader than a locker requires. GDM uses a narrower stack. This is a security-review item, not a defect.
-- Screen-lock policy spans two components: `hypridle` decides when to lock, `hyprlock` decides what unlocking requires. A policy claim about lock timeout is a claim about both, and the diagnostic must check both.
+- `include login` is broader than a locker requires. GDM uses a narrower stack. This is a security-review item, not a defect, and it belongs to whichever change hardens the lock path.
+- Screen-lock policy spans two components: `swayidle` decides when to lock, `swaylock` decides what unlocking requires. A policy claim about lock timeout is a claim about both, and the diagnostic must check both.
 
 ## Screen capture cuts both ways
 

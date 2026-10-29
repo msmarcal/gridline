@@ -2,11 +2,11 @@
 
 ## 1. The selection on record
 
-- [ ] 1.1 Record the selection of `swaylock`, `swayidle` and `hyprpolkitagent` in `docs/component-ownership.md`, replacing the rows that name candidates, and verify neither row still says the component is not selected
-- [ ] 1.2 Remove both entries from the deferred-declarations table in the same document, and verify the table no longer lists a component this change declares, since a deferral that has happened is not a deferral
-- [ ] 1.3 Record for each selection what decided it, by the measurement rather than by preference: which Hyprland libraries each candidate links, which pull a desktop environment, and which speak the session lock protocol. Verify the figures in the document match the packages by re-reading the archive metadata rather than copying from design.md
-- [ ] 1.4 Correct the passage in `docs/security-and-manageability.md` that analyses the candidate locker's PAM stack, since it names a component this change does not select. Read the selected locker's own PAM file and record what it contains, and verify the document no longer presents the unselected one as the project's locker
-- [ ] 1.5 Verify no live document still names `hyprlock` or `hypridle` as the project's choice, by grep, and that any surviving mention is clearly a rejected candidate with the reason
+- [x] 1.1 Record the selection of `swaylock`, `swayidle` and `hyprpolkitagent` in `docs/component-ownership.md`, replacing the rows that name candidates, and verify neither row still says the component is not selected
+- [x] 1.2 Remove both entries from the deferred-declarations table in the same document, and verify the table no longer lists a component this change declares, since a deferral that has happened is not a deferral
+- [x] 1.3 Record for each selection what decided it, by the measurement rather than by preference: which Hyprland libraries each candidate links, which pull a desktop environment, and which speak the session lock protocol. Verify the figures in the document match the packages by re-reading the archive metadata rather than copying from design.md
+- [x] 1.4 Correct the passage in `docs/security-and-manageability.md` that analyses the candidate locker's PAM stack, since it names a component this change does not select. Read the selected locker's own PAM file and record what it contains, and verify the document no longer presents the unselected one as the project's locker
+- [x] 1.5 Verify no live document still names `hyprlock` or `hypridle` as the project's choice, by grep, and that any surviving mention is clearly a rejected candidate with the reason
 
 ## 2. The components are declared
 
