@@ -27,6 +27,12 @@ Three boundaries sit close enough together to be worth stating explicitly, becau
 
 **The adapter is integration glue, not a tool.** The compositor adapter ships in `gridline-session` because that package owns integration. Putting it in `gridline-tools` would force the diagnostic commands to carry compositor knowledge, which `specs/compositor-abstraction/spec.md` forbids.
 
+**Compositor configuration is owned by one package and authored in another's source tree, and that is not a contradiction.** The compositor's defaults and the loader at its search path install through `gridline-config`, which owns shipped defaults under `/etc/xdg`, and are authored under `src/adapters/<compositor>/`, which is where `compositor-abstraction` requires compositor-specific content to live.
+
+Those two rules look like they point at different places for one file, and the reason they do not is that they are about different things: `package-delivery` says which **binary package** owns an installed path, `compositor-abstraction` says where in the **source tree** compositor-specific content may live. The `.install` line that connects them sits in `debian/`, which the isolation check excludes because packaging metadata has to name what the project depends on.
+
+The test this has to pass is the one `compositor-abstraction` cares about: supporting a second compositor means adding an adapter, not editing a file that knows a compositor's name. A second compositor brings its own defaults and its own loader inside its own adapter directory, and nothing outside changes.
+
 **The portal mapping is configuration, not session logic.** The interface-to-backend mapping is a shipped default, so `gridline-config` owns it, even though the session is what consumes it. `gridline-portals.conf` follows the mapping into `gridline-config` for the same reason, and it installs to `/usr/share/xdg-desktop-portal/gridline-portals.conf`, lower-cased, because the frontend appends `xdg-desktop-portal/` to each base directory it searches and case-folds the desktop name before building the filename. `/etc/xdg` without that subdirectory is not a search path; `/etc/xdg-desktop-portal/` is, and it is reserved for administrator overrides rather than package content. It is a new file under a Gridline-specific name, so it owns no path another package claims.
 
 ## What no package does
@@ -52,7 +58,7 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 |---|---|---|---|
 | `hyprland` | 0.53.3+ds-4 | **universe** | Compositor |
 | `swaylock` | 1.8.4-1 | **universe** | Screen locker |
-| `swayidle` | 1.9.0-1 | **universe** | Idle daemon candidate |
+| `swayidle` | 1.9.0-1 | **universe** | Idle daemon |
 | `hyprpaper` | 0.8.3-1 | **universe** | Wallpaper candidate |
 | `hyprpolkitagent` | 0.1.3-1 | **universe** | polkit authentication agent |
 | `xdg-desktop-portal-hyprland` | 1.3.11-1build2 | **universe** | Compositor portal backend |
@@ -73,6 +79,8 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 | `apt` | 3.2.0 | main | Update path |
 | `unattended-upgrades` | 2.12ubuntu9 | main | Update path |
 | `wayland-utils` | 1.3.0-1 | **universe** | Wayland registry query, used by the compositor adapter |
+| `xdg-terminal-exec` | 0.14.0-1 | main | Launches the terminal the system is configured to use |
+| `foot` | 1.25.0-1 | **universe** | Terminal emulator, declared because the baseline guarantees none |
 
 ### How these were measured
 
@@ -90,9 +98,13 @@ These rows were confirmed against the archive by `define-supported-ubuntu-integr
 
 **[component-ownership.md](component-ownership.md) is authoritative for component facts.** Where that page and this one carry the same version or archive component, it wins, because it is the one organized by component and it carries what each component's absence does. This table is the packaging-side view of the same measurement.
 
-**Two rows are candidates rather than dependencies**, marked as such in the Role column: `hyprpaper` for the wallpaper and `swayidle` for the idle daemon. No requirement rests on either, so neither is in any package's `Depends`, and `add-gridline-configuration-defaults` owns both choices. `swayidle` was a declared dependency of `gridline-session` for the length of one change and is not one now; `component-ownership.md` records why, under the blocking components.
+**One row is a candidate rather than a dependency**, marked as such in the Role column: `hyprpaper` for the wallpaper. No requirement rests on it, so it is in no package's `Depends`, and the change that adds the wallpaper owns the choice.
 
-**One universe package is not Hypr-ecosystem.** `wayland-utils` comes from freedesktop and is the only non-Hypr entry in the table carrying the universe gap, so the claim below remains true as written rather than being stretched to cover it. The adapter depends on it because the compositor publishes its protocols through the Wayland registry and offers no command that lists them.
+`swayidle` is a dependency again, declared by `add-gridline-configuration-defaults`, which is the change that gave it something to do: it runs the session's lock entry point on inactivity, on the logind lock signal and before suspend. It was a dependency for the length of an earlier change, removed when the blocking components were counted and no idle daemon was among them, and declared again here for a different reason. It is still not a blocking component, and `component-ownership.md` records how the session holds it running without treating its absence as grounds to refuse a session.
+
+**Four universe packages are not Hypr-ecosystem**: `swaylock` and `swayidle` from swaywm, `wayland-utils` from freedesktop, and `foot`. They carry the same universe gap and none of them carries it because of the compositor. Gridline depends on them for reasons of its own: the adapter needs the registry query because the compositor publishes its protocols there and offers no command that lists them, the locker and idle daemon were chosen for the libraries they do **not** link, and the terminal is declared because the baseline supplies none.
+
+This paragraph said "one" and named only `wayland-utils` until `add-gridline-configuration-defaults` counted the rows. It had been wrong since `add-session-lifecycle-integration` declared the locker and the idle daemon, and that change's own coherence pass did not catch it, which is the ordinary way a count in prose drifts from the table above it.
 
 **Every Hypr-ecosystem package is in universe.** Two consequences follow and neither is a packaging detail. A security issue in the compositor has no Canonical update commitment behind it, which is a fact users of this session are entitled to know rather than discover. And `gridline-desktop`, once it ships, depends on universe packages and therefore cannot itself live in main - which makes this the central obstacle to any future official-flavor candidacy, not a footnote to it.
 
