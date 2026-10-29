@@ -45,18 +45,30 @@ These come first because the rest is built on their answers. A task here that re
 
 ## 4. Locking happens without being asked
 
-- [ ] 4.1 Declare the idle daemon as a dependency of `gridline-session` and verify with `dpkg-deb -f` on the built package rather than by reading the control file
-- [ ] 4.2 Author the lock entry point, setting `LockedHint` true before the locker starts and false after it exits. Verify the false path runs whatever the exit reason, by exercising a normal unlock and a killed locker and reading the property after each
-- [ ] 4.3 Route the idle timeout, the suspend hook and the key binding through that one entry point, with the binding asking logind to lock rather than running the locker. Verify by reading the journal for a lock triggered each of the three ways and confirming the same entry point ran
+- [x] 4.1 `swayidle` is in the built package's `Depends`, read with `dpkg-deb -f`. It resolved from the archive alone on the VM, alongside `foot` and `xdg-terminal-exec`
+- [x] 4.2 `src/session/gridline-lock`, installed at `/usr/libexec/gridline/gridline-lock`. Two defects were found by running it rather than by reading it.
+
+  **It used the wrong session alias.** `self` resolves for a process inside the session, which is where the earlier probe ran, as a child of the compositor. This runs under the systemd user manager, which belongs to no login session, and there `self` is an unknown object. Measured from inside a user unit: `self` fails outright, `auto` resolves to the graphical session. `auto` is logind's alias for the caller's session if it has one and the user's display session otherwise, which is this case exactly. The previous change's measurement was right about the method and taken in the wrong context.
+
+  **The worse one: the failure was silent.** The first version sent `busctl` output to `/dev/null`, so the screen locked, the hint stayed false, and nothing anywhere said why. Anyone not checking the property explicitly would have recorded this as working. Failures now reach stderr and the journal.
+
+  The false path was exercised both ways. A killed locker: `LockedHint` went to `no` through the trap. A locker that is not installed never sets the hint at all, because the `-x` check runs first
+- [x] 4.3 All three are wired to `/usr/libexec/gridline/gridline-lock` in `gridline-idle.service`, as `timeout`, `lock` and `before-sleep`, and the key binding runs `loginctl lock-session`, which raises the logind `Lock` signal the `lock` event answers. Verified through logind rather than by inspection: `loginctl lock-session 28` produced a running locker and `LockedHint=yes`, which is the whole path, the signal reaching the daemon and the daemon reaching the entry point.
+
+  The suspend route is **not** exercised, for the reason `add-session-lifecycle-integration` recorded: this machine cannot suspend. The wiring is identical to the other two and the event is documented in the daemon's manual, which is weaker than exercising it and is said so rather than implied.
+
+  One thing this task did not cover and the implementation had to decide: how the idle daemon starts. The archive ships no unit for it, and putting it in `gridline-session.target`'s `Wants=` would make the launcher refuse a session without it, contradicting the recorded finding that no idle daemon is blocking. It is held by `Upholds=` instead, which systemd reports separately from `Wants=`, so the launcher's blocking check needed no change and the daemon is still kept running and restarted if it stops
 - [ ] 4.4 Verify the session locks itself after the configured period, timing it rather than assuming, and that authentication is required to return
-- [ ] 4.5 Verify `LockedHint` reads true while locked and false after unlocking, which is the debt `add-session-lifecycle-integration` recorded and could not close
-- [ ] 4.6 Verify the hint is not left true when the locker fails to start, since a system that believes an unlocked session is locked is the failure this ordering exists to prevent
+- [x] 4.5 `LockedHint=yes` while locked, read with `loginctl show-session 28 -p LockedHint`, against the `no` that both lock verifications in the previous change recorded. The debt is closed
+- [x] 4.6 Not left true. A locker killed with `SIGKILL` leaves `LockedHint=no` through the trap, and a locker that is not installed never reaches the point where the hint is set.
+
+  **This exposed a scenario of this change's own delta being stricter than fail-safe allows, and the scenario was corrected rather than the behaviour.** With the locker dead the compositor still holds the session locked, so the screen is locked while logind reports it is not. The scenario as first written asked the two to agree. They cannot always: the exit status does not distinguish a locker that died after acquiring the lock from one that never acquired it, so clearing only on a clean exit would leave the hint true with the session unlocked, which is the direction that lets something skip locking. Clearing always chooses the direction that leaves the session protected. The delta now carries a scenario for the dead-locker case saying exactly that
 
 ## 5. Recovery from a dead locker
 
 - [x] 5.1 Shipped in the defaults and read back from a running session as `int: 1`, from a startup that loaded the packaged loader rather than anything injected at runtime
-- [ ] 5.2 Verify the measured lock-failure state is now recoverable from the machine itself: lock, kill the locker, and confirm a working lock screen can be restored and the session returned to, without another machine and without ending the session
-- [ ] 5.3 Verify the session is still held locked throughout that recovery, since the scenario this serves is about not exposing the session and a recovery path that exposes it is worse than none
+- [x] 5.2 Recovered on the machine itself. After killing both locker processes, running the lock entry point again through the compositor restored a working lock screen with `LockedHint=yes`, and the user unlocked into their session. Before this change the same state needed `misc:allow_session_lock_restore` set from another TTY, which is what the shipped default removes
+- [x] 5.3 Held throughout. With the locker dead the compositor remained running and the desktop was not reachable, which is the protocol behaviour `add-session-lifecycle-integration` measured and this change relies on rather than reproves. The recovery replaced the lock client without the session ever becoming reachable
 
 ## 6. First login
 

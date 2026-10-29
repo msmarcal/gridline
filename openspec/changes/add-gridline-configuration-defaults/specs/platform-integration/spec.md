@@ -18,8 +18,13 @@ A Gridline session SHALL provide screen locking, and a locked session SHALL requ
 
 #### Scenario: The system agrees that the session is locked
 
-- **WHEN** a Gridline session is locked, whether by the user or by inactivity
+- **WHEN** a Gridline session is locked, whether by the user or by inactivity, and the lock component is running
 - **THEN** the session manager reports that session as locked, so that a component acting on the system's view of lock state behaves the same way as one acting on the compositor's
+
+#### Scenario: A dead lock component is not reported as a session that is safe to treat as unlocked
+
+- **WHEN** the lock component dies while the compositor holds the session locked
+- **THEN** the session manager's view of the session SHALL NOT claim a lock that no component is maintaining, and the session SHALL remain locked, so that the two disagree in the direction that leaves the session protected rather than the direction that lets something skip locking it
 
 #### Scenario: Lock holds across suspend
 
