@@ -13,6 +13,12 @@
 # Compositor-specific content may exist only inside the adapter layer. Anchored
 # at the same stage as the ownership gate, so there is one answer to when the
 # gates run rather than two.
+# The portal mapping is assembled from the adapters present in the tree, so the
+# compositor backend each one serves stays inside the isolation boundary. It is
+# generated before dh_install because that is the helper that stages it.
+execute_before_dh_install:
+	tools/generate-portals-conf debian/generated/gridline-portals.conf
+
 execute_before_dh_builddeb:
 	tools/check-path-ownership debian
 	tools/check-adapter-isolation

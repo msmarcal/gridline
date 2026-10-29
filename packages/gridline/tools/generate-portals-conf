@@ -1,0 +1,70 @@
+#!/bin/sh
+# Assemble the portal mapping from the adapters present in the source tree.
+#
+# The portal frontend reads one file per desktop identity, and Gridline's
+# identity names Gridline first whichever compositor is active. So one mapping
+# has to serve every compositor the project supports, and it cannot be written
+# per adapter.
+#
+# What each adapter does own is which portal backend serves its compositor.
+# That declaration lives beside the adapter, inside the isolation boundary, and
+# this script collects it. Adding a compositor therefore means adding an
+# adapter directory, which is what compositor-abstraction asks of everything
+# outside that boundary.
+#
+# Backends are listed in the order the adapters sort, and the frontend passes
+# over a backend that implements nothing for the interface it is resolving, so
+# listing a compositor that is not installed costs nothing.
+
+set -eu
+
+root=$(dirname "$0")/..
+template=src/config/gridline-portals.conf.in
+adapters=src/adapters
+
+cd "$root"
+
+[ -r "$template" ] || {
+    printf 'generate-portals-conf: no template at %s\n' "$template" >&2
+    exit 1
+}
+
+output=${1-}
+[ -n "$output" ] || {
+    printf 'generate-portals-conf: usage: %s <output-file>\n' "$0" >&2
+    exit 1
+}
+
+backends=
+count=0
+for declaration in "$adapters"/*/portal-backend; do
+    [ -r "$declaration" ] || continue
+    name=$(tr -d ' \t\n' < "$declaration")
+    [ -n "$name" ] || {
+        printf 'generate-portals-conf: %s is empty\n' "$declaration" >&2
+        exit 1
+    }
+    count=$((count + 1))
+    if [ -z "$backends" ]; then backends=$name; else backends="$backends;$name"; fi
+done
+
+# An empty list would produce a mapping whose every compositor interface
+# resolves to the GTK backend, which implements none of them, so the session
+# would lose screen capture while the file still looked valid.
+[ "$count" -gt 0 ] || {
+    printf 'generate-portals-conf: no adapter declares a portal backend under %s\n' \
+        "$adapters" >&2
+    exit 1
+}
+
+mkdir -p "$(dirname "$output")"
+sed "s/@COMPOSITOR_BACKENDS@/$backends/g" "$template" > "$output"
+
+grep -q '@COMPOSITOR_BACKENDS@' "$output" && {
+    printf 'generate-portals-conf: placeholder survived substitution in %s\n' \
+        "$output" >&2
+    exit 1
+}
+
+printf 'generate-portals-conf: %s backend(s) from %s adapter(s): %s\n' \
+    "$count" "$count" "$backends"

@@ -12,7 +12,8 @@ Architecture: all
 Depends: ${misc:Depends},
          hyprland,
          xdg-desktop-portal-hyprland,
-         wayland-utils
+         wayland-utils,
+         xwayland
 Description: Gridline session integration
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
  package owns the session entry the display manager reads, the session
@@ -31,7 +32,9 @@ Description: Gridline session integration
 
 Package: gridline-config
 Architecture: all
-Depends: ${misc:Depends}
+Depends: ${misc:Depends},
+         xdg-desktop-portal,
+         xdg-desktop-portal-gtk
 Description: Gridline configuration defaults and policy input (no content yet)
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
  package will own the shipped defaults, the default keybindings and themes,

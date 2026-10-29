@@ -2,18 +2,18 @@
 
 ## 1. The mapping
 
-- [ ] 1.1 List the portal interfaces the session relies on, deriving them from the scenarios in `openspec/specs/platform-integration/spec.md` rather than from the backends' own claims, and record the list with the scenario each interface comes from. An interface nothing in the specification relies on does not belong in the mapping
-- [ ] 1.2 Add `packages/gridline/src/config/gridline-portals.conf` with a `default` covering every interface and an explicit entry for each interface on the list from 1.1. Entries take the backend's short name, the basename of its `.portal` file, which `portals.conf(5)` defines and which is not the backend's D-Bus name. Verify the explicit entries match the list from 1.1 in both directions, and that the default leaves no interface resolving through the frontend's own matching
-- [ ] 1.3 Verify no entry names `gnome.portal`'s backend, and record why for any interface where that leaves no entry at all: the session relies on it and something else must serve it, or it does not rely on it and the absence is correct
-- [ ] 1.4 Verify every backend the file names is provided by a package the baseline carries, by resolving each short name to the `.portal` file whose basename it is and that file to its owning package with `dpkg -S`
+- [x] 1.1 List the portal interfaces the session relies on, deriving them from the scenarios in `openspec/specs/platform-integration/spec.md` rather than from the backends' own claims, and record the list with the scenario each interface comes from. An interface nothing in the specification relies on does not belong in the mapping
+- [x] 1.2 Add the mapping as a template in `src/config/` naming no compositor, with each adapter declaring the portal backend serving its compositor inside the isolation boundary, and a build step assembling them. Entries take the backend's short name, the basename of its `.portal` file, which `portals.conf(5)` defines and which is not the backend's D-Bus name. Verify the generated file's explicit entries match the list from 1.1 in both directions, that the default leaves no interface resolving through the frontend's own matching, and that the isolation gate passes
+- [x] 1.3 Verify no entry names `gnome.portal`'s backend, and record why for any interface where that leaves no entry at all: the session relies on it and something else must serve it, or it does not rely on it and the absence is correct
+- [x] 1.4 Verify every backend the file names is provided by a package the baseline carries, by resolving each short name to the `.portal` file whose basename it is and that file to its owning package with `dpkg -S`
 
 ## 2. Packaging
 
-- [ ] 2.1 Add `packages/gridline/debian/gridline-config.install` placing the file at `usr/share/xdg-desktop-portal/gridline-portals.conf`, and verify with `dpkg -c` on the built package that the path is exactly that, lower-cased and inside the portal directory, since neither is a preference
-- [ ] 2.2 Declare `xdg-desktop-portal` and `xdg-desktop-portal-gtk` as `Depends` of `gridline-config`, and `xwayland` as `Depends` of `gridline-session`, and verify each with `dpkg-deb -f` on the built packages rather than by reading the control file
-- [ ] 2.3 Verify the three packages are no longer relied on informally, by confirming they were present on the baseline only through `ubuntu-session` and `libmutter` before this change and are declared by Gridline after it
-- [ ] 2.4 Verify the mapping is not registered as a conffile, since it is Gridline's own decision rather than a file an administrator is expected to edit, and record where an administrator overrides it instead
-- [ ] 2.5 Build and verify both existing gates still pass, and that the ownership gate's file count rose by exactly one
+- [x] 2.1 Add `packages/gridline/debian/gridline-config.install` placing the file at `usr/share/xdg-desktop-portal/gridline-portals.conf`, and verify with `dpkg -c` on the built package that the path is exactly that, lower-cased and inside the portal directory, since neither is a preference
+- [x] 2.2 Declare `xdg-desktop-portal` and `xdg-desktop-portal-gtk` as `Depends` of `gridline-config`, and `xwayland` as `Depends` of `gridline-session`, and verify each with `dpkg-deb -f` on the built packages rather than by reading the control file
+- [x] 2.3 Verify the three packages are no longer relied on informally, by confirming they were present on the baseline only through `ubuntu-session` and `libmutter` before this change and are declared by Gridline after it
+- [x] 2.4 Verify the mapping is not registered as a conffile, since it is Gridline's own decision rather than a file an administrator is expected to edit, and record where an administrator overrides it instead
+- [x] 2.5 Build and verify both existing gates still pass, and that the ownership gate's file count rose by exactly one
 
 ## 3. Documentation
 

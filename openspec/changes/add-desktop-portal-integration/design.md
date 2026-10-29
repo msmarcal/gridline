@@ -46,6 +46,16 @@ So the file sets `default=hyprland;gtk`, searched in that order, and then names 
 
 The specification relies on exactly two portal interfaces, `ScreenCast` through the screen sharing and screen capture scenarios and `FileChooser` through the file chooser scenario, derived from the scenarios rather than from what the backends offer. `Screenshot` and `GlobalShortcuts` are claimed by the compositor backend and no requirement relies on them; the default covers them without this change asserting a reliance the project has not taken.
 
+### The mapping is assembled at build time from the adapters
+
+The isolation gate rejected the first version of this file, and it was right to. A mapping naming `hyprland` lives outside the adapter boundary, and `compositor-abstraction` requires that supporting a second compositor be confined to selecting which adapter is active. A file someone must edit to add a compositor is not confined.
+
+Moving the file inside the boundary was not available: `package-delivery` and three documents record `gridline-portals.conf` as `gridline-config`'s, and a mapping is configuration rather than session logic. Excluding `src/config/` from the gate was available and was rejected, because the gate would then be weaker for every change after this one and `add-ci-vm-smoke-tests` inherits it.
+
+So the knowledge moved rather than the file. Each adapter declares the portal backend serving its compositor, in `src/adapters/<compositor>/portal-backend`, inside the boundary. A template in `src/config/` carries everything else and names no compositor. The build assembles them, `gridline-config` ships the result, and adding a compositor means adding an adapter directory.
+
+One mapping has to serve every compositor, because the frontend reads one file per desktop identity and Gridline's identity names Gridline first whichever compositor is active. That works because the frontend searches a backend list for an implementation of the interface it is resolving and passes over a backend that offers none, which `portals.conf(5)` states and which is already why `gtk` is passed over for screen capture. Listing a compositor backend that is not installed therefore costs nothing.
+
 ### `gnome.portal` is named nowhere
 
 It claims eighteen interfaces, including all three the compositor backend serves, and it is installed because GNOME is installed and must stay. Naming it for anything would make a Gridline session's behaviour depend on whether the user still has GNOME, which is the opposite of what the fallback guarantee promises. Where GNOME's backend is the only implementation of an interface the session does not rely on, the interface simply has no entry, because relying on it is what would need declaring.

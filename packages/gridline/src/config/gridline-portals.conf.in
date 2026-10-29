@@ -1,0 +1,47 @@
+# Portal backend selection for the Gridline session.
+#
+# GENERATED AT BUILD TIME. Edit the template at
+# src/config/gridline-portals.conf.in, or the adapter declarations it draws
+# from, rather than this file.
+#
+# The portal frontend reads this file because the session's desktop identity
+# names Gridline first and the frontend case-folds that name to build the
+# filename it looks for. Without it, selection falls back to matching each
+# element of the identity against each backend's own UseIn list, which on the
+# baseline resolves screen capture through the compositor's name and leaves the
+# file chooser matching nothing at all.
+#
+# Entries take a backend's short name, the basename of its .portal file, as
+# portals.conf(5) defines. Backends are searched in the order written, and a
+# backend that implements nothing for an interface is passed over, which is how
+# one file serves every compositor Gridline supports.
+
+[preferred]
+
+# Every interface, so that no request reaches the frontend's own matching.
+# Compositor backends come first because the interfaces that need a compositor
+# are the ones only a compositor backend serves; the GTK backend answers the
+# rest.
+#
+# The GNOME backend is deliberately absent. It implements eighteen interfaces,
+# including every one a compositor backend serves, and it is installed because
+# GNOME is installed and must remain installed as the fallback desktop. Naming
+# it would make a Gridline session's behaviour depend on whether the user still
+# has GNOME, which inverts the guarantee that removing Gridline leaves a working
+# desktop rather than the other way round.
+default=@COMPOSITOR_BACKENDS@;gtk
+
+# The two interfaces the specification relies on are named rather than left to
+# the order above, so that reordering the default cannot move them silently.
+#
+# ScreenCast: specs/platform-integration, "Screen sharing works" and "Screen
+# capture does not depend on fallback matching". The GTK backend does not
+# implement screen capture on Wayland, so a compositor backend is the only
+# implementation rather than the preferred one.
+org.freedesktop.impl.portal.ScreenCast=@COMPOSITOR_BACKENDS@
+
+# FileChooser: specs/platform-integration, "File chooser works". The GTK
+# backend declares UseIn=gnome, which neither element of Gridline's identity
+# matches, so before this file existed no backend claimed this interface for a
+# Gridline session.
+org.freedesktop.impl.portal.FileChooser=gtk

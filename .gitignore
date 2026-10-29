@@ -27,6 +27,8 @@ packages/*/debian/*.debhelper
 packages/*/debian/*.debhelper.log
 packages/*/debian/debhelper-build-stamp
 packages/*/debian/gridline-*/
+# Build-time output assembled from the source tree, staged for dh_install.
+packages/*/debian/generated/
 
 # Local tooling and caches
 .cache/
