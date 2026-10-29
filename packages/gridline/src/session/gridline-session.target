@@ -62,3 +62,12 @@ BindsTo=graphical-session.target
 # the document instead is the better shape anyway: the reasoning lives in one
 # place rather than two that can drift.
 Wants=hyprpolkitagent.service
+
+# Held running but not required. Upholds= keeps a unit alive, restarting it if
+# it stops, and systemd reports it separately from Wants=, which is what makes
+# the distinction usable here: the launcher refuses the session when a unit the
+# target Wants is not running, and the project records that no idle daemon is a
+# blocking component. A session without idle detection stops locking itself,
+# which is a worse desktop; a session without a locker cannot lock at all, which
+# is an unsafe one. Only the second refuses to start.
+Upholds=gridline-idle.service

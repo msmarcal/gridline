@@ -1,0 +1,29 @@
+# Idle detection for a Gridline session.
+#
+# The archive ships no unit for the idle daemon, so this one is Gridline's. It
+# is held by gridline-session.target through Upholds= rather than Wants=, and
+# that distinction is load-bearing: the session launcher refuses to start when a
+# unit the target Wants is not running, and the project records that no idle
+# daemon is a blocking component. Upholds keeps it running, and restarts it if
+# it stops, without making its absence a reason to refuse a session.
+#
+# All three events run the same entry point. The timeout is inactivity; the lock
+# event is logind's Lock signal, which is what the key binding raises by asking
+# logind rather than running a locker; before-sleep is suspend. One path, three
+# doors.
+
+[Unit]
+Description=Gridline idle detection
+PartOf=graphical-session.target
+After=graphical-session.target
+ConditionEnvironment=WAYLAND_DISPLAY
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/swayidle -w \
+    timeout 300 /usr/libexec/gridline/gridline-lock \
+    lock /usr/libexec/gridline/gridline-lock \
+    before-sleep /usr/libexec/gridline/gridline-lock \
+    idlehint 300
+Restart=on-failure
+Slice=session.slice

@@ -2,3 +2,5 @@ src/session/gridline.desktop usr/share/wayland-sessions/
 src/session/gridline-session usr/libexec/gridline/
 src/session/gridline-session.target usr/lib/systemd/user/
 src/adapters/hyprland/adapter usr/libexec/gridline/adapters/hyprland/
+src/session/gridline-lock usr/libexec/gridline/
+src/session/gridline-idle.service usr/lib/systemd/user/

@@ -1,0 +1,66 @@
+#!/bin/sh
+# The session's one lock entry point.
+#
+# Everything that locks a Gridline session arrives here: the idle timeout, the
+# suspend hook, and the key binding, which asks logind to lock rather than
+# running a locker so that a request from anywhere on the system takes the same
+# route. session-manageability requires that lock policy be one policy rather
+# than several components configured independently, and this change does not
+# build that policy layer, but it should not build something the layer has to
+# undo first.
+#
+# What this adds over running the locker directly is the one thing the locker
+# does not do: telling logind that the session is locked. Measured on the
+# baseline, swaylock sets nothing, and the session read LockedHint=no through
+# two separate lock verifications while the compositor was genuinely locked.
+# Anything that acts on the system's view of lock state disagreed with the
+# compositor for the whole of it.
+
+set -u
+
+LOCKER=/usr/bin/swaylock
+SESSION_OBJECT=/org/freedesktop/login1/session/auto
+SESSION_IFACE=org.freedesktop.login1.Session
+
+# auto, not self. This runs under the systemd user manager, which belongs to no
+# login session, and there self is an unknown object: measured from inside a
+# user unit, self fails outright while auto resolves to the graphical session.
+# auto is logind's alias for the caller's session if it has one and the user's
+# display session otherwise, which is exactly this case. An earlier version used
+# self because a probe run as a child of the compositor, which is in the
+# session, resolved it fine. The probe was in the wrong context, not the
+# alias in the wrong place.
+#
+# Errors are reported rather than discarded. The first version silenced busctl
+# entirely, so when the call failed the session locked, the hint stayed false,
+# and nothing anywhere said why.
+set_locked_hint() {
+    if ! busctl call org.freedesktop.login1 "$SESSION_OBJECT" "$SESSION_IFACE" \
+        SetLockedHint b "$1" >/dev/null 2>&1; then
+        printf 'gridline-lock: could not set LockedHint to %s\n' "$1" >&2
+        logger -t gridline-lock -p daemon.err \
+            "could not set LockedHint to $1 on $SESSION_OBJECT" 2>/dev/null
+        return 1
+    fi
+}
+
+# A second locker over the first would stack: the idle timeout can fire while
+# the user is already locked, and the suspend hook can fire on top of that.
+if pgrep -x "$(basename "$LOCKER")" >/dev/null 2>&1; then
+    exit 0
+fi
+
+if [ ! -x "$LOCKER" ]; then
+    printf 'gridline-lock: %s is not installed\n' "$LOCKER" >&2
+    logger -t gridline-lock -p daemon.err "locker missing at $LOCKER" 2>/dev/null
+    exit 1
+fi
+
+# Cleared on every exit path, including a locker that fails to start and one
+# killed from outside. A hint left true is worse than one never set: the system
+# would believe an unlocked session is locked, which is the failure this
+# ordering exists to prevent rather than a tidiness concern.
+trap 'set_locked_hint false' EXIT INT TERM
+
+set_locked_hint true
+"$LOCKER"
