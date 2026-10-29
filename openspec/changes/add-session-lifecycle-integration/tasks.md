@@ -32,8 +32,8 @@
 
 Execution note: this group needs the session running on the VM, started from the greeter. Two of its checks cannot be performed on that machine and say so rather than being skipped silently.
 
-- [ ] 5.1 Start a Gridline session with all three components installed and verify it reaches a desktop, so the new gate is shown not to refuse a correct installation
-- [ ] 5.2 Lock the session manually and verify the contents are no longer accessible and that authentication is required to return, recording which key or command was used since nothing is bound yet
+- [x] 5.1 Start a Gridline session with all three components installed and verify it reaches a desktop, so the new gate is shown not to refuse a correct installation
+- [x] 5.2 Lock the session manually and verify the contents are no longer accessible and that authentication is required to return, recording which key or command was used. Used `swaylock` typed in a terminal, since nothing is bound to a key yet. The screen became inaccessible and showed light grey with no indicator, which is the locker's documented default: the background defaults to A3A3A3 and the indicator appears on input, which is why `--indicator-idle-visible` exists. Authentication was genuinely enforced rather than assumed, evidenced by a `pam_unix(swaylock:auth): authentication failure` in the journal before the successful unlock. One finding for `add-gridline-configuration-defaults`: `LockedHint` stayed `no` throughout, so the compositor was locked while logind did not know it, and wiring the idle daemon to logind's lock signal belongs to the change that configures them
 - [ ] 5.3 Suspend the locked session and resume it, and verify it is still locked and still requires authentication. The machine supports suspend: `/sys/power/state` offers `freeze mem` and `sleep.target` exists
 - [ ] 5.4 Verify suspend and resume return a working session with display, input and network restored, and record anything that did not come back
 - [ ] 5.5 Trigger a privileged action and verify the prompt appears and accepts credentials, recording which action was used
