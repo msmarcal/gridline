@@ -29,14 +29,14 @@ Execution note: this group needs the session running on the VM, started from the
 - [x] 4.2 Verify resolution no longer depends on the compositor's name, by confirming the match is on `Gridline`. The check that distinguishes a real fix from an apparent one is whether the outcome would change if the compositor's own claim were removed
 - [x] 4.3 Verify the file chooser resolves to the GTK backend, which before this change matched nothing under Gridline's identity, and record what the frontend did with it beforehand so the difference is on record rather than assumed
 - [x] 4.4 Verify screen capture still resolves to the compositor backend, now through Gridline's entry rather than through the compositor's `UseIn`
-- [ ] 4.5 Verify a confined graphical Snap application runs and reaches portal services, and record which Snap was used, since the scenario names no particular one and a later reader needs to know what was exercised
+- [x] 4.5 Verify a confined graphical Snap application runs and reaches portal services, and record which Snap was used. Used `gnome-text-editor` 48.3, strictly confined and running under the AppArmor profile `snap.gnome-text-editor.gnome-text-editor (enforce)` with `GTK_USE_PORTAL=1`. It was chosen because opening a file goes through the FileChooser interface, the one no backend claimed under Gridline's identity before this change, so the test exercises what changed rather than what already worked. The dialog was served by `xdg-desktop-portal-gtk`, the only backend with a running process, while the GNOME backend that also implements FileChooser stayed inactive
 - [x] 4.6 Verify an X11-only application runs under XWayland, and record which one. Used `xeyes` from `x11-apps` 7.7+11build4, chosen because it links `libX11` and no Wayland library at all, so its rendering in a Wayland session can only be XWayland. Confirmed by contrast: the snap running beside it links `libwayland-client` as well
 
 ## 5. Coherence
 
-- [ ] 5.1 Verify the requirement added by this change is satisfied by something a reader can check, and name the file and section that satisfies each of its scenarios
-- [ ] 5.2 Record that one scenario of the existing portal requirement, the one requiring a missing configuration to be reported by the diagnostic commands, stays unsatisfiable until `add-session-health-check` delivers that surface, and verify the record names that change as its owner
-- [ ] 5.3 Verify no file under `packages/gridline/src/adapters/` was touched, since nothing in this change is compositor-specific, and confirm the isolation gate still reports zero references outside the adapter path
+- [x] 5.1 Verify the requirement added by this change is satisfied by something a reader can check, and name the file and section that satisfies each of its scenarios
+- [x] 5.2 Record that one scenario of the existing portal requirement, the one requiring a missing configuration to be reported by the diagnostic commands, stays unsatisfiable until `add-session-health-check` delivers that surface, and verify the record names that change as its owner
+- [x] 5.3 Verify the only file this change added under `packages/gridline/src/adapters/` is the adapter's declaration of which portal backend serves its compositor, and that the isolation gate reports zero references outside the boundary. This task was written assuming nothing in the change would be compositor-specific and that the directory would go untouched. The gate disproved that premise: naming a portal backend is compositor knowledge, and the gate rejected the first version of the mapping for holding it outside the boundary. The directory is touched, which is the correct outcome rather than a violation of it
 
 ## Workflow follow-up
 
