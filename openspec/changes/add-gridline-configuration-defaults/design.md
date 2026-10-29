@@ -63,6 +63,14 @@ The third scenario of the new requirement asks that a user not lose the defaults
 
 So the defaults carry something a running session can be asked about, and the session can report which configuration produced its current state. What that marker is depends on what the compositor can be asked at runtime, which is a measurement rather than a choice, and the adapter is where the asking belongs, since it is the component that already queries the compositor. `add-session-health-check` owns surfacing the answer; this change owns making the answer exist.
 
+### A terminal is declared, and the binding does not name it
+
+The keymap scenario asks that a user be able to launch a terminal on first login. The baseline does not supply one: measured against the archive, neither `ubuntu-desktop` nor `ubuntu-desktop-minimal` depends on or recommends a terminal emulator, and both depend on `xdg-terminal-exec`. The only terminal on the verification machine is one that `apt-mark showmanual` reports as hand-installed, so it is not evidence about the baseline. Every candidate is in `universe`, so that gap applies whichever is chosen and the choice rests elsewhere.
+
+The binding calls `xdg-terminal-exec`, which is in `main` and is the freedesktop mechanism for "open the terminal this system is configured to use". `gridline-session` separately declares `foot`, so there is one for it to find. Two things follow, and both are the point rather than a side effect: a user who prefers another terminal registers it the standard way instead of editing a Gridline keybinding, and Gridline's keymap contains no terminal's name, so the choice can change without the configuration changing.
+
+`foot` over the alternatives for the ordinary reasons: it is the terminal `docs/user-experience.md` already names in the 3.x stack this project targets, it is Wayland-native, and at 700 KB installed it is the smallest of the candidates against `gnome-console`'s 1164 KB. Configuring it stays out of scope; this change declares that it exists and nothing more.
+
 ### `swayidle`, on the evidence already gathered
 
 `add-session-lifecycle-integration` measured the candidates and recorded them as candidate evidence rather than discarding them: `swayidle` links no Hyprland library, where `hypridle` links `libhyprlang2` and `libhyprutils10`. The reason that mattered there applies here with more force, because this is the change that puts the idle daemon in the lock path: `libhyprlang`'s `findConfig` is the obstacle this whole design works around, and building the component that decides when to lock on top of it would be a choice rather than an inheritance.

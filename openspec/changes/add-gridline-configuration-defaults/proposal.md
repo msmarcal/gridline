@@ -11,13 +11,14 @@ Two records already say this is owed. `package-delivery` requires `gridline-conf
 **This change ships implementation.** It gives `gridline-config` its first content and makes a freshly installed session usable without the user editing anything.
 
 - Ships compositor defaults covering tiling, workspaces, focus movement, window placement and a Super-centric keymap, so the session is operable from the keyboard on first login.
+- Declares a terminal emulator, because the baseline guarantees none. Neither `ubuntu-desktop` nor `ubuntu-desktop-minimal` depends on or recommends one; both depend on `xdg-terminal-exec`, which is the launcher with nothing to launch. A keymap whose most obvious binding opens nothing is not a usable session, so the binding calls `xdg-terminal-exec` and the package declares a terminal for it to find.
 - Establishes **how** a Gridline default reaches a component that resolves configuration by first-file-wins rather than by merging, and how a user customizes without silently discarding every default. This is the change's central design problem, not a detail: `docs/configuration.md` records that `findConfig` returns the first file it finds and stops.
 - Selects the idle daemon, using the measurements `add-session-lifecycle-integration` left as candidate evidence, and configures idle timeout so the session locks itself.
 - Ships a default for `misc:allow_session_lock_restore`, since recovery from a dead locker currently has only the TTY route.
 - Makes the session's locked state observable to `systemd-logind`. `LockedHint` read `no` in both lock verifications, so the compositor was locked while the system did not know it.
 - Resolves where compositor configuration lives. `package-delivery` puts shipped defaults in `gridline-config`; `compositor-abstraction` puts compositor-specific content inside the adapter. A compositor configuration file is both, and the two rules currently point at different places.
 
-**Out of scope.** The policy layer: the generator, per-setting locks and the reporting of policy that is not in effect are `session-manageability`'s six requirements and belong to the change that implements them. This change ships defaults an administrator may edit, not policy an administrator can enforce. Also out of scope, and deliberately: the status bar, the application launcher, the wallpaper daemon, capture tools, and terminal, editor and monitor defaults. Those are the rest of the table in `docs/user-experience.md` and are a separate change, so that this one can be verified as a whole.
+**Out of scope.** The policy layer: the generator, per-setting locks and the reporting of policy that is not in effect are `session-manageability`'s six requirements and belong to the change that implements them. This change ships defaults an administrator may edit, not policy an administrator can enforce. Also out of scope, and deliberately: the status bar, the application launcher, the wallpaper daemon, capture tools, and terminal, editor and monitor defaults. Declaring a terminal so that a key can open one is not configuring it, and this change ships no terminal configuration. Those are the rest of the table in `docs/user-experience.md` and are a separate change, so that this one can be verified as a whole.
 
 ## Capabilities
 
@@ -36,7 +37,7 @@ None.
 
 - `packages/gridline/src/config/`: the compositor defaults and the keymap, new content.
 - `packages/gridline/debian/gridline-config.install`: the first files that package ships beyond the portal mapping.
-- `packages/gridline/debian/control`: the idle daemon as a dependency of `gridline-session`, and a description that stops saying `gridline-config` ships no content.
+- `packages/gridline/debian/control`: the idle daemon and a terminal emulator as dependencies of `gridline-session`, and a description that stops saying `gridline-config` ships no content.
 - `packages/gridline/tools/check-adapter-isolation`: the gate matches file contents, so a compositor configuration file passes it while being the most compositor-specific content in the project. Whether the gate's reference list or its scope is what needs to change is part of this work.
 - `docs/configuration.md`, `docs/component-ownership.md`, `docs/user-experience.md`: the selection, the resolution mechanism, and which elements of the target experience are now delivered.
 - Verification runs on the LXD VM, where the three lock debts were measured and where a session can be started from the greeter.

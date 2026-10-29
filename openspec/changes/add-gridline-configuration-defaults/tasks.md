@@ -28,6 +28,7 @@ These come first because the rest is built on their answers. A task here that re
 
 ## 2. The defaults themselves
 
+- [ ] 2.0 Declare a terminal emulator as a dependency of `gridline-session` and bind the keymap to `xdg-terminal-exec` rather than to its name. Verify with `dpkg-deb -f` on the built package, and verify by grep that no Gridline configuration file names a terminal, since the point of the indirection is that the choice can change without the keymap changing
 - [ ] 2.1 Author the compositor defaults under `src/adapters/<compositor>/`, covering tiling, workspaces, focus movement, window placement and the Super-centric keymap. Verify the file is inside the adapter path by running the isolation check, which must still report zero references outside it
 - [ ] 2.2 Author the loader that sits at the compositor's search path and sources the defaults. Verify on the VM that a session started with no user configuration has the defaults in effect, using the answer from 1.2 rather than inference
 - [ ] 2.3 Ship both through `gridline-config` rather than `gridline-session`, and verify with `dpkg -L` on the built package that the installed paths belong to the package `package-delivery` names, not the one whose source tree holds the file
