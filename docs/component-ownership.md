@@ -49,14 +49,26 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 
 The compositor's own backend is the exception on this page: it is the only portal component whose absence blocks startup, because screen capture on Wayland cannot be served by any other backend. The frontend and the GTK backend degrade in the ordinary way.
 
-There is a second, less obvious failure here, and it is a Gridline problem rather than a missing component. `xdg-desktop-portal` selects backends by looking for `<desktop>-portals.conf`, taking the desktop name from the first entry in `XDG_CURRENT_DESKTOP`. Gridline's identity is `Gridline:Hyprland`, so the frontend looks for `gridline-portals.conf`. The `hyprland` package ships `/usr/share/xdg-desktop-portal/hyprland-portals.conf`, which is never consulted under that identity, and `hyprland.portal` lists `UseIn=wlroots;Hyprland;sway;Wayfire;river;` without `Gridline` - so the deprecated `UseIn` fallback does not match either. **Gridline must ship its own `gridline-portals.conf`**; without it, backend selection falls to a last-resort fallback and screen capture fails while the session appears healthy. The file is a Gridline-named drop-in, not a modification of a file another package owns.
+Gridline ships `gridline-portals.conf` and the frontend reads it, which is what decides backend selection in a Gridline session. Before that file existed the frontend fell back to matching each element of `XDG_CURRENT_DESKTOP` against each backend's own `UseIn` list, and what it produced is worth recording because it explains the shape of the file.
 
-Two mechanical details decide whether that file is ever read, and both are verified against `xdg-desktop-portal 1.21.1+ds-1ubuntu3.1`:
+Two mechanical details decide whether the file is read at all, and both are verified against `xdg-desktop-portal 1.21.1+ds-1ubuntu3.1`:
 
 - **The filename is lower-cased.** The frontend case-folds each desktop name with `g_ascii_strdown` before building the filename, so the identity `Gridline` yields `gridline-portals.conf`. A file named `Gridline-portals.conf` is never found.
-- **The search directory is a portal directory, not a generic config root.** The frontend appends `xdg-desktop-portal/` to each base directory it searches, so the vendor default belongs at `/usr/share/xdg-desktop-portal/gridline-portals.conf` and an administrator override at `/etc/xdg-desktop-portal/gridline-portals.conf`. A file placed at the root of a Gridline-owned directory, or in `/etc/xdg` without the `xdg-desktop-portal/` component, is not on any search path.
+- **The search directory is a portal directory, not a generic config root.** The frontend appends `xdg-desktop-portal/` to each base directory it searches, so the vendor default belongs at `/usr/share/xdg-desktop-portal/gridline-portals.conf` and an administrator override at `/etc/xdg-desktop-portal/gridline-portals.conf`.
 
-The frontend also tries **every** name in `XDG_CURRENT_DESKTOP` in order before falling back, so with `Gridline:Hyprland` a missing `gridline-portals.conf` means the `hyprland-portals.conf` shipped by the compositor package is consulted next. That is a working screen-capture path by accident, which is worse than a clean failure: it hides the missing file until someone changes the identity or the compositor package drops its default.
+**What the file decides**, measured on the baseline:
+
+| Interface | Backend | Why |
+|---|---|---|
+| `org.freedesktop.impl.portal.ScreenCast` | the compositor's | `specs/platform-integration` relies on it through screen sharing and screen capture, and the GTK backend does not implement screen capture on Wayland, so a compositor backend is the only implementation rather than the preferred one |
+| `org.freedesktop.impl.portal.FileChooser` | `gtk` | `specs/platform-integration` relies on it through the file chooser scenario. `gtk.portal` declares `UseIn=gnome`, which neither element of `Gridline:Hyprland` matches, so before this file existed **no backend claimed this interface at all** |
+| every other interface | the compositor's, then `gtk` | A default rather than an enumeration, so no request reaches the frontend's own matching. The frontend passes over a backend that implements nothing for the interface it is resolving, which is how one file serves every compositor Gridline supports |
+
+**The GNOME backend is named nowhere.** It implements eighteen interfaces, including all three the compositor backend serves, and it is installed because GNOME is installed and must remain installed as the fallback desktop. Naming it would make a Gridline session's behaviour depend on whether the user still has GNOME, which inverts the guarantee that removing Gridline leaves a working desktop rather than the other way round. An interface only GNOME's backend implements therefore has no entry, and that absence is deliberate: relying on such an interface is what would need declaring first.
+
+**The mapping is assembled at build time rather than written by hand.** Each adapter declares the portal backend serving its compositor, inside the isolation boundary, and a template outside it names no compositor. Supporting a second compositor stays what `compositor-abstraction` requires it to be: adding an adapter, not editing a configuration file that happens to know a compositor's name.
+
+**What the fallback produced before the file existed**, kept because it explains why the file is not optional: `hyprland.portal` lists `UseIn=wlroots;Hyprland;sway;Wayfire;river` without `Gridline`, so screen capture matched on the second element of the identity, through a file the compositor's package owns and can change. That was a working screen-capture path by accident, which is worse than a clean failure, and the file chooser had no match at all.
 
 | Component | Upstream | Ubuntu source | Component | Gridline ownership | Fallback |
 |---|---|---|---|---|---|

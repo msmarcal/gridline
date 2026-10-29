@@ -17,9 +17,9 @@
 
 ## 3. Documentation
 
-- [ ] 3.1 Replace the passage in `docs/component-ownership.md` that describes the accidental path as the current state, and verify the document no longer presents matching through the compositor's name as how resolution works
-- [ ] 3.2 Record the mapping in `docs/component-ownership.md` with the reason for each assignment, and verify every interface in the document matches the shipped file character for character, since the file and the document are two copies of one claim
-- [ ] 3.3 Record that `gnome.portal` is named nowhere and why, so a later reader does not add it to fix an interface that has no entry on purpose
+- [x] 3.1 Replace the passage in `docs/component-ownership.md` that describes the accidental path as the current state, and verify the document no longer presents matching through the compositor's name as how resolution works
+- [x] 3.2 Record the mapping in `docs/component-ownership.md` with the reason for each assignment, and verify every interface in the document matches the shipped file character for character, since the file and the document are two copies of one claim
+- [x] 3.3 Record that `gnome.portal` is named nowhere and why, so a later reader does not add it to fix an interface that has no entry on purpose
 
 ## 4. Verification in a session
 
