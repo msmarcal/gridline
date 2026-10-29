@@ -3,9 +3,9 @@
 ## 1. The mapping
 
 - [ ] 1.1 List the portal interfaces the session relies on, deriving them from the scenarios in `openspec/specs/platform-integration/spec.md` rather than from the backends' own claims, and record the list with the scenario each interface comes from. An interface nothing in the specification relies on does not belong in the mapping
-- [ ] 1.2 Add `packages/gridline/src/config/gridline-portals.conf` naming a backend for every interface on that list, by D-Bus name rather than by relying on the backend's own matching, and verify by comparing the file's entries against the list from 1.1 in both directions
+- [ ] 1.2 Add `packages/gridline/src/config/gridline-portals.conf` with a `default` covering every interface and an explicit entry for each interface on the list from 1.1. Entries take the backend's short name, the basename of its `.portal` file, which `portals.conf(5)` defines and which is not the backend's D-Bus name. Verify the explicit entries match the list from 1.1 in both directions, and that the default leaves no interface resolving through the frontend's own matching
 - [ ] 1.3 Verify no entry names `gnome.portal`'s backend, and record why for any interface where that leaves no entry at all: the session relies on it and something else must serve it, or it does not rely on it and the absence is correct
-- [ ] 1.4 Verify every backend the file names is provided by a package the baseline carries, by resolving each D-Bus name to the `.portal` file that declares it and that file to its owning package with `dpkg -S`
+- [ ] 1.4 Verify every backend the file names is provided by a package the baseline carries, by resolving each short name to the `.portal` file whose basename it is and that file to its owning package with `dpkg -S`
 
 ## 2. Packaging
 

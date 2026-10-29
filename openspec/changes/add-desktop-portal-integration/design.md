@@ -36,11 +36,15 @@ So screen capture resolves through `Hyprland`, the second element, and the file 
 
 ## Decisions
 
-### The mapping names a backend for every relied-on interface, not only the contested ones
+### A default plus explicit entries, rather than an enumeration
 
-A first reading suggests naming only the interfaces two backends fight over. Measurement says otherwise: the file chooser has the opposite problem, no backend claims it under this identity, and an interface nothing claims is as unresolved as one two backends claim.
+The first draft of this design said the file names a backend for each relied-on interface and nothing else, and that it would name them by D-Bus name. Reading `portals.conf(5)` corrected both points. Entries take the backend's short name, the basename of its `.portal` file, and the format has a `default` key covering every interface not listed explicitly.
 
-So the file names a backend for each interface the session relies on. The compositor backend takes the interfaces that need the compositor: `ScreenCast`, `Screenshot` and `GlobalShortcuts`. The GTK backend takes the toolkit interfaces it implements, with the file chooser first among them. An interface with no entry is a gap this change is responsible for, not a case the frontend may improvise on.
+That key changes the shape of the answer. An enumeration leaves every unlisted interface resolving through the frontend's own `UseIn` matching, which is the accidental path this change exists to remove; it would remove it for two interfaces and leave it for the rest. A default removes it for all of them in one line.
+
+So the file sets `default=hyprland;gtk`, searched in that order, and then names the two interfaces the specification relies on explicitly. The default means no request reaches the frontend's own matching. The explicit entries mean the two the specification names are decided by name rather than by the order of a list, so reordering the default cannot silently move them.
+
+The specification relies on exactly two portal interfaces, `ScreenCast` through the screen sharing and screen capture scenarios and `FileChooser` through the file chooser scenario, derived from the scenarios rather than from what the backends offer. `Screenshot` and `GlobalShortcuts` are claimed by the compositor backend and no requirement relies on them; the default covers them without this change asserting a reliance the project has not taken.
 
 ### `gnome.portal` is named nowhere
 
@@ -52,7 +56,7 @@ The test that distinguishes a real fix from an apparent one is whether removing 
 
 ### The three archive packages are declared where they are required
 
-`xdg-desktop-portal` and `xdg-desktop-portal-gtk` are required by `gridline-config`, because the mapping it ships names backends those packages provide and a mapping naming an absent backend is worse than no mapping. `xwayland` is required by `gridline-session`, because X11 applications are a session capability rather than a configuration one.
+`xdg-desktop-portal` and `xdg-desktop-portal-gtk` are required by `gridline-config`, because the mapping it ships names backends those packages provide and a mapping naming an absent backend is worse than no mapping. The compositor's backend is already a dependency of `gridline-session`, declared by `add-hyprland-session-baseline` because the adapter cannot report `screencast` without it. `xwayland` is required by `gridline-session`, because X11 applications are a session capability rather than a configuration one.
 
 The alternative was declaring all three on `gridline-session`, which is simpler and wrong: `gridline-config` installed without the backends it names produces a configuration file that points at nothing, and the package that ships a claim should be the package that requires what the claim depends on.
 
@@ -62,7 +66,7 @@ The alternative was declaring all three on `gridline-session`, which is simpler 
 
 ## Risks / Trade-offs
 
-- **The compositor package could stop claiming an interface the mapping names.** → The mapping names the backend by its D-Bus name rather than relying on the backend's own matching, so the entry survives a change to that package's `UseIn`. What it does not survive is the backend being removed, which is a dependency problem and is why the packages are declared.
+- **The compositor package could stop claiming an interface the mapping names.** → The mapping names the backend directly rather than relying on that backend's own `UseIn` list, so the entry survives a change to it. What it does not survive is the backend being removed, which is a dependency problem and is why the packages are declared.
 - **An interface relied on later and not added to the mapping fails the new requirement silently.** → Until `add-session-health-check` exists, nothing reports it at runtime. The mitigation here is a build-time check only if one is cheap; otherwise the obligation is recorded and the diagnostic change owns detection.
 - **Naming the GTK backend for the file chooser ties Gridline to a package whose `UseIn` says `gnome`.** → The entry names the backend directly, so the mismatch between its `UseIn` and Gridline's identity stops mattering. That mismatch is exactly why the entry is needed.
 - **Snap confinement is verified rather than configured, so a failure there has no owner in this change.** → If a confined Snap cannot reach a portal, the finding is recorded with the change that owns the affected component rather than absorbed here.
