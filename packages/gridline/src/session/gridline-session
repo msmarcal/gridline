@@ -172,15 +172,20 @@ fi
 # The list is read back from the target instead of repeated here, so the units
 # the session depends on are declared in exactly one place.
 #
-# What this catches and what it does not, measured rather than assumed. It
-# catches a unit that never started, which is not hypothetical: an earlier
-# version of the target closed an ordering cycle and systemd broke it by
-# deleting the agent's start job, so the target was reached with the component
-# never run. It does not catch a unit that started and then exited, because the
-# units are Type=simple and are active from the fork, and the polkit agent in
-# particular exits 0 when it cannot register, so systemd does not even count
-# that as a failure to restart. Observing a component over the life of a session
-# is a diagnostic rather than a gate, and add-session-health-check owns it.
+# What this catches and what it does not. It catches a unit that never started,
+# which is not hypothetical: an earlier version of the target closed an ordering
+# cycle and systemd broke it by deleting the agent's start job, so the target was
+# reached with the component never run.
+#
+# It does not catch a unit that starts and then keeps crashing. The units are
+# Type=simple, so they are active from the fork, and a check that runs right
+# after the start reads that. Measured on the baseline: the target was reached at
+# 20.710 and the first core dump landed at 24.802, a four-second window in which
+# this loop sees a healthy unit, after which Restart=on-failure cycled it four
+# times. That is the behaviour docs/component-ownership.md already records for
+# the archive's units, and this check does not change it. Observing a component
+# over the life of a session is a diagnostic rather than a startup gate, and
+# add-session-health-check owns it.
 for unit in $(systemctl --user show -p Wants --value "$SESSION_TARGET" 2>/dev/null); do
     systemctl --user is-active --quiet "$unit" && continue
     stop_session
