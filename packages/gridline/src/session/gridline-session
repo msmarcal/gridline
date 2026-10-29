@@ -34,6 +34,26 @@ report_missing() {
 # because reporting one cause is more useful than reporting a list the user has
 # to read backwards.
 
+# Components the session refuses to start without, beyond what the adapter
+# answers for. The adapter reports capabilities, which are statements about the
+# compositor: that it implements the lock protocol is not that a locker is
+# installed. These are checked here because nothing else will. The archive's
+# units for them carry Restart=on-failure, so a missing or failing one restarts
+# quietly and systemd lets the session come up regardless.
+#
+# Absolute paths rather than names resolved through PATH: one of these installs
+# outside PATH, and what matters is that the component is installed rather than
+# that a name resolves in whatever environment the display manager handed over.
+REQUIRED_COMPONENTS="/usr/bin/swaylock
+/usr/bin/swayidle
+/usr/libexec/hyprpolkitagent"
+
+for component in $REQUIRED_COMPONENTS; do
+    [ -x "$component" ] && continue
+    report_missing "session component" \
+        "$(basename "$component") is not installed at $component"
+done
+
 if [ ! -d "$ADAPTER_DIR" ]; then
     report_missing "compositor adapter" \
         "no adapter directory at $ADAPTER_DIR"

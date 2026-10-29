@@ -17,11 +17,11 @@
 
 ## 3. The launcher gates on components
 
-- [ ] 3.1 Add the blocking-component check to the launcher, in the phase that runs before anything starts, and verify by grep that it names no compositor so the isolation gate still reports zero references outside the adapter path
-- [ ] 3.2 Verify an absent blocking component ends the launch with that component named, using a stub installation with one of the three removed, and read the failure from `journalctl -t gridline-session` rather than from the exit status
-- [ ] 3.3 Verify the check runs before the compositor, by confirming no compositor process was created when a component is absent
-- [ ] 3.4 Verify a reported capability does not substitute for a present component: with the adapter reporting `lock-signaling` and the locker removed, the session must still refuse, and the failure must name the locker rather than the capability
-- [ ] 3.5 Verify the check does not consult systemd unit state, since a unit that restarts on failure would otherwise read as evidence the component is present. Confirm by inspection that the check tests for the component itself
+- [x] 3.1 Add the blocking-component check to the launcher, in the phase that runs before anything starts, and verify by grep that it names no compositor so the isolation gate still reports zero references outside the adapter path
+- [x] 3.2 Verify an absent blocking component ends the launch with that component named, using a stub installation with one of the three removed, and read the failure from `journalctl -t gridline-session` rather than from the exit status
+- [x] 3.3 Verify the check runs before the compositor, by confirming no compositor process was created when a component is absent
+- [x] 3.4 Verify a reported capability does not substitute for a present component: with the adapter reporting `lock-signaling` and the locker removed, the session must still refuse, and the failure must name the locker rather than the capability
+- [x] 3.5 Verify the check does not consult systemd unit state, since a unit that restarts on failure would otherwise read as evidence the component is present. Confirm by inspection that the check tests for the component itself
 
 ## 4. The gate's reference list
 
