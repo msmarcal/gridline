@@ -20,7 +20,7 @@ See proposal.md for motivation. Four measurements shape the approach.
 
 **Nothing enforces the blocking classification.** The launcher gates on what the adapter reports, and the adapter reports capabilities rather than components. `docs/component-ownership.md` records that the archive's user units carry `PartOf=graphical-session.target` and `Restart=on-failure`, so a failing one restarts quietly and the session comes up regardless.
 
-**The verification machine has no battery and no lid.** Measured on the VM: zero real `upower` devices, no `BAT*` under `/sys/class/power_supply/`, no `/proc/acpi/button/lid`, and `logind` reporting `LidClosed=false` as a default rather than an observation. Suspend is available: `/sys/power/state` offers `freeze mem` and `sleep.target` exists.
+**The verification machine has no battery and no lid.** Measured on the VM: zero real `upower` devices, no `BAT*` under `/sys/class/power_supply/`, no `/proc/acpi/button/lid`, and `logind` reporting `LidClosed=false` as a default rather than an observation. Suspend is **not** available either, which a first reading of the same machine got wrong. `/sys/power/state` offers `freeze mem` and `sleep.target` exists, and both were read as availability. They are not: that file lists what the kernel was built to support, not what the hardware underneath accepts. Writing to it returns an I/O error and `systemd-sleep` reports `Failed to put system to sleep. System resumed again: Operation not supported`.
 
 ## Goals / Non-Goals
 
