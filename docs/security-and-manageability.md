@@ -19,6 +19,7 @@ Every Hypr-ecosystem package Gridline depends on is in Ubuntu's **universe** com
 This is the single largest gap between what Gridline promises and what the archive provides, and it is not closable by packaging work:
 
 - A Gridline installation inherits no CVE-response SLA for its compositor, locker, idle manager or portal backend.
+- Even under Ubuntu Pro (`esm-apps`), which extends Canonical security backporting to `universe` for high and critical CVEs, the fixes land on the archive's frozen version. ESM never rebases on upstream, so the version drift is not closable by a subscription.
 - `gridline-desktop` cannot live in main while it depends on universe, which is the central obstacle to official flavor candidacy.
 - The archive also lags upstream: Hyprland 0.53.3 in the baseline against 0.56.2 upstream.
 
