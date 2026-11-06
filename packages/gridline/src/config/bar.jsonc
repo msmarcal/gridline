@@ -1,0 +1,48 @@
+// Gridline's default status bar.
+//
+// This file carries everything about the bar that is not the compositor's
+// business: where it sits, what it shows about the machine, and how each of
+// those reads. The one module that is compositor vocabulary, the workspace
+// indicator, is included from the adapter rather than written here, because
+// compositor-abstraction forbids naming a compositor outside the adapter path.
+//
+// The include's precedence runs the opposite way from the compositor's source
+// directive: for a duplicate key the including file wins, so a key defined
+// here is not overridable by the included file. modules-left is therefore
+// deliberately absent, which is what lets the adapter supply it.
+{
+    "include": ["/etc/xdg/gridline/compositor/bar.jsonc"],
+
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "spacing": 12,
+
+    "modules-center": ["clock"],
+    "modules-right": ["network", "battery"],
+
+    "clock": {
+        "format": "{:%a %d %b  %H:%M}"
+    },
+
+    "network": {
+        "format-wifi": "{essid} {signalStrength}%",
+        "format-ethernet": "wired",
+        "format-linked": "no address",
+        "format-disconnected": "offline",
+        "tooltip-format": "{ifname}: {ipaddr}"
+    },
+
+    // The three formats are what distinguishes the power source from the
+    // charge, which the session requirement asks for as two separate things.
+    "battery": {
+        "format": "{capacity}%",
+        "format-charging": "{capacity}% charging",
+        "format-plugged": "{capacity}% plugged",
+        "format-full": "{capacity}% full",
+        "states": {
+            "warning": 20,
+            "critical": 10
+        }
+    }
+}

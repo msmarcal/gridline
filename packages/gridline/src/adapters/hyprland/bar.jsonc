@@ -1,0 +1,18 @@
+// The bar's compositor-side module, in the compositor's own vocabulary.
+//
+// It lives in the adapter because the module name is a compositor's name, and
+// compositor-abstraction requires that such a name appear nowhere else. The
+// Gridline operation this expresses is "show which workspace the user is on";
+// a different adapter supplies its own file at the same installed path and the
+// rest of the bar's configuration does not change.
+//
+// modules-left is supplied here rather than in the including file because an
+// included value applies only where the including file defines none.
+{
+    "modules-left": ["hyprland/workspaces"],
+
+    "hyprland/workspaces": {
+        "format": "{id}",
+        "on-click": "activate"
+    }
+}

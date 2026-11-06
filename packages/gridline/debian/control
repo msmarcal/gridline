@@ -21,7 +21,8 @@ Depends: ${misc:Depends},
          kitty,
          waybar,
          mako-notifier,
-         hyprpaper
+         hyprpaper,
+         ubuntu-wallpapers
 Description: Gridline session integration
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
  package owns the session entry the display manager reads, the session
@@ -52,7 +53,10 @@ Description: Gridline session integration
  is worse and not unsafe.
  .
  Every package this one depends on is in the universe component except
- xwayland and xdg-terminal-exec, which are in main. Universe carries no
+ xwayland, xdg-terminal-exec and ubuntu-wallpapers, which are in main. The
+ last of those is depended on for one file: the symlink it maintains at the
+ release's own wallpaper, which the shipped wallpaper configuration names so
+ that a per-release rename does not leave the desktop blank. Universe carries no
  Canonical security-update commitment. Main does. Patching them is the
  operator's responsibility, which on a personal machine means its owner.
 

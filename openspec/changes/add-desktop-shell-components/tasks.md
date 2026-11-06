@@ -75,13 +75,31 @@ The gate that was missing exists: `tools/check-declared-paths` fails a manifest 
 
 
 
-- [ ] 3.1 Author each component's own configuration, in that component's format, outside the adapter path, since these are read by programs that are not the compositor. Verify the isolation check still reports zero references outside the adapter path, and that it does so with the name match as well as the content match
-- [ ] 3.2 Author the compositor-side configuration that launches and places these components, inside the adapter path, since that part is the compositor's vocabulary
-- [ ] 3.3 Ship a default appearance for each, and verify against the line the design draws: no colour is defined once and consumed by two components. Confirm by reading the shipped files, since the test is about whether anything generalises rather than about how much styling there is
-- [ ] 3.4 Verify a later theme change could replace these files wholesale without unpicking anything, by naming for each file what would have to change and confirming none of them is a mechanism other files depend on
-- [ ] 3.5 Ship all of it through `gridline-config` and verify with `dpkg -c` on the built package that the installed paths belong to the package `package-delivery` names as the owner of shipped defaults
-- [ ] 3.6 Register the shipped configuration as conffiles and verify with `dpkg-deb -I <package> conffiles`, since an administrator is expected to edit them
-- [ ] 3.7 Verify both gates pass and account for the ownership gate's file count, which must rise by exactly the number of files this change ships
+- [x] 3.1 Authored four files outside the adapter path, under `/etc/xdg/gridline/shell/`, mirroring `compositor/` for the compositor: `bar.jsonc`, `bar-style.css`, `notifications.conf` and `wallpaper.conf`. Isolation check after: **5 files inside `src/adapters`, 15 outside, 0 references found**, with the name match as well as the content match.
+
+  The wallpaper file is the first thing written in the 0.8.3 syntax task 1.6 established, and it carries `splash = 0` for a reason outside this change: the component draws its own project name over the wallpaper by default, and `desktop-session` already requires that a first login present no upstream project messaging.
+
+  **Where the default wallpaper comes from was a decision the plan did not settle**, since the scenario asks for the background Gridline ships and Gridline ships no image. Resolved by depending on `ubuntu-wallpapers` and naming `/usr/share/backgrounds/ubuntu-default-greyscale-wallpaper.png`, a symlink the package ships, confirmed in its file list, and which tracks the release through its dependency on `ubuntu-wallpapers-resolute`. Every other file in that directory is renamed per release; this one is not. The component offers no solid-colour directive, read from the 0.8.3 source, so the alternative was shipping an image, and Gridline ships the choice instead. The package is in **main**, so the long description's exception list grew to three and was corrected again
+- [x] 3.2 **One adapter file, and the task's own wording was wrong about why.** It says the compositor-side configuration launches and places these components. It does neither: the session target starts them, as the design decided, and they are layer-shell clients whose exclusive zone the compositor honours without being configured to. The design asserted both things in two places; it now asserts one, and the preamble of group 5 that repeated the `exec-once` claim is corrected too.
+
+  What is genuinely compositor vocabulary is the bar's workspace module, whose name is a compositor's name, so `src/adapters/hyprland/bar.jsonc` carries it and the bar's own configuration includes it. The include's precedence is the one task 1.4 measured, inverted from the compositor's `source`: the including file wins on a duplicate key, so `modules-left` is deliberately absent from the outer file, which is what lets the adapter supply it
+- [x] 3.3 Read from the shipped files rather than argued: **two of the five carry any colour at all**, `bar-style.css` with 7 distinct literals and `notifications.conf` with 6, and neither reads the other. No `@define-color`, no shared palette file, no variable crossing a file boundary.
+
+  Four values coincide between them, `#1e1e2e`, `#89b4fa`, `#cdd6f4` and `#f38ba8`, each written out in both places. That is the intended shape and not an oversight: the desktop looks coherent, and the coherence is duplication rather than a mechanism, which is exactly what a later theme change would unify
+- [x] 3.4 Named per file, and **one real dependency found rather than none**:
+
+  | File | What a theme would change | Depended on by |
+  |---|---|---|
+  | `shell/bar-style.css` | every colour literal, the font stack | nothing but the bar |
+  | `shell/notifications.conf` | the colour literals and the font; the timeout and anchor are behaviour, not theme | nothing |
+  | `shell/wallpaper.conf` | the image path and `fit_mode` | nothing |
+  | `compositor/bar.jsonc` | nothing. Replaced by whichever adapter is active, not by a theme | the bar's configuration, by name |
+  | `shell/bar.jsonc` | geometry, module placement, formats | nothing |
+
+  **`shell/bar.jsonc` carries one line a wholesale replacement must keep**, the `include` of the adapter's module file. It is composition rather than styling, and a theme change restyles rather than recomposes, so the line the design draws holds. It is recorded here instead of being left for a theme change to discover, which is the whole point of asking the question before there is a theme
+- [x] 3.5 All five install through `gridline-config`, read from the built package with `dpkg -c`: four under `/etc/xdg/gridline/shell/` and one under `/etc/xdg/gridline/compositor/`. **Neither of the other two packages ships any path under those directories**, checked rather than assumed, so the package `package-delivery` names as the owner of shipped defaults is the one that owns them
+- [x] 3.6 All six files under `/etc` in `gridline-config` are registered, verified by comparing `dpkg-deb -I gridline-config conffiles` against the package's own `/etc` contents entry by entry rather than by eyeballing the list: six shipped, six registered, none missed. Registration is debhelper's default for `/etc` and the check is that nothing escaped it
+- [x] 3.7 All three gates pass, and the count is exact. `check-path-ownership` went from **15 files to 20**, which is the five this change ships and nothing more; `check-declared-paths` from 13 to 18 declared paths, 0 not identifiable as Gridline; `check-adapter-isolation` from 4 to 5 inside the adapter and 11 to 15 outside, 0 references found
 
 ## 4. Starting them
 
@@ -95,7 +113,9 @@ The gate that was missing exists: `tools/check-declared-paths` fails a manifest 
 
 **The mechanism this group was written against is gone, and the group is still work.** It assumed Gridline's compositor defaults sat at the compositor's own system configuration path, which every session of that compositor reads, so that an `exec-once` added by this change would start Gridline's components in a session that is not Gridline's. That is no longer true: `confine-gridline-configuration` moved the defaults to a path the session names, and the session-entry diversion stopped the compositor's own entry being offered at the greeter, so the leak is closed by two independent mechanisms rather than one.
 
-What that changes is which tasks here are measurements and which are records. It does not make the scenario free: an `exec-once` is still how these three components start, and this change adds three of them, so the scenario has to be measured against what this change ships rather than inherited from a change that shipped nothing of it.
+A third mechanism removes the premise entirely, and it is the one this change itself chose: **these components are started by the session target, not by an `exec-once`**, so the compositor starts none of them and a session that is not Gridline's reaches no start mechanism at all. The sentence that stood here said the opposite, carried over from the preamble it replaced. The design said both things in two places and now says one.
+
+What that changes is which tasks here are measurements and which are records. It does not make the scenario free: the target is Gridline's, but proving that nothing of this reaches another session is still a measurement against what this change ships rather than one inherited from a change that shipped none of it.
 
 - [x] 5.1 **The failing measurement cannot be obtained on this machine any more, and already exists.** The open finding in `docs/compositor-adapter.md` recorded that every session of that compositor read Gridline's defaults, and `confine-gridline-configuration` measured the closed state against it: the configuration such a session produces is byte for byte the file the machine generated before Gridline was installed, recorded in `docs/configuration.md`. Asking for the failing half again here would mean reinstating the defect in order to watch it, which buys nothing the archived measurement does not already establish
 - [ ] 5.2 Verify the route is recorded coherently rather than in halves. Both routes were taken, by `confine-gridline-configuration` and by the session-entry diversion, and three documents now carry part of the answer: `docs/configuration.md`, `docs/package-matrix.md` and `docs/recovery.md`. Read all three and confirm they state the same thing, since the reason this task existed was that two of them each carried half of the question and neither said so

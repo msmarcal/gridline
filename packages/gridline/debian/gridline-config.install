@@ -1,3 +1,8 @@
 debian/generated/gridline-portals.conf usr/share/xdg-desktop-portal/
 src/adapters/hyprland/defaults.conf etc/xdg/gridline/compositor/
+src/adapters/hyprland/bar.jsonc etc/xdg/gridline/compositor/
 src/config/gridline-xdg-terminals.list usr/share/xdg-terminal-exec/
+src/config/bar.jsonc etc/xdg/gridline/shell/
+src/config/bar-style.css etc/xdg/gridline/shell/
+src/config/notifications.conf etc/xdg/gridline/shell/
+src/config/wallpaper.conf etc/xdg/gridline/shell/
