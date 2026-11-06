@@ -200,8 +200,16 @@ Execution note: this group needs the session running on the VM, started from the
 
   **A reading was wrong before it was right, and the instrument was mine.** The first count of live notifications grepped for a JSON key in output that is not JSON, so `makoctl list` reported zero every time while two notifications were in fact alive, and that zero agreed with a mistaken impression that the critical one had expired. The output it actually prints names each notification and its urgency, and reading it said the opposite
 - [ ] 6.3 Verify a background is displayed, and that it is the one Gridline ships rather than whatever the compositor leaves when nothing has drawn
-- [ ] 6.4 Verify a user's own configuration for one of these components replaces Gridline's and is not reimposed, which is what separates a shipped default from policy
-- [ ] 6.5 Verify the session still reaches a usable desktop with all three absent, since the requirement says their absence degrades rather than blocks
+- [x] 6.4 **The user's configuration wins by existing, and the decision is per component rather than global**, which is more than the scenario asks and is the part worth recording.
+
+  A configuration was planted at `~/.config/waybar/config.jsonc`, deliberately unmistakable so that passing could not rest on a subtle detail: the bar at the bottom of the screen, one module, the literal text `USER CONFIG` and a seconds-resolution clock. After a login from the greeter the bar was at the bottom reading `USER CONFIG 17:41:26`, in the component's own default styling rather than Gridline's, with no workspace indicator and no network module. The process line carried neither `--config` nor `--style`: Gridline declined both, which is the rule that naming one while the component finds the other would have broken.
+
+  **In the same session the notification daemon still carried Gridline's path**, because the user had configured the bar and not it. One component deferring does not make the others defer.
+
+  Removing the planted file and restarting the unit brought Gridline's bar back with both paths, so declining is a state rather than a latch, and nothing of the test was left in the user's configuration directory
+- [x] 6.5 **Already measured, by task 4.5, and recorded here rather than repeated.** That task logged in from the greeter with all three binaries moved aside: the session reached the desktop, the launcher wrote nothing, the blocking components were unaffected, and each of the three units failed with the wrapper naming the role and the binary it could not run.
+
+  The two tasks ask the same question from the two groups' angles, 4.5 from the start mechanism and this one from what the user sees, and one login cycle answers both. Repeating it would have produced the same evidence at the cost of another cycle, and a verification repeated for the appearance of thoroughness is not a second measurement
 
 ## 7. Coherence
 
