@@ -88,11 +88,18 @@ the `hyprland` package owns is touched and nothing Gridline did is unpicked:
 `/usr/local/share` is the local administrator's, which is exactly why Gridline
 cannot write there and you can.
 
-**That session is not a Gridline session.** It reads Gridline's compositor
-defaults, because they sit at the path any session of that compositor reads, so
-it arrives with Gridline's keybindings and without Gridline's locker, polkit
-agent or portal mapping. The lock key in particular does nothing. Choose it
-knowing that.
+**That session is not a Gridline session, and it no longer pretends to be.** It
+arrives with the compositor's own configuration and none of Gridline's: no
+keybindings, no locker, no polkit agent, no portal mapping. That is what
+choosing it means, and it is now what it does.
+
+It used to be worse. Gridline placed its defaults at the path any session of
+that compositor reads, so this session inherited Gridline's keybindings while
+having none of the components they assume, and the lock key did nothing in
+silence. `confine-gridline-configuration` ended that by naming Gridline's
+configuration path rather than occupying the compositor's. Measured afterwards:
+the configuration such a session produces is byte for byte the file the
+compositor generated on this machine before Gridline was installed.
 
 ### Hiding a session entry yourself
 

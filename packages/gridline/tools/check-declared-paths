@@ -1,0 +1,80 @@
+#!/bin/sh
+# Every path a Gridline package declares must be identifiable as Gridline's.
+#
+# package-delivery requires it and nothing enforced it, which is how a path in
+# another component's directory, under that component's own filename, shipped
+# in gridline-config and was caught by no gate. docs/package-matrix.md records
+# which path and what it cost. The ownership check beside this one compares
+# Gridline packages
+# against each other looking for a path two of them claim, so a path only one
+# claims passes however it is named. The isolation check reads src/ and tools/,
+# and a manifest lives in debian/, which it excludes.
+#
+# The rule is that SOME SEGMENT of the declared path carries the project name,
+# not that the whole path does. Both shapes the requirement blesses depend on
+# that reading:
+#
+#   /etc/xdg/gridline/compositor/defaults.conf     a Gridline directory
+#   /usr/share/wayland-sessions/gridline.desktop   a Gridline file in a
+#                                                  directory another package
+#                                                  owns, which is the drop-in
+#
+# This comment named the offending path in an earlier version and the isolation
+# check failed the build for it, which is that check working rather than being
+# in the way.
+#
+# What this does not check: whether the directory a Gridline-named file lands in
+# is one the owning component actually reads. A Gridline-named file in an
+# unrelated directory passes here and is still wrong. That is a judgement about
+# a component's behaviour rather than about a name, and no pattern decides it.
+set -eu
+
+root=$(dirname "$0")/..
+project=gridline
+
+cd "$root"
+
+report=$(mktemp)
+trap 'rm -f "$report"' EXIT INT TERM
+
+checked=0
+
+# A declared path is Gridline-named when any segment contains the project name.
+check_path() {
+    manifest=$1
+    path=$2
+    checked=$((checked + 1))
+    printf '%s' "$path" | tr '/' '\n' | grep -qi -- "$project" && return 0
+    printf 'declared paths: %s declares %s, which no segment identifies as %s\n' \
+        "$manifest" "$path" "$project" >> "$report"
+}
+
+for manifest in debian/*.install; do
+    [ -f "$manifest" ] || continue
+    while read -r source destination; do
+        case "$source" in '' | \#*) continue ;; esac
+        [ -n "$destination" ] || continue
+        # dh_install keeps the source basename when the destination is a
+        # directory, which is the only form the manifests use.
+        check_path "$manifest" "/${destination%/}/$(basename "$source")"
+    done < "$manifest"
+done
+
+for manifest in debian/*.dirs; do
+    [ -f "$manifest" ] || continue
+    while read -r directory; do
+        case "$directory" in '' | \#*) continue ;; esac
+        check_path "$manifest" "/$directory"
+    done < "$manifest"
+done
+
+hits=$(wc -l < "$report")
+[ "$hits" -eq 0 ] || cat "$report" >&2
+
+printf 'declared paths: %s checked, %s not identifiable as %s\n' \
+    "$checked" "$hits" "$project"
+
+[ "$hits" -eq 0 ] || {
+    printf 'declared paths: a Gridline package may declare only Gridline-named paths\n' >&2
+    exit 1
+}

@@ -29,3 +29,4 @@ execute_before_dh_installdeb:
 execute_before_dh_builddeb:
 	tools/check-path-ownership debian
 	tools/check-adapter-isolation
+	tools/check-declared-paths
