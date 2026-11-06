@@ -48,6 +48,20 @@ The adapter therefore names Gridline's path **only when the user has none of the
 
 This is Gridline-authored glue, like the lock entry point, and it is deliberate: the component has no mechanism that expresses "use mine unless theirs exists", so the session supplies it. The cost is that the precedence rule becomes Gridline's behaviour rather than the component's, which is recorded rather than hidden.
 
+### The terminal is chosen by a file keyed on Gridline's desktop name
+
+The same principle reaches a second component, which is why it is here rather than in a change of its own.
+
+Two things were measured and both are wrong today. `docs/package-matrix.md` says the terminal is declared because the baseline guarantees none; the baseline **recommends** one, `ptyxis`, in both desktop metapackages, and apt installs recommends by default. The original measurement grepped the recommends list for the words `console` and `terminal`, and the package is named neither. And with two terminals present the launcher selects Gridline's, so installing Gridline changes which terminal the machine opens, by winning an ordering rule nobody chose.
+
+The launcher reads a preference file keyed on the desktop name, read from its source: `${XDG_DATA_DIRS}/xdg-terminal-exec/<desktop>-xdg-terminals.list`, with `<desktop>` iterating the lowercased elements of `XDG_CURRENT_DESKTOP`. Gridline's identity makes that `gridline-xdg-terminals.list`.
+
+That file is the answer to both problems at once. It names the terminal rather than hoping an ordering picks it, and because it is keyed on the desktop name it applies in a Gridline session and nowhere else, so another session keeps whatever it had. It is a Gridline-named file in a directory the component reads, which is the drop-in shape `package-delivery` blesses and the same shape as `gridline-portals.conf`.
+
+**Declaring a terminal is still right, for a different reason than the one recorded.** Recommends is not a guarantee: an install made with `--no-install-recommends` has none, and the scenario that the keyboard works on first login would fail on it. What changes is the justification, which this change corrects rather than leaves to read as measured when it was guessed.
+
+**The preference lists one entry and no fallback.** The declared terminal is a dependency, so a machine without it is a machine without `gridline-session`, and a second entry would be unreachable. Shipping an unreachable line to feel safe is the kind of thing this project has been removing.
+
 ### A gate for Gridline-named declared paths
 
 The requirement has been in force since `establish-gridline-vision` and nothing enforced it. A gate reading the install manifests and failing on a declared path whose name identifies no Gridline ownership would have caught this on the day it shipped.

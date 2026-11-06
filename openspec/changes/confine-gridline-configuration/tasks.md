@@ -27,18 +27,27 @@
 - [ ] 4.3 Verify the gate would have caught the path this change removes, by planting it again and confirming the failure names it. That is the claim this change makes about why the violation shipped, and it should be demonstrated rather than asserted
 - [ ] 4.4 Record in the check's own comments what it does not cover, in the same place the other two gates record theirs
 
-## 5. The administrator who edited the file
+## 5. The terminal a Gridline session opens
 
-- [ ] 5.1 Exercise the upgrade path for an unmodified conffile that the new version stops shipping, and record what dpkg does with it
-- [ ] 5.2 Exercise the same upgrade with the conffile edited, and record what dpkg does and what the administrator has to do about it
-- [ ] 5.3 Record the answer where an administrator would meet it, not only in this change, since whoever edited that file will not read an archived task list
+- [ ] 5.1 Verify the problem before fixing it: with two terminals installed, confirm the launcher selects Gridline's rather than the machine's, and record which ordering rule decides. A fix whose before state was guessed is a fix nobody can check
+- [ ] 5.2 Ship a preference file keyed on Gridline's desktop name, naming the declared terminal. Verify with `xdg-terminal-exec --print-id` inside a Gridline session that it selects that terminal, and verify the file's path is Gridline-named so the new gate accepts it
+- [ ] 5.3 Verify the preference applies to no other session, by asking the launcher what it would select with a different desktop identity and confirming the answer is the machine's terminal rather than Gridline's
+- [ ] 5.4 Change the declared terminal, and verify with `dpkg-deb -f` on the built package rather than by reading the control file. Verify the keymap still names no terminal, since the binding calls the launcher and the preference file is what chooses
+- [ ] 5.5 Correct the recorded reason in `docs/package-matrix.md`. The baseline recommends a terminal in both desktop metapackages, so "declared because the baseline guarantees none" is false; what is true is that a recommend is not a guarantee. Verify by grep that no live document still carries the old claim
+- [ ] 5.6 Verify `SUPER + Return` opens the declared terminal on a real login, since the whole path is binding, launcher, preference file and package, and only the last of those is visible from the build
 
-## 6. Coherence
+## 6. The administrator who edited the file
 
-- [ ] 6.1 Verify each scenario of the modified requirement is exercised or recorded as unexercised with a reason, counting them from the delta file rather than from the proposal's description of them
-- [ ] 6.2 Verify the rewritten scenario about a user's own configuration is satisfied by the new mechanism rather than by the old wording surviving, since a MODIFIED block replaces the requirement and the scenario's name stayed while its meaning changed
-- [ ] 6.3 Update `docs/configuration.md`, whose section on what Gridline does about first-file-wins describes the mechanism this change replaces. Verify by grep that no live document still describes the loader
-- [ ] 6.4 Update `docs/package-matrix.md` for the owned paths that change, and verify the list matches `dpkg -L` on the built packages rather than the previous text
+- [ ] 6.1 Exercise the upgrade path for an unmodified conffile that the new version stops shipping, and record what dpkg does with it
+- [ ] 6.2 Exercise the same upgrade with the conffile edited, and record what dpkg does and what the administrator has to do about it
+- [ ] 6.3 Record the answer where an administrator would meet it, not only in this change, since whoever edited that file will not read an archived task list
+
+## 7. Coherence
+
+- [ ] 7.1 Verify each scenario of the modified requirement is exercised or recorded as unexercised with a reason, counting them from the delta file rather than from the proposal's description of them
+- [ ] 7.2 Verify the rewritten scenario about a user's own configuration is satisfied by the new mechanism rather than by the old wording surviving, since a MODIFIED block replaces the requirement and the scenario's name stayed while its meaning changed
+- [ ] 7.3 Update `docs/configuration.md`, whose section on what Gridline does about first-file-wins describes the mechanism this change replaces. Verify by grep that no live document still describes the loader
+- [ ] 7.4 Update `docs/package-matrix.md` for the owned paths that change, and verify the list matches `dpkg -L` on the built packages rather than the previous text
 
 ## Workflow follow-up
 

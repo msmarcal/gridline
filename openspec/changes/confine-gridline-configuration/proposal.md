@@ -16,6 +16,8 @@ The same file is also the mechanism behind an open finding recorded in `docs/com
 - Stops `gridline-config` declaring any path that is not Gridline-named, which removes `/etc/xdg/hypr/` from the set of directories Gridline creates and owns.
 - Adds a build gate that fails when an install manifest declares a path whose name does not identify it as Gridline's. The requirement has been in force since `establish-gridline-vision` with nothing enforcing it.
 - Keeps the customization story the previous change established, in whatever form the new arrangement allows, since "a user can decline a shipped default" is a scenario that already exists and is not weakened here.
+- Names the terminal a Gridline session opens, through the desktop-keyed preference file the terminal launcher reads, and declares that terminal. Today Gridline's dependency changes which terminal the launcher picks for the whole machine, which is the opposite of additive, and it does so by winning an ordering rule nobody chose.
+- Corrects `docs/package-matrix.md`, which records the terminal as declared because the baseline guarantees none. The baseline recommends one, and apt installs recommends by default, so the recorded reason is false.
 
 **Out of scope.** The bar, the notification daemon and the wallpaper daemon, which `add-desktop-shell-components` owns and which waits on the pattern this change settles. The `start-hyprland` question and the logout crash, both recorded in `docs/compositor-adapter.md` and neither touched by moving a configuration file.
 
@@ -39,5 +41,7 @@ None.
 - `packages/gridline/tools/`: a gate for Gridline-named declared paths.
 - `docs/configuration.md`: the section describing what Gridline does about first-file-wins, which describes the mechanism this change replaces.
 - `docs/compositor-adapter.md`: the open finding about Gridline's defaults reaching other sessions, which this closes.
-- `docs/package-matrix.md`: the owned-path list.
+- `packages/gridline/debian/control`: the declared terminal changes, and the reason it is declared changes with it.
+- `packages/gridline/src/config/`: the terminal preference file, Gridline-named and keyed on Gridline's desktop name.
+- `docs/package-matrix.md`: the owned-path list, and the terminal row whose stated reason is false.
 - Verification runs on the LXD VM, where a session other than Gridline's is the measurement for the finding this closes.
