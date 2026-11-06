@@ -13,7 +13,7 @@
 ## 2. The diversion
 
 - [x] 2.1 Both registered by the package's own `postinst`, not by hand: `dpkg-divert --list` names each as diverted by `gridline-session`, and the directory holds `gridline.desktop`, `ubuntu.desktop` and the two renamed files
-- [ ] 2.2 Add a `postrm` removing every diversion the package registered. Verify by removing the package and confirming `dpkg-divert --list` is clean and each file is back at its original path
+- [x] 2.2 Written, and exercised twice rather than once: on `apt-get remove` and again on `apt-get purge`, each leaving `dpkg-divert --list` empty for this package's suffix and both entries back at their original paths. It reads what to undo from `dpkg-divert` rather than from a list this package wrote, so it removes what was added rather than what someone remembered to record
 - [x] 2.3 `dpkg --verify hyprland` reports nothing, with the diversion in place and again after the package was reinstalled over it
 - [x] 2.4 Reinstalled the compositor with the diversion in place. Both diversions survived, the package's files landed at the diverted paths rather than the original ones, and the session entry directory still offers only `gridline.desktop` and `ubuntu.desktop`. This is the behaviour that makes a diversion the right mechanism and an edit the wrong one
 - [x] 2.5 Both gates pass and the ownership gate reports 15 files, unchanged, since maintainer scripts and the trigger are package metadata rather than shipped paths
@@ -32,24 +32,34 @@
 
 Execution note: this group needs the VM at the greeter, and what the login screen lists is the measurement.
 
-- [ ] 4.1 Verify the login screen offers Gridline and the stock Ubuntu session, and not the compositor's entry, reading it off the screen rather than from the filesystem
-- [ ] 4.2 Verify the entry the baseline withholds is covered too, by making it visible first. Its `TryExec` names a binary the baseline does not install, so install that binary, confirm the entry would otherwise appear, and confirm the diversion keeps it off the screen. Remove the binary afterwards and verify the removal
-- [ ] 4.3 Verify the stock Ubuntu session is still selectable and still works, by logging into it, since it is the fallback every recovery path depends on and the mechanism here is capable of hiding it
-- [ ] 4.4 Verify the Gridline session still starts, since nothing in this change should touch it and a diversion that caught the wrong file would show up here
+- [x] 4.1 Two entries on the greeter, Gridline and Ubuntu, read off the screen by the person looking at it. The compositor's entry is not offered
+- [x] 4.2 Made visible before being tested, which is the whole point: `hyprland-uwsm.desktop` carries `TryExec=uwsm`, and with `uwsm` absent the greeter withholds it whether or not Gridline exists. Installing `uwsm` removes that excuse. With it present the greeter still listed two entries, confirmed on screen, so the second entry is covered by the diversion and not by the baseline's omission.
+
+  Without this step the task would have confirmed that something already invisible was invisible
+- [x] 4.3 Selected from the greeter and logged into, and it works. This is the one the mechanism must never be pointed at, so exercising it rather than reasoning from the diversion list is the point
+- [x] 4.4 Selected and logged into, and it works. A diversion that had caught `gridline.desktop` would have removed the entry entirely, so this is the cheapest check that the right files were taken
 
 ## 5. Removal returns the machine
 
-- [ ] 5.1 Remove `gridline-session` on the VM and verify the login screen offers the compositor's entry again, from the greeter rather than from the package database
-- [ ] 5.2 Verify the restored file is the one the compositor's package shipped, by comparing it against the package rather than assuming the diversion put back what it took
-- [ ] 5.3 Verify a purge behaves the same as a remove for this, since conffiles and diversions are handled at different stages and the two are easy to assume identical
-- [ ] 5.4 Verify nothing of the diversion survives: `dpkg-divert --list` clean, and no leftover file at a diverted name
+- [x] 5.1 Removed on the VM, and the greeter was read by the person looking at it: Hyprland and Ubuntu, with Gridline gone because its package went and the compositor's entry back because the diversion was undone. The uwsm variant was withheld again by its own `TryExec`, the borrowed `uwsm` having been returned first, which is the baseline's behaviour rather than ours.
+
+  The system side agreed before the screen was looked at, with zero diversions and `dpkg --verify hyprland` clean, and the screen is what the delta promises: a machine without Gridline offers what it offered before Gridline arrived
+- [x] 5.2 `dpkg --verify hyprland` reports nothing after the removal, which compares both restored files against the package's own checksums rather than against a copy this change kept. That is the comparison the task asks for and it is stronger than one against a copy, since a copy could be wrong in the same way twice
+- [x] 5.3 Exercised separately rather than assumed. After `apt-get purge`, zero diversions remain, both entries are back at their original paths, and `dpkg --verify hyprland` is clean, the same end state as `apt-get remove`
+- [x] 5.4 After both the remove and the purge, `dpkg-divert --list` filtered to this package's suffix returns nothing, and the session entry directory holds no file carrying the diverted name
 
 ## 6. Coherence
 
-- [ ] 6.1 Verify each scenario of the two modified capabilities is exercised or recorded as unexercised with a reason, counting them from the delta files rather than from the proposal's description of them
-- [ ] 6.2 Verify the modified `package-delivery` requirement reads as a bounded exception rather than a loosening, by confirming the drop-in scenario still stands beside it unchanged and that each obligation the new text adds has a scenario
-- [ ] 6.3 Verify `docs/package-matrix.md` and `docs/security-and-manageability.md` describe what was built. Both already record this decision, so the work is confirming they match the implementation rather than writing them, and correcting either if it does not
-- [ ] 6.4 Update `docs/recovery.md`, whose administrator recipe now runs in the opposite direction: it documented hiding an entry Gridline does not hide, and the useful recipe is restoring one Gridline diverted. Verify by grep that no live document still describes Gridline as hiding no session entry
+- [x] 6.1 Eleven scenarios, counted from the delta files: four under `desktop-session`, seven under `package-delivery`. All accounted for.
+
+  **`desktop-session`.** *One tiling session is offered*: 4.1, read off the greeter. *The compositor's entry returns when Gridline goes*: 5.1, read off the greeter after removal, with the system side agreeing first. *The fallback session is never hidden*: 4.3, the stock session selected and used; the mechanism is capable of hiding it and is not pointed at it. *The compositor stays usable to someone who wants it*: the compositor remains installed and startable, and `docs/recovery.md` now documents restoring its entry; the restoration recipe itself is **not** exercised and is recorded here as such rather than counted.
+
+  **`package-delivery`.** The three scenarios this change did not touch are unaffected and still hold: every declared path is Gridline-named, each has one owner, and the build reports a manifest declaring an archive path. *Influence on a third-party component uses a drop-in* is unchanged and still stands, which is the point of the modification being bounded. *A diversion is used only where a drop-in cannot reach*: the reason is recorded in `docs/package-matrix.md` where a reader meets the diversion. *A diversion does not outlive the package that needs it*: 2.2, 5.1 through 5.4, on both remove and purge. *A diversion covers every file it has to*: 3.1 through 3.3, where the trigger makes coverage structural rather than checked
+- [x] 6.2 The drop-in scenario is unchanged and still present, now reading as the rule for the case a directory can carry the change. The added text attaches three obligations and each has its own scenario: used only where a drop-in cannot reach, does not outlive the package, covers every file it has to. The requirement is longer and narrower rather than weaker, and a reader meeting it finds the exception fenced rather than the rule relaxed
+- [x] 6.3 They recorded the decision and predated the mechanism, so both needed correcting rather than confirming. `docs/package-matrix.md` described a single entry where the compositor ships two, and warned that covering one and not the other would silently stop working, which the trigger now prevents rather than merely warns about. It now describes the run-time enumeration, the trigger, and the removal reading its own diversions back from dpkg. `docs/security-and-manageability.md` records the accepted cost and needed no change, since nothing about the cost moved
+- [x] 6.4 Rewritten. It said **"Gridline hides none of them, and will not"**, which this change makes false, and its recipe hid an entry Gridline now hides by itself. The useful recipe is the opposite one, restoring the compositor's entry without removing Gridline, and it is there with the warning that the restored session is not a Gridline session: it reads Gridline's compositor defaults and has none of Gridline's components, so its lock key does nothing.
+
+  The hiding recipe is kept, since the mechanism is general, along with the warning never to point it at the stock Ubuntu session. Verified by grep that no live document still says Gridline hides nothing
 
 ## Workflow follow-up
 

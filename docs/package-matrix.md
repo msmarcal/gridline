@@ -37,9 +37,11 @@ The test this has to pass is the one `compositor-abstraction` cares about: suppo
 
 ## One thing a Gridline package does to another package
 
-`gridline-session` diverts the compositor's session entry at
-`/usr/share/wayland-sessions`, so the login screen offers Gridline and not also
-the bare compositor it is built on.
+`gridline-session` diverts the session entries the compositor's package owns
+under `/usr/share/wayland-sessions`, so the login screen offers Gridline and not
+also the bare compositor it is built on. Entries, not entry: the compositor
+ships two on this baseline, one of which the greeter withholds for its own
+reasons and would offer the moment those reasons changed.
 
 This is the one place Gridline touches a file another package owns, and it is
 done with `dpkg-divert` because that is the mechanism Debian provides for it
@@ -67,10 +69,16 @@ verification rather than an intention:
   offers the compositor's entry again. A package that leaves another package's
   file diverted after its own removal has broken the stock-removal rule below,
   which is the more serious of the two costs.
-- The compositor ships more than one session entry. One is currently invisible
-  because its `TryExec` names a binary the baseline does not carry, which is a
-  fact about the baseline and not a property of the entry. Covering one entry
-  and not the other produces a diversion that silently stops working.
+- The set of entries is read from the compositor's package at run time rather
+  than written down here, and `gridline-session` registers a **dpkg trigger** on
+  the directory so that read happens again whenever any package changes it. That
+  covers the case no check could reach: the compositor gaining an entry in a
+  version released after Gridline, on a machine already installed. Coverage is a
+  property of when the script runs rather than something to verify.
+- The removal reads back its own diversions from `dpkg-divert` rather than from
+  a list the package wrote, so it undoes what was done instead of what someone
+  remembered to record. A written list would be a second copy of the same fact
+  and the one more likely to drift.
 
 ## What no package does
 
