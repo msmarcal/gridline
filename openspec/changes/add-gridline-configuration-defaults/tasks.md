@@ -76,12 +76,18 @@ in design.md as the wrong answer to a real problem.
 - [x] 8.1 All five present, read from `/usr/bin/Hyprland` with the fully qualified key: `ecosystem:no_update_news`, `ecosystem:no_donation_nag`, `misc:disable_watchdog_warning`, `misc:disable_xdg_env_checks`, `misc:disable_hyprland_guiutils_check`. Run with two controls rather than one: `misc:disable_hyprland_logo`, known to exist because `hyprctl getoption` had already answered for it, reported present; `misc:not_a_real_option` reported absent. Without the negative control the measurement could not be told apart from one that reports everything present.
 
   The first attempt searched for the bare key and called the known-good control absent, which is what put the controls there
-- [ ] 8.2 Ship the three cosmetic suppressions in the defaults and verify each reads back from a running session with `hyprctl getoption`
+- [x] 8.2 All five read back `int: 1` from a session started by the greeter: `ecosystem:no_update_news`, `ecosystem:no_donation_nag`, `misc:disable_hyprland_guiutils_check`, `misc:disable_watchdog_warning`, `misc:disable_xdg_env_checks`
 - [x] 8.3 Both shipped and both recorded in a live document rather than only in this change. `docs/compositor-adapter.md` now says the banner is gone, that the session still starts the compositor directly, and that everything in the open finding is as unresolved as when the banner was visible; the paragraph exists so a quiet screen does not read as a settled question. `docs/architecture.md` records that the compositor warns about the externally managed identity, that the warning is accurate because the display manager manages it on purpose, and what heeding it would cost.
 
   Verified by grep: each option name appears in a live document as well as in the shipped file, and the underlying questions appear in `docs/` rather than only under `openspec/changes/`
-- [ ] 8.4 Verify a first login presents no banner from any integrated component, by counting `Creating the CHyprError` in the compositor log and confirming `hyprctl configerrors` is empty, rather than by looking at a screenshot
-- [ ] 8.5 Verify the identity warning was worth suppressing rather than heeding: confirm `XDG_CURRENT_DESKTOP` is still the composed `Gridline:Hyprland` and that the portal mapping still resolves through it, since the alternative the third-party package chose was to discard the identity instead
+- [x] 8.4 Nothing on screen, reported by the person looking at it, with `hyprctl configerrors` empty.
+
+  **The instrument this task named does not measure what it says.** Counting `Creating the CHyprError` returns 1 on a clean session, because that line is a subsystem being constructed at startup, not an error being raised: its neighbours in the log are `Creating the HookSystem!`, `Creating the KeybindManager!`, `Creating the ConfigManager!` and `Creating the LayoutManager!`. It is the component that *displays* errors, and every session builds exactly one whether or not anything is shown. An earlier reading in this project used that same line as evidence that a banner had appeared, which happened to be true then and was not evidence.
+
+  What the log does show, and should: the `WARN` about not using `start-hyprland` is still emitted. The suppression stops the message being presented, not the condition being detected, which is the better of the two and is what makes the paired record in `docs/compositor-adapter.md` consistent rather than decorative
+- [x] 8.5 Identity intact, read from the compositor's own process environment: `XDG_CURRENT_DESKTOP=Gridline:Hyprland` and `XDG_SESSION_DESKTOP=gridline`. Three portal mappings are installed and all three have owners: `gridline-portals.conf` from `gridline-config`, `hyprland-portals.conf` from the `hyprland` package, `gnome-portals.conf` from `gnome-session-common`. The identity case-folds to `gridline` first, so ours is the one consulted, and the compositor's portal backend is active.
+
+  The upstream `hyprland-portals.conf` is `default=hyprland;gtk` and nothing else, with no `FileChooser` entry. Discarding the identity would therefore not merely swap one mapping for another: it would land on the weaker file that leaves the file chooser unclaimed, which is the gap `add-desktop-portal-integration` existed to close
 
 ## 5. Recovery from a dead locker
 
