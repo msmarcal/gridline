@@ -126,6 +126,9 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 | `wayland-utils` | 1.3.0-1 | **universe** | Wayland registry query, used by the compositor adapter |
 | `xdg-terminal-exec` | 0.14.0-1 | main | Launches the terminal the system is configured to use |
 | `kitty` | 0.45.0-1build1 | **universe** | Terminal emulator, declared because a recommend is not a guarantee |
+| `waybar` | 0.15.0-1 | **universe** | Status bar. 16 packages and 13.5 MiB installed, the largest component declared |
+| `mako-notifier` | 1.10.0-1build1 | **universe** | Notification daemon. Packaged under this name, not `mako` |
+| `hyprpaper` | 0.8.3-1 | **universe** | Wallpaper daemon, admitted by accepting `--config` rather than by what it links |
 
 ### How these were measured
 

@@ -22,9 +22,17 @@ the archive at all.
 | --- | --- |
 | quickshell | absent from the archive |
 | Hyprland with Lua configuration | archive has 0.53.3; Lua arrived upstream in 0.55 |
-| walker, mako, satty, mise, impala | absent from the archive |
-| waybar, fuzzel, hyprlock, hypridle, hyprpaper, hyprpolkitagent | present in universe |
+| walker, satty, mise, impala | absent from the archive |
+| waybar, mako, fuzzel, hyprlock, hypridle, hyprpaper, hyprpolkitagent | present in universe |
 | foot, btop, neovim, grim, slurp, wf-recorder, swayosd, swaybg | present in universe |
+
+**Mako was recorded as absent from the archive and is present.** The archive
+carries it as `mako-notifier`, not `mako`, and the original check looked for the
+upstream name. The four names left on that row were re-checked when this was
+corrected and none of them resolves to any package, so they stay. The lesson is
+the one the terminal row in [package-matrix.md](package-matrix.md) already
+carries: searching the archive for the name a project calls itself answers a
+different question than asking what provides the component.
 
 The Lua gap was verified against the packaged binary rather than inferred from
 the version number: the archive's Hyprland executable exports no Lua symbols and

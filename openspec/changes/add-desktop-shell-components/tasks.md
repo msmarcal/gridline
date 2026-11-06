@@ -43,11 +43,27 @@ These come first because each one changes how much the session target has to dec
 
 ## 2. Selection and declaration
 
-- [ ] 2.1 Declare the bar, the notification daemon and the wallpaper daemon as `Depends` of `gridline-session`, and verify with `dpkg-deb -f` on the built package rather than by reading the control file
-- [ ] 2.2 Verify all three resolve from the archive alone on the baseline VM, recording how many packages apt fetched and the installed size each one brought, since the bar is the largest component the project has declared
-- [ ] 2.3 State the `universe` support gap for the three in the `gridline-session` long description, using the wording the live documents already carry, and verify it is identical by comparing against `docs/component-ownership.md`
-- [ ] 2.4 Record the three selections in `docs/component-ownership.md` and `docs/package-matrix.md`, with what decided each. For the wallpaper that means recording what the design settles: the rule that rejected two earlier components tests the configuration search and not the library, and a named path is not searched for
-- [ ] 2.5 Correct `docs/user-experience.md`, which lists the notification daemon among packages absent from the archive when the archive carries it under a different binary package name. Verify by grep that no live document still records it as unavailable, and leave the other four names on that line alone, since they were checked and are genuinely absent
+- [x] 2.1 Declared `waybar`, `mako-notifier` and `hyprpaper`, and read back from the built package rather than from the control file: `dpkg-deb -f gridline-session_0.0.1_all.deb Depends` lists twelve entries with the three new ones at 10, 11 and 12.
+
+  **The notification daemon is `mako-notifier`, not `mako`**, which is the same class of error as the terminal row: the archive carries no package named `mako`, so declaring the upstream name would have failed to install
+- [x] 2.2 All three resolve from the Ubuntu archive alone, measured together on the VM: **20 URIs, every one on `archive.ubuntu.com`**, ten from the main pool and ten from universe, and 20 newly installed, so the three dependency closures do not overlap.
+
+  | Component | Packages | Download | Installed |
+  |---|---|---|---|
+  | `waybar` | 16 | 3.4 MiB | 13.5 MiB |
+  | `mako-notifier` | 1 | 0.1 MiB | 0.2 MiB |
+  | `hyprpaper` | 3 | 0.5 MiB | 1.9 MiB |
+
+  The bar is the largest component the project has declared, as the task anticipated. **The first run of this measurement was wrong and the bench was dirty with my own work**: `hyprpaper` reported zero packages to fetch against three to install, because installing and purging it for task 1.3 had left its `.deb` in the apt cache. The numbers above are from `apt-get clean` first. Two instrument errors as well: `--print-uris` carries the size in field 3, not 2, and `apt-get install -s` prints no "additional disk space" line at all, so the installed size is the sum of `Installed-Size` over the `Inst` list
+- [x] 2.3 Stated in the long description, and verified identical rather than similar: the sentence pair extracted from the built package and from `docs/component-ownership.md` compare equal after stripping markdown emphasis and squeezing the whitespace the control file's continuation lines add.
+
+  **The claim it replaced was false, and false before this change.** It read that every package `gridline-session` depends on except `xwayland` is in universe. `xdg-terminal-exec` is in **main**, confirmed from `apt-cache policy` rather than from the `Section` field, so there are two exceptions and the description now names both. `docs/package-matrix.md` already recorded it correctly, so the defect was in the package alone. Also added: a paragraph saying the three draw the desktop and that none of them is blocking, since a reader of the description would otherwise see three new dependencies and no account of them
+- [x] 2.4 Recorded in both documents. `docs/component-ownership.md` gains a **Desktop shell** section, separate from Desktop integration because those rows are platform services Gridline surfaces while these are components Gridline selected, with the sizes, the D-Bus activation of the notification daemon, and the archive-only measurement. `docs/package-matrix.md` gains three dependency rows.
+
+  The wallpaper row records what the design settles, in the form that stops it being re-litigated: `hyprlock` and `hypridle` were set aside for linking `libhyprlang2` and `libhyprutils10`, **and this one links them too**. The rule tests the configuration search, not the library, and `hyprpaper` is admitted by accepting `--config`, which task 1.3 measured with `strace` on the running daemon
+- [x] 2.5 Corrected. `mako` moved from the absent row to the present-in-universe row, with a paragraph recording that the archive carries it as `mako-notifier` and that the original check searched for the name the project calls itself. The other four were re-checked rather than taken on trust: `walker`, `satty`, `mise` and `impala` resolve to no package, and `quickshell` on the row above does not either, so all five stay.
+
+  Verified by grep across `docs/`, `packages/` and `openspec/specs/`: the only live text pairing that component with "absent" is the correction itself, which records what was wrong rather than repeating it
 
 ## 3. Configuration and styling
 

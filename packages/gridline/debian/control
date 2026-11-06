@@ -18,7 +18,10 @@ Depends: ${misc:Depends},
          swayidle,
          hyprpolkitagent,
          xdg-terminal-exec,
-         kitty
+         kitty,
+         waybar,
+         mako-notifier,
+         hyprpaper
 Description: Gridline session integration
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
  package owns the session entry the display manager reads, the session
@@ -42,10 +45,16 @@ Description: Gridline session integration
  the unit in its own target rather than enabling it, so installing Gridline
  changes nothing about a GNOME session on the same machine.
  .
- Every package this one depends on except xwayland is in the universe
- component. Universe carries no Canonical security-update commitment. Main
- does. Patching them is the operator's responsibility, which on a personal
- machine means its owner.
+ This package also depends on a status bar, a notification daemon and a
+ wallpaper daemon, so that selecting Gridline presents a desktop rather than a
+ bare compositor. None of the three is blocking: each one's absence degrades
+ the desktop and leaves the session usable, because a desktop that shows less
+ is worse and not unsafe.
+ .
+ Every package this one depends on is in the universe component except
+ xwayland and xdg-terminal-exec, which are in main. Universe carries no
+ Canonical security-update commitment. Main does. Patching them is the
+ operator's responsibility, which on a personal machine means its owner.
 
 Package: gridline-config
 Architecture: all

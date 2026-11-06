@@ -45,6 +45,23 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 | XWayland | X.Org | `xwayland` 2:24.1.10-1 | main | Integration only | Session starts, X11-only applications do not run. Reported as a capability gap, since native Wayland applications are unaffected |
 | snapd | Canonical | `snapd` 2.77.1+ubuntu26.04.2 | main | Integration only: Gridline sets the desktop identity confined Snaps resolve against | Session starts, Snap applications may lose theme or portal access. Reported as a capability gap |
 
+## Desktop shell
+
+These three draw the desktop continuously. They are separated from the rows above because those are platform services Gridline surfaces, while these are components Gridline selected and configures, and none of them is blocking.
+
+| Component | Upstream | Ubuntu source | Component | Gridline ownership | Fallback |
+|---|---|---|---|---|---|
+| Status bar | Alexays | `waybar` 0.15.0-1 | **universe** | Selection and configuration: Gridline ships its configuration and styling and holds it running | Session starts and the machine's state is not visible. Reported as a capability gap, not a startup failure |
+| Notification daemon | emersion | `mako-notifier` 1.10.0-1build1 | **universe** | Selection and configuration | Session starts and notifications are discarded, because nothing holds the D-Bus name. Reported as a capability gap |
+| Wallpaper daemon | Hyprland | `hyprpaper` 0.8.3-1 | **universe** | Selection and configuration | Session starts and the desktop shows whatever the compositor leaves when nothing has drawn. Reported as a capability gap |
+
+**What decided each, measured from the archive packages rather than from reputation.** All three are the Omarchy 3.x components, which is the experience [user-experience.md](user-experience.md) records Gridline as targeting, and all three are the only candidate in the archive for their role once the ones absent from it are set aside. What the measurements settled is narrower and is recorded because it is what a later change would otherwise re-litigate:
+
+- **The bar is the largest component the project has declared.** 16 packages, 3.4 MiB to download and 13.5 MiB installed, against 1 package and 0.2 MiB for the notification daemon and 3 packages and 1.9 MiB for the wallpaper daemon. Measured on the baseline VM from a cleared apt cache, because a cache left warm by earlier work reports zero packages to fetch.
+- **The notification daemon needs nothing to want it.** Its unit is `Type=dbus` with `BusName=org.freedesktop.Notifications` and the package ships the matching activation file, so it starts when an application first sends a notification.
+- **The wallpaper daemon passes the test that rejected two earlier components, and the test is not the one its name suggests.** `hyprlock` and `hypridle` were set aside for linking `libhyprlang2` and `libhyprutils10`; this one links them too. What the rule tests is the configuration *search*, not the library: a component whose configuration path Gridline can name does not search, so nothing of Gridline's is read by a session that is not Gridline's. `hyprpaper` accepts `--config`, measured with `strace` on the running daemon rather than from its exit code, which is what admits it. [configuration.md](configuration.md) carries the pattern.
+- **Twenty packages, all from the Ubuntu archive**, ten from the main pool and ten from universe, with no overlap between the three dependency closures.
+
 ## Portals
 
 The compositor's own backend is the exception on this page: it is the only portal component whose absence blocks startup, because screen capture on Wayland cannot be served by any other backend. The frontend and the GTK backend degrade in the ordinary way.
