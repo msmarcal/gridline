@@ -30,6 +30,13 @@ packages/*/debian/gridline-*/
 # Build-time output assembled from the source tree, staged for dh_install.
 packages/*/debian/generated/
 
+# Maintainer scripts assembled at build time from what the adapters declare, so
+# that no file outside the adapter layer carries a compositor's name. The source
+# is the template under packages/*/src/config/, which is tracked; the name
+# dh_installdeb requires is fixed, so the output has to land here rather than in
+# generated/ with the rest.
+packages/*/debian/gridline-session.postinst
+
 # Local tooling and caches
 .cache/
 .venv/

@@ -19,6 +19,13 @@
 execute_before_dh_install:
 	tools/generate-portals-conf debian/generated/gridline-portals.conf
 
+# The maintainer script acts on the compositor package by name, which is
+# compositor-specific logic and so is declared by the adapter rather than
+# written into debian/. Same reason and same shape as the portal mapping above.
+execute_before_dh_installdeb:
+	tools/generate-maintainer-scripts src/config/gridline-session.postinst.in \
+		debian/gridline-session.postinst
+
 execute_before_dh_builddeb:
 	tools/check-path-ownership debian
 	tools/check-adapter-isolation

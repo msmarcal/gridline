@@ -61,6 +61,17 @@ Execution note: this group needs the VM at the greeter, and what the login scree
 
   The hiding recipe is kept, since the mechanism is general, along with the warning never to point it at the stock Ubuntu session. Verified by grep that no live document still says Gridline hides nothing
 
+## 7. The compositor's name leaves the maintainer script
+
+Added by `/opsx:verify`, which found the `postinst` naming the compositor package directly. `compositor-abstraction` requires that components outside the adapter layer contain no compositor-specific logic, and the build gate could not see this one: it excludes `debian/` wholesale, on a reason written into the gate itself that covers declarative metadata and says in so many words that it is not covering logic that leaked out of the adapter. A `Depends` on a compositor is a recorded dependency; a script that enumerates a named package and acts on the result is not.
+
+- [x] 7.1 Declare the compositor package inside the adapter, at `src/adapters/<compositor>/compositor-package`, following the shape `portal-backend` already set for the portal mapping. Verify the isolation check counts it as adapter content rather than a leak
+- [x] 7.2 Turn the maintainer script into a template carrying no compositor name, and substitute at build time with `tools/generate-maintainer-scripts`, which fails rather than ships if no adapter declares a package or if the placeholder survives. Verified the built package's `postinst` carries the substituted name, read with `dpkg-deb -I`.
+
+  **The output is a generated file at a tracked path**, which `git status` caught and the precedent did not have to solve: `generate-portals-conf` writes into `debian/generated/`, which is already ignored, while `dh_installdeb` fixes the name a maintainer script must have. A `.gitignore` entry now covers it, with the reason, and the previously committed copy has to be untracked once by hand, since an ignore rule does not undo tracking. Without both, every build leaves the tree dirty with an artefact
+- [x] 7.3 Verify the gate now catches what it could not before, which is the whole point of moving the file rather than only rewriting it. The template lives under `src/config/`, which the check scans: planting the compositor's name back into it fails the build with `src/config/gridline-session.postinst.in references hyprland`, and removing it passes. Before this change that same name sat in `debian/` and no gate had anything to say
+- [x] 7.4 Verify the behaviour is unchanged by the refactor, by removing the package and installing it again so the generated script does the work from nothing: two diversions registered, the session entry directory holding only Gridline's and Ubuntu's entries, `dpkg --verify hyprland` clean, and the trigger registered
+
 ## Workflow follow-up
 
 - Run `/opsx:verify` once the login screen and the removal have both been exercised on the VM.

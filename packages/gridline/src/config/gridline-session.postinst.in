@@ -18,19 +18,24 @@ set -e
 SESSION_DIR=/usr/share/wayland-sessions
 DIVERTED_SUFFIX=.gridline-diverted
 
-# The compositor whose entries are hidden is the one the adapter layer serves.
-# Reading it from the package that provides the adapter would be better and is
-# not available to a maintainer script, so it is named here, in debian/, which
-# the isolation check excludes because packaging metadata has to name what the
-# project depends on.
-COMPOSITOR_PACKAGE=hyprland
+# Substituted at build time from what each adapter declares, so this file names
+# no compositor. An earlier version carried the name directly, in debian/, on
+# the reasoning that the isolation check excludes that directory. The exclusion
+# is real and does not reach this far: its own stated reason is that packaging
+# metadata must name the packages the project depends on, and a Depends is a
+# recorded dependency rather than logic. A script that enumerates a named
+# package and acts on the result is logic, which compositor-abstraction
+# confines to the adapter layer.
+COMPOSITOR_PACKAGES="@COMPOSITOR_PACKAGES@"
 
 divert_session_entries() {
     # Enumerated from the package rather than from a list written here. A list
     # covers what was true when it was written; this covers what the package
     # owns now, which is the point of being re-run by a trigger.
-    dpkg -L "$COMPOSITOR_PACKAGE" 2>/dev/null |
-        grep "^$SESSION_DIR/.*\.desktop\$" |
+    for package in $COMPOSITOR_PACKAGES; do
+        dpkg -L "$package" 2>/dev/null |
+            grep "^$SESSION_DIR/.*\.desktop\$"
+    done |
         while IFS= read -r entry; do
             # Idempotent: a trigger fires an unpredictable number of times, and
             # re-adding an existing diversion is an error rather than a no-op.

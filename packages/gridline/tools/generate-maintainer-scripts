@@ -1,0 +1,68 @@
+#!/bin/sh
+# Substitute the compositor package names the adapters declare into the
+# maintainer script that acts on them.
+#
+# The script needs to know which package owns the session entries it hides.
+# That is compositor-specific logic, and compositor-abstraction confines such
+# logic to the adapter layer: a component outside it that names a compositor
+# makes supporting a second one an edit rather than an addition.
+#
+# debian/ being excluded from the isolation check does not cover this. The
+# exclusion's own stated reason is that packaging metadata must name the
+# packages the project depends on, and a Depends is a recorded dependency
+# rather than logic. A script that enumerates a named package and acts on the
+# result is logic, and an earlier version of it carried the name directly.
+#
+# Same shape as generate-portals-conf, which assembles the portal mapping from
+# each adapter's portal-backend declaration, for the same reason.
+set -eu
+
+root=$(dirname "$0")/..
+adapters=src/adapters
+
+cd "$root"
+
+template=${1-}
+output=${2-}
+[ -n "$template" ] && [ -n "$output" ] || {
+    printf 'generate-maintainer-scripts: usage: %s <template> <output>\n' "$0" >&2
+    exit 1
+}
+[ -r "$template" ] || {
+    printf 'generate-maintainer-scripts: no template at %s\n' "$template" >&2
+    exit 1
+}
+
+packages=
+count=0
+for declaration in "$adapters"/*/compositor-package; do
+    [ -r "$declaration" ] || continue
+    name=$(tr -d ' \t\n' < "$declaration")
+    [ -n "$name" ] || {
+        printf 'generate-maintainer-scripts: %s is empty\n' "$declaration" >&2
+        exit 1
+    }
+    count=$((count + 1))
+    if [ -z "$packages" ]; then packages=$name; else packages="$packages $name"; fi
+done
+
+# An empty list would produce a script that enumerates nothing and diverts
+# nothing, leaving the compositor's session entries on the login screen while
+# the package installed without error.
+[ "$count" -gt 0 ] || {
+    printf 'generate-maintainer-scripts: no adapter declares a compositor package under %s\n' \
+        "$adapters" >&2
+    exit 1
+}
+
+mkdir -p "$(dirname "$output")"
+sed "s|@COMPOSITOR_PACKAGES@|$packages|g" "$template" > "$output"
+
+grep -q '@COMPOSITOR_PACKAGES@' "$output" && {
+    printf 'generate-maintainer-scripts: placeholder survived substitution in %s\n' \
+        "$output" >&2
+    exit 1
+}
+
+chmod 755 "$output"
+printf 'generate-maintainer-scripts: %s adapter package(s) into %s\n' "$count" "$output"
