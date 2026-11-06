@@ -189,3 +189,32 @@ configuration question:
 and deliberately left it, because changing how the session starts the compositor
 is `compositor-abstraction`'s territory and reconciling it with an existing
 requirement is larger than removing a banner.
+
+
+## Open finding: the session does not end cleanly either
+
+`gdm-wayland-session` segfaults on every Gridline logout. Counted rather than
+noticed: six occurrences in one boot and four in an earlier one, the same
+process each time, across package states that differ in what Gridline had
+installed. It is not caused by anything Gridline ships that has been changed
+recently, and it predates the work that found it.
+
+**It was happening while a change recorded the opposite.** One occurrence falls
+on the exact logout that `add-session-lifecycle-integration` recorded as leaving
+no session residue. That measurement was true as far as it went, and it went
+only as far as `pgrep`: nothing was left running. The teardown itself was never
+read, so a crash in it went unseen under the word "clean".
+
+What attributing this needs, and none of it is a count:
+
+- a backtrace, which means a core pattern that keeps one and a debug build
+- whether the crash is before or after the launcher's own teardown runs, since
+  the launcher stops the session target and unsets the environment after the
+  compositor exits
+- whether a plain Hyprland session logs out the same way, which separates a
+  Gridline fault from one in the display manager's wrapper
+
+**Owner:** unattributed until there is a backtrace. It belongs with the question
+above rather than with configuration defaults: both are about how the session
+and the compositor hand control to each other, one at the start and one at the
+end.
