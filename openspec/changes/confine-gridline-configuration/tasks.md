@@ -80,16 +80,24 @@
 
 ## 6. The administrator who edited the file
 
-- [ ] 6.1 Exercise the upgrade path for an unmodified conffile that the new version stops shipping, and record what dpkg does with it
-- [ ] 6.2 Exercise the same upgrade with the conffile edited, and record what dpkg does and what the administrator has to do about it
-- [ ] 6.3 Record the answer where an administrator would meet it, not only in this change, since whoever edited that file will not read an archived task list
+- [x] 6.1 With `rm_conffile` declared, an upgrade from the version that shipped the file reports `Removing obsolete conffile /etc/xdg/hypr/hyprland.conf` and the file is gone, leaving the directory empty. Without it, task 1.2 measured the file simply staying, so the helper is what makes the difference rather than the manifest change
+- [x] 6.2 **The two cases differ, and only because the helper is there.** With the file edited, the upgrade reports `Obsolete conffile /etc/xdg/hypr/hyprland.conf has been modified by you` and keeps the edit as `hyprland.conf.dpkg-bak`, confirmed by finding the edit line in that file afterwards.
+
+  That is the outcome worth having: the leak closes even for an administrator who customised the file, and nothing they wrote is destroyed. The backup is not read, because it no longer carries the filename the compositor searches for. What they have to do is nothing, unless they want their changes back, in which case the content is there to move
+- [x] 6.3 Recorded in `docs/configuration.md`, under the section on shipped defaults being conffiles, which is where the rule it extends already lives. It states the dpkg behaviour that a reader would not guess, that an obsolete conffile is left in place without the helper, gives both upgrade outcomes in a table, and says plainly that nothing written is destroyed and nothing written is still in effect. It names the one file this happened to and points at `recovery.md` for what changed for a session outside Gridline
 
 ## 7. Coherence
 
-- [ ] 7.1 Verify each scenario of the modified requirement is exercised or recorded as unexercised with a reason, counting them from the delta file rather than from the proposal's description of them
-- [ ] 7.2 Verify the rewritten scenario about a user's own configuration is satisfied by the new mechanism rather than by the old wording surviving, since a MODIFIED block replaces the requirement and the scenario's name stayed while its meaning changed
-- [ ] 7.3 Update `docs/configuration.md`, whose section on what Gridline does about first-file-wins describes the mechanism this change replaces. Verify by grep that no live document still describes the loader
-- [ ] 7.4 Update `docs/package-matrix.md` for the owned paths that change, and verify the list matches `dpkg -L` on the built packages rather than the previous text
+- [x] 7.1 Seven scenarios, counted from the delta file. All exercised, none deferred.
+
+  *The keyboard works on first login*: a login with nothing of the compositor's own present loaded Gridline's defaults with forty bindings, and `SUPER + Return` opened the declared terminal. *Gridline's defaults are the ones in effect*: the log names `/etc/xdg/gridline/compositor/defaults.conf` and `gaps_in` reads 4. *A first login presents no upstream project messaging*: the suppressions ride in the same file and were read back from the running compositor. *A suppressed warning is recorded rather than erased*: unchanged by this change, the records are where the previous change put them. *A user's own configuration does not silently discard the defaults*: with a user file present the compositor loaded theirs and Gridline named nothing, and the marker was absent in both the terminal and the user manager, which is the detectable half. *The defaults reach no session but Gridline's*: the configuration a session outside Gridline produces is byte for byte the pre-Gridline file. *Absent defaults degrade rather than block*: unchanged in mechanism, and the reporting half remains owed to `add-session-health-check` exactly as the previous change recorded
+- [x] 7.2 The name stayed and the meaning changed, deliberately, and the new meaning is what was measured. The old scenario described a component resolving by first file wins and asked that the defaults survive or their absence be recorded; the new one asks that the user's configuration be the one in effect and the absence be readable. Both halves exercised in the second branch of task 2.1.
+
+  The validator is what forced this to be deliberate. A first draft replaced the scenario with two new ones, and `openspec validate` refused, because a MODIFIED block replaces the whole requirement and dropping a scenario has to be visible rather than incidental
+- [x] 7.3 Rewritten. The section now describes naming the path rather than placing a file where the component searches, with the three consequences that follow, and says plainly that the precedence rule is Gridline's rather than the component's, since the compositor has no way to express "use mine unless theirs exists".
+
+  One mention of the loader survives on purpose: a closing paragraph recording that the earlier arrangement existed, worked, and had two faults that appeared later. A reader who met the old mechanism should be able to tell it was replaced rather than find it deleted
+- [x] 7.4 Updated against `dpkg -c` on the built packages rather than against the previous wording. `gridline-config` now ships three files: the compositor defaults under a Gridline-named path, the portal mapping, and the terminal preference. `gridline-session` ships six, unchanged by this change. Nothing under `/etc/xdg/hypr` remains in either
 
 ## Workflow follow-up
 
