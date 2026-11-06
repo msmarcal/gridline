@@ -11,7 +11,7 @@ The session works and shows nothing. A user logs into Gridline and gets a bare c
 - Selects and declares a status bar, a notification daemon and a wallpaper daemon, all from the archive.
 - Configures each enough to be usable on first login, without the user editing anything.
 - Starts each through the session target, extending the `Upholds=` mechanism that already holds the idle daemon: these degrade the desktop when absent and do not make it unsafe, so none of them blocks startup.
-- Records why the wallpaper choice settles a question the project has left open twice: whether rejecting a component for linking the compositor's configuration library is a rule about the fail-safe path or a rule about everything.
+- Records what the rule that rejected two earlier components actually tests. The wallpaper daemon selected here links the same configuration library they were rejected for, and the difference is that its configuration path can be named rather than searched for.
 - Corrects `docs/user-experience.md`, which records the notification daemon as absent from the archive when it is present under a different package name.
 
 **Out of scope.** The application launcher, deliberately: `docs/user-experience.md` calls the command menu built over it the element worth the most to the experience, and choosing a launcher now would constrain that menu before anyone has designed it. The two belong in one change. Also out: the capture tools, which are keybindings over three small packages and carry no styling or lifecycle question; opinionated terminal, editor and monitor defaults; and theming, which the same document already separates into Gridline-authored integration rather than archive-package configuration.
