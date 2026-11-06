@@ -87,6 +87,49 @@ if ! "$adapter" capabilities >/dev/null 2>&1; then
         "$adapter could not report what it provides"
 fi
 
+# The machine's keyboard configuration, handed to the compositor before it
+# builds a keymap.
+#
+# Nothing else does this. The display manager does not export XKB_DEFAULT_* to a
+# Wayland session, and with those unset the keymap falls back to the library's
+# own default of us. Measured: a machine configured for br/abnt2 ran a Gridline
+# session whose compositor reported `l "us"`, so a user outside that one layout
+# got the wrong characters on a session that promises to be usable without
+# configuring anything.
+#
+# These variable names belong to libxkbcommon, which every Wayland compositor
+# uses, so reading them here rather than in an adapter is not a compositor
+# detail leaking out: it is the one place that knows the machine and not the
+# compositor.
+#
+# An existing value wins. If something upstream already decided the layout, it
+# decided deliberately, and this should not overrule it.
+locale_property() {
+    busctl get-property org.freedesktop.locale1 /org/freedesktop/locale1 \
+        org.freedesktop.locale1 "$1" 2>/dev/null |
+        sed -n 's/^s "\(.*\)"$/\1/p'
+}
+
+export_keyboard_configuration() {
+    [ -n "${XKB_DEFAULT_LAYOUT:-}" ] && return 0
+
+    layout=$(locale_property X11Layout)
+    [ -n "$layout" ] || return 0
+
+    export XKB_DEFAULT_LAYOUT="$layout"
+
+    # The rest only when set. An empty variant is not the same as no variant,
+    # and exporting one would describe the machine wrongly.
+    for pair in X11Variant:XKB_DEFAULT_VARIANT X11Model:XKB_DEFAULT_MODEL \
+        X11Options:XKB_DEFAULT_OPTIONS; do
+        value=$(locale_property "${pair%%:*}")
+        [ -n "$value" ] || continue
+        export "${pair##*:}=$value"
+    done
+}
+
+export_keyboard_configuration
+
 # Phase two. Start the compositor through the adapter, so this launcher never
 # names one. Supporting a second compositor stays a question of which adapter is
 # active, which is what the isolation requirement asks of everything out here.

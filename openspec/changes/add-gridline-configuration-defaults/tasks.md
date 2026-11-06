@@ -144,6 +144,23 @@ in design.md as the wrong answer to a real problem.
   **A sweep of the edited page caught a claim that was already wrong before this change touched it.** `package-matrix.md` said `wayland-utils` was the only non-Hypr package carrying the universe gap. Counting the rows gives four: `swaylock`, `swayidle`, `wayland-utils` and `foot`. It had been false since `add-session-lifecycle-integration` declared the locker, and that change's own coherence pass did not catch it. Corrected, with the drift recorded rather than quietly fixed
 - [x] 7.3 Recorded in `docs/package-matrix.md`, under the boundaries that are easy to get wrong, which is where a reader meets the ownership rules rather than in an archived design. It states the two axes, binary package against source tree, names `debian/` as the bridge and why the isolation check excludes it, and gives the test the arrangement has to pass: a second compositor brings its own defaults and loader inside its own adapter directory and nothing outside changes
 
+## 9. The keyboard the machine is configured for
+
+Added by `/opsx:verify`, which found a hardcoded `kb_layout = us` in the shipped
+defaults. The group exists because the first two attempts at fixing it were both
+wrong and both looked right.
+
+- [x] 9.1 Establish that the defaults forced a layout, and that the forcing was undocumented. `src/adapters/hyprland/defaults.conf` set `kb_layout = us` with no rationale anywhere in the change, which contradicts this change's own scenario that a first login is operable from the keyboard without the user configuring anything: outside that one layout the keyboard produces the wrong characters
+- [x] 9.2 Make the defect observable before fixing it, since on a machine already set to `us` every version of this looks correct. Set the verification machine to `br`/`abnt2` through `/etc/default/keyboard`, confirmed at the system level as `X11 Layout: br`, `X11 Variant: abnt2`, with the original backed up and later restored
+- [x] 9.3 Have the launcher read the machine's keyboard configuration and export `XKB_DEFAULT_LAYOUT`, `XKB_DEFAULT_VARIANT` and `XKB_DEFAULT_MODEL` before the compositor starts. Read from `org.freedesktop.locale1` over D-Bus, which an unprivileged process can query, rather than by parsing `localectl` prose. An existing value wins, and an empty property is not exported, since empty is not the same as unset. Verified from a real session: the compositor's environment carries `br`, `pc105` and `abnt2`.
+
+  These variable names belong to `libxkbcommon`, which every Wayland compositor uses, so reading them in the launcher is not compositor knowledge leaking out of the adapter: it is the one component that knows the machine rather than the compositor
+- [x] 9.4 Settle what the defaults must say, which took three measurements because two of the three states are indistinguishable on a US machine. On a machine configured for `br`/`abnt2`: `kb_layout = us` resolved to `English (US)`; **removing the line** also resolved to `English (US)`, because the compositor substitutes its own default and passes it explicitly, which closes the environment path exactly as a named layout would; `kb_layout =`, explicitly empty, resolved to `Portuguese (Brazil)`.
+
+  The middle state is the one worth recording. Deleting a setting to let a default apply assumes the component has no default of its own. This one does, so the deletion looked like deferring and was not. The verification this change was about to pass would have passed on that version
+- [x] 9.5 Verify the whole path end to end on a session provably newer than the package that fixed it, since an earlier reading of this was taken from a session three minutes older than the fix and reported a failure that could not have been otherwise. Session at `10:56:05` against a package installed at `10:55:16`: the launcher exported `br`, the compositor resolved `l ""` and `Portuguese (Brazil)`, `general:gaps_in` read `4` confirming these were our defaults, and the person at the machine typed a character the US layout cannot produce
+- [x] 9.6 Return the verification machine to the layout it had, verified rather than announced: `/etc/default/keyboard` back to `us` with an empty variant, and the backup file gone
+
 ## Workflow follow-up
 
 - Run `/opsx:verify` once the session has been started from the greeter with the defaults in place.
