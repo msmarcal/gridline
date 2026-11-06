@@ -44,11 +44,17 @@ Editing or deleting the compositor's file was never a candidate. It breaks on up
 
 The risk is entirely in the `postrm`. A `postinst` that fails leaves an install error, which is loud. A `postrm` that fails to remove the diversion leaves an archive package's file relocated on a machine Gridline is no longer on, which is silent and is a worse failure than anything this change is trying to fix. The delta therefore carries it as a scenario rather than leaving it to care, and the verification exercises removal rather than reasoning about it.
 
-### Covering every entry, and noticing a new one
+### Coverage by construction, through a dpkg trigger
 
-Diverting one of two entries produces a mechanism that works until `uwsm` is installed and then quietly does not. Both are diverted.
+Diverting one of two entries produces a mechanism that works until `uwsm` is installed and then quietly does not. Both are diverted. That is the easy half.
 
-That still leaves the case where the compositor's package gains a third entry in a later version. A diversion names a path, so a new path is simply not covered, and nothing reports it. The delta asks that the build or review report an uncovered entry, which means something has to enumerate what the compositor's package ships and compare it with what the diversion covers. That check is the part of this change most likely to be skipped and the part that keeps it working a year from now.
+The hard half is the compositor's package gaining a third entry in a version released after Gridline. A diversion names a path, so a new path is simply not covered. Neither enumeration available at first glance helps: a check at build time reports what the archive shipped when Gridline was built, and an enumeration in the installation script runs once, at a moment before the upgrade that adds the entry. The event that breaks this happens on the user's machine, later, and neither mechanism is there for it.
+
+`gridline-session` therefore registers a **dpkg trigger on the session entry directory**. Its installation script is re-run whenever any package changes that directory, which includes the compositor's own upgrade adding an entry. The script enumerates what the compositor owns there and diverts each, so coverage stops being something to verify and becomes a property of when the script runs.
+
+This is an ordinary mechanism on this baseline rather than a clever one: eight path triggers are registered on the machine already, four of them on directories under `/usr/share`, including `dbus` watching two of its own and `shared-mime-info` watching `/usr/share/mime/packages`.
+
+**The removal path needs no state file.** `dpkg-divert --list` filtered to Gridline's own diversions returns exactly what the script added, with the original path in a fixed field, so the removal undoes what was done rather than what someone remembered to write down. A state file would be a second record of the same fact and the one more likely to be wrong.
 
 ### The fallback is never a candidate
 
@@ -66,4 +72,4 @@ This is a scenario rather than a comment because the mechanism arrives in the sa
 ## Open Questions
 
 - Whether `dpkg-divert` with `--rename` and no replacement file is the right shape here, given that Gridline supplies nothing at the diverted path and only wants the original gone. Measurable before implementation.
-- What enumerates the compositor's session entries for the coverage check: the package's file list at build time names what the baseline ships, and a check against the installed package names what the machine has. These answer different questions and the change should say which one it is making.
+- ~~What enumerates the compositor's session entries for the coverage check.~~ Settled during implementation, and neither of the two candidates was right: both are evaluated at a moment before the upgrade that would add an entry. A dpkg trigger on the directory re-runs the installation script when the directory changes, which makes coverage a property of the mechanism rather than something to check.

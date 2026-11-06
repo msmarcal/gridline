@@ -1,0 +1,59 @@
+#!/bin/sh
+# Hide the session entries the compositor's own package registers.
+#
+# They are on the machine because gridline-session depends on that compositor,
+# not because anyone chose them: apt-mark showmanual does not list it. So
+# installing one desktop offers two, and the one nobody asked for runs a session
+# that inherits Gridline's keybindings and none of Gridline's components.
+#
+# A diversion rather than an edit or a deletion. The compositor's package keeps
+# owning its file, dpkg --verify on it stays clean, its upgrades land at the
+# diverted path, and removing the diversion puts the file back without anyone
+# having kept a copy. See docs/package-matrix.md for why a drop-in cannot do
+# this: the only directory with precedence belongs to the local administrator
+# and Policy forbids a package writing there.
+
+set -e
+
+SESSION_DIR=/usr/share/wayland-sessions
+DIVERTED_SUFFIX=.gridline-diverted
+
+# The compositor whose entries are hidden is the one the adapter layer serves.
+# Reading it from the package that provides the adapter would be better and is
+# not available to a maintainer script, so it is named here, in debian/, which
+# the isolation check excludes because packaging metadata has to name what the
+# project depends on.
+COMPOSITOR_PACKAGE=hyprland
+
+divert_session_entries() {
+    # Enumerated from the package rather than from a list written here. A list
+    # covers what was true when it was written; this covers what the package
+    # owns now, which is the point of being re-run by a trigger.
+    dpkg -L "$COMPOSITOR_PACKAGE" 2>/dev/null |
+        grep "^$SESSION_DIR/.*\.desktop\$" |
+        while IFS= read -r entry; do
+            # Idempotent: a trigger fires an unpredictable number of times, and
+            # re-adding an existing diversion is an error rather than a no-op.
+            if dpkg-divert --list "$entry$DIVERTED_SUFFIX" | grep -q .; then
+                continue
+            fi
+            dpkg-divert --package gridline-session \
+                --divert "$entry$DIVERTED_SUFFIX" \
+                --rename --add "$entry" >/dev/null
+        done
+}
+
+case "$1" in
+configure | triggered)
+    divert_session_entries
+    ;;
+abort-upgrade | abort-remove | abort-deconfigure) ;;
+*)
+    echo "postinst called with unknown argument '$1'" >&2
+    exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

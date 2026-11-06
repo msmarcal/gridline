@@ -1,0 +1,9 @@
+# Re-run the installation script whenever any package changes the session
+# entry directory. That is what makes the diversion cover an entry the
+# compositor's package gains in a version released after this one: the event
+# happens on the user's machine, after any check at build time and after the
+# one run at install time, and nothing else would notice it.
+#
+# noawait because nothing Gridline does depends on the result being available
+# to the package that tripped the trigger.
+interest-noawait /usr/share/wayland-sessions
