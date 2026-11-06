@@ -213,7 +213,21 @@ Execution note: this group needs the session running on the VM, started from the
 
 ## 7. Coherence
 
-- [ ] 7.1 Verify each scenario of the added requirement is exercised or recorded as unexercised with a reason, naming the file or measurement for each, and that none is left unaccounted for. Count the scenarios from the delta file rather than from the proposal's description of them
+- [x] 7.1 **Seven scenarios, counted from the delta file.** Five are exercised, one partly, one not at all, and none is unaccounted for.
+
+  | Scenario | Where | State |
+  |---|---|---|
+  | The state of the machine is visible | 6.1 | **Partly.** Workspace, clock and network each read off the screen and compared against the system at the same moment. The power source has never been seen rendering: the VM has no battery |
+  | A notification reaches the user | 6.2 | **Exercised**, and against the configuration rather than the daemon: a critical notification stays until dismissed with its own border colour |
+  | The desktop has a background | 6.3 | **Not exercised.** The daemon aborts before drawing on this machine. 4.7 carries how far the cause was traced |
+  | Each component is kept running | 4.4 | **Exercised for two of three.** The bar and the notification daemon were killed and returned, with the wrapper running again rather than only the binary. The wallpaper daemon satisfies it and the evidence is worthless: it restarts without being killed |
+  | An absent component degrades and does not block | 4.5, 6.5 | **Exercised** for all three at once, from the greeter, with the wrapper naming each role and binary it could not run |
+  | Their configuration is a shipped default a user can decline | 6.4, 4.2 | **Exercised.** Measured in a session for the bar, and by probe for all three, including that one component deferring does not make the others defer |
+  | Only the Gridline session is affected | 5.3, 5.4 | **Exercised** in the stock Ubuntu session: none of the three running, no failed unit, no Gridline directory on the configuration search path, and the person who uses it reporting nothing different |
+
+  The requirement this change also modifies carries no task and implements nothing: it shortens prose that stated, in the requirement itself, what one of its own scenarios states word for word. The proposal records that, and no scenario of it is this change's to exercise.
+
+  **One thing this accounting cannot say is that the change is done.** Two of the seven rows are short, and the shortfall is not spread evenly: the background is the whole of one scenario and is the reason 4.7 and 6.3 stay open
 - [x] 7.2 **Owed, not satisfied, and the shortfall is larger than this change.** `add-session-health-check` does not exist as a change, active or archived. The launcher's only reporting path is `report_missing`, and every one of its eight call sites ends in `exit 1`: it refuses a session and names the component, which is the blocking case and the opposite of this one. Nothing anywhere reports a component that is absent without blocking.
 
   Counted rather than estimated: **seventeen cells across five live documents** promise "reported as a capability gap", and two scenarios in `openspec/specs/` require it. Three of those cells are this change's. No document said the promise was unimplemented.
