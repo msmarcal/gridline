@@ -27,6 +27,7 @@ None.
 ### Modified Capabilities
 
 - `desktop-session`: gains one requirement, that the session presents a desktop rather than a bare compositor. The capability already requires a session that reaches a usable desktop and, since the last change, one that is operable from the keyboard without configuration. Neither says anything about the user being able to see the state of their own machine, or about a notification reaching them rather than being dropped.
+- `desktop-session`: one requirement is modified for its prose and not its behaviour. `confine-gridline-configuration` left "a newly installed session is usable without configuration" stating, in the requirement itself, the outcome that one of its own scenarios already states word for word, which put the requirement text over the length the validator accepts. The duplicated clause is dropped and the scenario keeps it. Nothing is required here that was not required before, and no task implements it.
 
 `platform-integration` is **not** modified. Its scenarios about network, audio, battery and bluetooth already require those to work; a bar makes them visible, which is presentation rather than a new integration.
 
