@@ -1,2 +1,3 @@
 debian/generated/gridline-portals.conf usr/share/xdg-desktop-portal/
 src/adapters/hyprland/defaults.conf etc/xdg/gridline/compositor/
+src/config/gridline-xdg-terminals.list usr/share/xdg-terminal-exec/

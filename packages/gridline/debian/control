@@ -18,7 +18,7 @@ Depends: ${misc:Depends},
          swayidle,
          hyprpolkitagent,
          xdg-terminal-exec,
-         foot
+         kitty
 Description: Gridline session integration
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
  package owns the session entry the display manager reads, the session

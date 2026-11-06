@@ -125,7 +125,7 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 | `unattended-upgrades` | 2.12ubuntu9 | main | Update path |
 | `wayland-utils` | 1.3.0-1 | **universe** | Wayland registry query, used by the compositor adapter |
 | `xdg-terminal-exec` | 0.14.0-1 | main | Launches the terminal the system is configured to use |
-| `foot` | 1.25.0-1 | **universe** | Terminal emulator, declared because the baseline guarantees none |
+| `kitty` | 0.45.0-1build1 | **universe** | Terminal emulator, declared because a recommend is not a guarantee |
 
 ### How these were measured
 
@@ -143,11 +143,13 @@ These rows were confirmed against the archive by `define-supported-ubuntu-integr
 
 **[component-ownership.md](component-ownership.md) is authoritative for component facts.** Where that page and this one carry the same version or archive component, it wins, because it is the one organized by component and it carries what each component's absence does. This table is the packaging-side view of the same measurement.
 
+**Which terminal a Gridline session opens is named rather than left to chance.** `gridline-config` ships `/usr/share/xdg-terminal-exec/gridline-xdg-terminals.list`, keyed on Gridline's desktop name, which is how the launcher finds it and why it applies in a Gridline session and in no other. Without it the launcher walks every application on the machine in the order the directory scan produced and takes the first carrying the terminal category: measured on the baseline, 114 candidates with three terminals at positions 9, 76 and 102, so installing or removing an unrelated application could change which terminal a keybinding opens. Other desktops already ship such a file of their own; Gridline was the only session falling through to that list.
+
 **One row is a candidate rather than a dependency**, marked as such in the Role column: `hyprpaper` for the wallpaper. No requirement rests on it, so it is in no package's `Depends`, and the change that adds the wallpaper owns the choice.
 
 `swayidle` is a dependency again, declared by `add-gridline-configuration-defaults`, which is the change that gave it something to do: it runs the session's lock entry point on inactivity, on the logind lock signal and before suspend. It was a dependency for the length of an earlier change, removed when the blocking components were counted and no idle daemon was among them, and declared again here for a different reason. It is still not a blocking component, and `component-ownership.md` records how the session holds it running without treating its absence as grounds to refuse a session.
 
-**Four universe packages are not Hypr-ecosystem**: `swaylock` and `swayidle` from swaywm, `wayland-utils` from freedesktop, and `foot`. They carry the same universe gap and none of them carries it because of the compositor. Gridline depends on them for reasons of its own: the adapter needs the registry query because the compositor publishes its protocols there and offers no command that lists them, the locker and idle daemon were chosen for the libraries they do **not** link, and the terminal is declared because the baseline supplies none.
+**Four universe packages are not Hypr-ecosystem**: `swaylock` and `swayidle` from swaywm, `wayland-utils` from freedesktop, and `kitty`. They carry the same universe gap and none of them carries it because of the compositor. Gridline depends on them for reasons of its own: the adapter needs the registry query because the compositor publishes its protocols there and offers no command that lists them, the locker and idle daemon were chosen for the libraries they do **not** link, and the terminal is declared because a recommend is not a guarantee: both desktop metapackages recommend one, which apt installs by default, so an ordinary machine has a terminal and one built with `--no-install-recommends` does not.
 
 This paragraph said "one" and named only `wayland-utils` until `add-gridline-configuration-defaults` counted the rows. It had been wrong since `add-session-lifecycle-integration` declared the locker and the idle daemon, and that change's own coherence pass did not catch it, which is the ordinary way a count in prose drifts from the table above it.
 

@@ -63,12 +63,20 @@
 
 ## 5. The terminal a Gridline session opens
 
-- [ ] 5.1 Verify the problem before fixing it: with two terminals installed, confirm the launcher selects Gridline's rather than the machine's, and record which ordering rule decides. A fix whose before state was guessed is a fix nobody can check
-- [ ] 5.2 Ship a preference file keyed on Gridline's desktop name, naming the declared terminal. Verify with `xdg-terminal-exec --print-id` inside a Gridline session that it selects that terminal, and verify the file's path is Gridline-named so the new gate accepts it
-- [ ] 5.3 Verify the preference applies to no other session, by asking the launcher what it would select with a different desktop identity and confirming the answer is the machine's terminal rather than Gridline's
-- [ ] 5.4 Change the declared terminal, and verify with `dpkg-deb -f` on the built package rather than by reading the control file. Verify the keymap still names no terminal, since the binding calls the launcher and the preference file is what chooses
-- [ ] 5.5 Correct the recorded reason in `docs/package-matrix.md`. The baseline recommends a terminal in both desktop metapackages, so "declared because the baseline guarantees none" is false; what is true is that a recommend is not a guarantee. Verify by grep that no live document still carries the old claim
-- [ ] 5.6 Verify `SUPER + Return` opens the declared terminal on a real login, since the whole path is binding, launcher, preference file and package, and only the last of those is visible from the build
+- [x] 5.1 **The rule is that there is no rule.** With the launcher's own debug output, the candidate list is every application on the machine in the order the directory scan produced, walked until one carries the terminal category. Measured: 114 candidates, with the three installed terminals at positions 9, 76 and 102. Installing or removing an unrelated application could change which terminal a Gridline keybinding opens.
+
+  That is a stronger finding than the task expected and it changes what the fix is for. The problem was never that the wrong terminal won; it was that the winner was arbitrary and unstable.
+
+  One more thing the same output showed: `/usr/share/xdg-terminal-exec/` already held `gnome-`, `sway-` and `ubuntu-xdg-terminals.list`. Other desktops name their terminal and **Gridline was the only session falling through to the arbitrary list**, which means changing the declared package without naming a preference would have left the instability untouched
+- [x] 5.2 `gridline-config` ships `/usr/share/xdg-terminal-exec/gridline-xdg-terminals.list`. Under the Gridline identity the launcher answers `kitty.desktop`. The path passes the new declared-paths gate on its filename, which is the drop-in shape: a Gridline-named file in a directory another component reads
+- [x] 5.3 Asked under two other identities and the machine's own choice is untouched: `GNOME` and `ubuntu:GNOME` both answer `org.gnome.Ptyxis.desktop:new-window`, which the machine's own preference files decide. Expressing a preference rather than taking one is the difference this measures
+- [x] 5.4 `dpkg-deb -f` on the built package lists `xdg-terminal-exec` and `kitty`, with the previous terminal gone; it was removed from the machine afterwards, since nothing declares it. A grep of `src/` for every terminal name considered finds them nowhere but in the preference file, which is the one place naming one belongs.
+
+  The grep needed redoing. The first run piped through `sed`, which exits zero on empty input, so the `||` branch reporting "none" never ran and silence read as a result. The status has to come from `grep`
+- [x] 5.5 The table row and the paragraph both corrected, and the page now records how the terminal is chosen as well as why one is declared. Verified by grep across `docs/` and `openspec/specs/` that neither form of the old claim survives.
+
+  It took two passes. The first corrected the row and the package list and left the same false claim standing in the trailing sentence of a paragraph it had just edited, caught only by grepping for the phrase afterwards. A second edit then failed its assertion on an anchor quoted from memory rather than from the file, which is the same mistake in a different place
+- [x] 5.6 Exercised on a login newer than every package involved. The compositor loaded `/etc/xdg/gridline/compositor/defaults.conf` with forty bindings, the key produced a client reporting `class: kitty`, and the process list shows `kitty` running and no other terminal installed. Four pieces measured separately now measured composing
 
 ## 6. The administrator who edited the file
 

@@ -1,0 +1,18 @@
+# The terminal a Gridline session opens.
+#
+# Without this the choice is arbitrary. The launcher walks every application on
+# the machine in the order the directory scan produced and takes the first
+# carrying the TerminalEmulator category. Measured on the baseline: 114
+# candidates, with three terminals at positions 9, 76 and 102. Installing or
+# removing any unrelated application can change which one a Gridline keybinding
+# opens.
+#
+# The filename is keyed on Gridline's desktop name, which is how the launcher
+# finds it, and it is why this preference applies in a Gridline session and in
+# no other. A machine's own terminal choice is left alone, which is the
+# difference between expressing a preference and taking one.
+#
+# One entry and no fallback: the terminal named here is a dependency of
+# gridline-session, so a machine without it has no Gridline session to express
+# a preference for, and a second line would be unreachable.
+kitty.desktop
