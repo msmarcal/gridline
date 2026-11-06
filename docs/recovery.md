@@ -50,6 +50,55 @@ Removing the Gridline packages returns the system to a stock Ubuntu desktop. No 
 
 You can keep using GNOME indefinitely with Gridline still installed. An unselected session costs nothing.
 
+## Choosing what the login screen offers
+
+Installing Gridline adds its own session entry, and the compositor it depends on
+adds one or two of its own. On the supported baseline the display manager ends up
+offering **Gridline**, **Hyprland** and **Ubuntu**. A fourth entry exists,
+`hyprland-uwsm.desktop`, and is withheld because its `TryExec` names a binary the
+baseline does not install.
+
+**Gridline hides none of them, and will not.** A session entry belongs to the
+package that ships it, and the only directory with precedence over
+`/usr/share/wayland-sessions` is `/usr/local/share/wayland-sessions`, which
+Debian Policy §9.1.2 reserves for the local administrator and forbids any package
+from writing to. Hiding another package's entry would also contradict the rule
+that Gridline is additive: a compositor you have installed stays launchable.
+
+**An administrator can, and here is the measured way.** The display manager
+resolves session entries by filename across its search path and the first match
+wins, so a file of the same name in the higher-precedence directory replaces the
+one the package shipped. Combined with `Hidden=true`, the entry disappears from
+the selector entirely:
+
+```
+sudo mkdir -p /usr/local/share/wayland-sessions
+sudo tee /usr/local/share/wayland-sessions/hyprland.desktop >/dev/null <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Hyprland
+Hidden=true
+EOF
+sudo systemctl restart gdm3
+```
+
+Undo it by deleting that file and restarting the display manager again. Nothing
+the `hyprland` package owns is touched, `dpkg --verify hyprland` stays clean, and
+an upgrade of that package does not fight the override.
+
+This works for any session entry, not only the compositor's: the filename is what
+matches, so the same recipe hides any entry whose file you name. **Do not hide the
+stock Ubuntu session.** It is the fallback every recovery on this page depends on,
+and a machine whose only remaining entry is Gridline has no route back if Gridline
+stops starting.
+
+Both halves of this were measured on the baseline rather than taken from the
+specification. A probe file carrying a different `Name` showed the
+higher-precedence file replacing the packaged one rather than appearing alongside
+it, which is what establishes that the search deduplicates by filename. The same
+probe carrying `Hidden=true` removed the entry from the selector, which is what
+establishes that the display manager honours that key for session entries.
+
 ## Why recovery does not depend on Gridline
 
 Every step above works when no Gridline component runs:
