@@ -202,4 +202,12 @@ compositor_status=$?
 systemctl --user stop "$SESSION_TARGET" 2>/dev/null
 systemctl --user unset-environment WAYLAND_DISPLAY 2>/dev/null
 
+# The configuration marker goes too. Today the user manager stops with the last
+# session, so the variable dies anyway, but that is `Linger=no` rather than a
+# guarantee: with lingering enabled the manager outlives the session and a
+# marker set by this session would still be set in the next one. A session
+# running without Gridline's defaults would then look like a session with them,
+# which is the one thing the marker exists to tell apart.
+systemctl --user unset-environment GRIDLINE_CONFIG 2>/dev/null
+
 exit "$compositor_status"
