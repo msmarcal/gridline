@@ -14,7 +14,26 @@ These come first because each one changes how much the session target has to dec
 
   Three instruments were wrong before that one, and the third found the answer only because the first two had controls. Run headless with no Wayland display, the daemon dies in `XDG_RUNTIME_DIR` with SIGSEGV **before reading any configuration**, and a nonexistent config path produces output identical to a valid one, so the whole first attempt measured nothing. `hyprctl hyprpaper listloaded` answers `Unknown hyprpaper request`: 0.8.x moved its IPC to a Wayland protocol, so the documented observation point no longer exists. And `--verbose` logs nothing about configuration whatsoever: four cases, including an invalid directive, produced logs of 90 lines that are byte-identical once addresses are masked
 
-- [ ] 1.6 **A finding for group 3, not for this group: the configuration format changed and the published syntax does not apply.** The named file is read and nothing in it takes effect. The reason is not the flag: `preload`, `wallpaper`, `splash` and `ipc`, the directives every current example uses, **do not exist as strings in the 0.8.3 binary**, measured for each one. What is there is `hyprpaper_wallpaper`, a `Failed parsing wallpaper for key` message, `splash_offset`, `source=`, and Hyprlang's `addSpecialCategory`, so the shape is a special category rather than the flat keys of 0.7. The changelog agrees this is a rewrite: 0.8.0 dropped cairo, pango and hyprgraphics for hyprtoolkit. Establish the real syntax from the 0.8.3 source or its own documentation before task 3.1 authors a file, and do not take it from an example written against 0.7, which parses without complaint and does nothing
+- [x] 1.6 **The 0.8.3 syntax, read from the source of the archive's own version and then confirmed by running it.** `apt-get source` is unavailable with no `deb-src`, so the orig tarball came from the pool and its sha256 was checked against the `.dsc` before extracting. `src/config/ConfigManager.cpp:55-67` registers the whole surface:
+
+  ```
+  splash = 1          splash_offset = 20       splash_opacity = 0.8      ipc = 1
+
+  wallpaper {         # a special category keyed on monitor, one block per wallpaper
+      monitor =       # empty applies to every output
+      path =          # a file, or a directory, which it walks for up to 1024 images
+      fit_mode = cover
+      timeout = 0     # non-zero rotates between the images found
+  }
+
+  source = /path      # honours ~ and glob patterns, relative to the including file
+  ```
+
+  **The finding recorded here before this was wrong, and wrong in a way that would have misled group 3.** It claimed `preload`, `wallpaper`, `splash` and `ipc` do not exist in the binary and concluded the published syntax does not apply at all. The string measurement was right and the inference was not: `splash` and `ipc` are still flat keys, and `wallpaper` still exists but became a category with a block instead of a one-line value. Only `preload` is genuinely gone, its job now done by `path` accepting a directory.
+
+  **What makes this worth a task rather than a footnote is how the wrong syntax fails.** Measured against the running compositor: the 0.8.3 syntax gets past the parse and into allocating a buffer to draw with, while the published 0.7 syntax and a key invented on the spot, `gridline_not_a_key = 1`, behave **identically to each other** - the daemon starts, reports nothing, exits nothing, and idles with no wallpaper for as long as it is left running. `throwAllErrors` does not reject an unknown key, `init()` logs no error, and the exit code is whatever killed it. So a file copied from a current example is indistinguishable at runtime from no configuration at all, which is precisely the failure this project keeps finding. Task 3.1 authors against the list above rather than against an example, and task 6.3 is the only check that can catch getting it wrong, since nothing short of looking at the screen distinguishes a wallpaper configuration that does nothing from one that was never shipped
+
+  Not obtained here: the wallpaper actually displayed. Started outside the session's own cgroup, logind denies the process DRM access and the daemon segfaults in buffer allocation, so the visual confirmation belongs to group 6, which runs in the session from the greeter
 - [x] 1.4 Both can be named explicitly: the binary carries `--config` and `--style`. It also searches `$XDG_CONFIG_HOME/waybar/` then `/etc/xdg/waybar/`, so unlike the other two it has a system path Gridline could ship into.
 
   Its `include` directive has the precedence **inverted** from the compositor's `source`: the manual states that in case of duplicate options the first defined value wins, including file before included file. So a user who includes Gridline's configuration overrides it by writing their own values anywhere in their file, rather than by writing them after the include
