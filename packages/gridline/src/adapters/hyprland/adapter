@@ -24,6 +24,13 @@ PORTAL_DEF=/usr/share/xdg-desktop-portal/portals/hyprland.portal
 PORTAL_IFACE=org.freedesktop.impl.portal.ScreenCast
 PORTAL_SERVICE=/usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.hyprland.service
 
+# Where Gridline's own compositor defaults live, and the subpath this compositor
+# searches for. Naming the first is how the defaults reach a Gridline session
+# and no other session of this compositor; knowing the second is how the adapter
+# can tell whether anything would have been found without us.
+GRIDLINE_CONFIG=/etc/xdg/gridline/compositor/defaults.conf
+CONFIG_SUBPATH=hypr/hyprland.conf
+
 # Wayland interfaces backing each protocol-served capability. These names are a
 # second copy of the table in this change's design document, which is why the
 # tasks require comparing the two rather than reading them.
@@ -34,6 +41,20 @@ IFACE_screencast_a=zwlr_screencopy_manager_v1
 IFACE_screencast_b=hyprland_toplevel_export_manager_v1
 IFACE_output_scaling=wp_fractional_scale_manager_v1
 IFACE_touch_and_gestures=zwp_pointer_gestures_v1
+
+# True when the compositor's own search would find a configuration file, so
+# that Gridline's is named only when it would displace nothing.
+compositor_config_exists() {
+    for base in \
+        "${XDG_CONFIG_HOME:-}" \
+        "${HOME:+$HOME/.config}" \
+        $(printf '%s' "${XDG_CONFIG_DIRS:-}" | tr ':' ' ') \
+        /etc/xdg; do
+        [ -n "$base" ] || continue
+        [ -r "$base/$CONFIG_SUBPATH" ] && return 0
+    done
+    return 1
+}
 
 fail() {
     printf 'gridline adapter (%s): %s\n' "$COMPOSITOR" "$1" >&2
@@ -161,6 +182,21 @@ confirm)
     exit 0
     ;;
 start)
+    # Name Gridline's configuration, but only when the compositor would
+    # otherwise find nothing of its own.
+    #
+    # Naming a path stops the search, so passing it unconditionally would take
+    # a user's compositor configuration away from them, and would override an
+    # administrator who placed a system-wide one. Both are worse than the
+    # problem this solves. The order checked below is the compositor's own,
+    # carried by libhyprutils: XDG_CONFIG_HOME, then $HOME/.config, then each
+    # entry of XDG_CONFIG_DIRS, then /etc/xdg.
+    #
+    # A path that cannot be evaluated counts as absent, which is the conclusion
+    # the compositor's own search would reach from the same state.
+    if [ -r "$GRIDLINE_CONFIG" ] && ! compositor_config_exists; then
+        exec "$COMPOSITOR" --config "$GRIDLINE_CONFIG"
+    fi
     exec "$COMPOSITOR"
     ;;
 *)

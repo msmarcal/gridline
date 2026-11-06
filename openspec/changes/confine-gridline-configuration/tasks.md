@@ -2,17 +2,39 @@
 
 ## 1. The measurements the design left open
 
-- [ ] 1.1 Establish how the adapter can tell whether the user has a compositor configuration of their own, using the component's own search paths rather than a guess at them. Record the paths and where they came from, and record what the check does when it cannot tell, since that case decides whether a user ever loses their own configuration
-- [ ] 1.2 Establish what dpkg does with a conffile the package stops shipping, separately for an unmodified copy and an edited one. They differ, and the edited case is the one that matters to an administrator. Verify by exercising both on the VM rather than by reading policy
-- [ ] 1.3 Confirm the compositor honours the explicit path by observing the running compositor, not by the command exiting zero. A path it reads and a path it ignores both succeed
+- [x] 1.1 The search order is carried by `libhyprutils.so.10`, which references `XDG_CONFIG_HOME`, `/.config`, `XDG_CONFIG_DIRS` and `/etc/xdg`, measured with a fabricated variable name as a negative control. The per-program subpath is `hypr/hyprland.conf`, taken from compositor logs of earlier sessions which name the file in use: `/home/ubuntu/.config/hypr/hyprland.conf` on one login and `/etc/xdg/hypr/hyprland.conf` on another.
+
+  **The check is the whole order, not only the user's paths.** Naming our path when an administrator has placed a system-wide compositor configuration would override them, and freeing that path for an administrator is one of the reasons this change exists. So the rule is: name Gridline's path only when the compositor would otherwise find nothing.
+
+  When a path cannot be evaluated, for instance with `HOME` unset, it counts as absent, which is what the compositor's own search would conclude from the same state
+- [x] 1.2 **They do not differ, and the answer is worse than either guess: dpkg leaves the file.** Exercised by building a version of the package that drops the manifest line and upgrading onto it.
+
+  Unmodified: the file is still at `/etc/xdg/hypr/hyprland.conf`, the directory is still there, and `dpkg-query` still lists it as a conffile of the package. Edited: identical, with the edit intact and no `.dpkg-*` written. An obsolete conffile is left alone in both cases.
+
+  **So removing the manifest line fixes nothing on a machine that already has Gridline.** A fresh install would be clean and an upgrade would not, and the compositor would still find the file and still read Gridline's defaults into every session. Testing only a fresh install is how this would have shipped. The implementation needs `dpkg-maintscript-helper rm_conffile`, which is group 2's work and is the thing this task existed to find.
+
+  Two further behaviours met while restoring the machine, both worth knowing for the same reason: `--reinstall` does not overwrite a conffile the administrator has modified, and does not recreate one the administrator has deleted. The second needs `--force-confmiss`. A restoration that reports success without comparing checksums will be wrong in both cases, as this one was until it compared
+- [x] 1.3 Confirmed without starting a session, using `--verify-config`, which parses and reports rather than running. Pointed at a file containing an invalid line it answers `Config error in file /tmp/bad.conf at line 1`, **naming the file**, which is what distinguishes read from ignored; pointed at a valid one it answers `config ok`.
+
+  That is a better instrument than the task asked for. Observing a running compositor would have meant starting one, and an earlier session in this project left an orphaned headless instance holding the screen doing exactly that
 
 ## 2. The defaults move to a path Gridline names
 
-- [ ] 2.1 Have the adapter's `start` verb name the configuration path, and only when the user has none of their own. Verify both branches on the VM: with a user configuration present the compositor must load theirs, with none it must load Gridline's, each read back from the running compositor
-- [ ] 2.2 Stop shipping the loader at the compositor's own path, and stop `gridline-config` declaring `/etc/xdg/hypr/`. Verify with `dpkg -L` on the built package that neither appears, and on the VM that the directory is gone after an upgrade
-- [ ] 2.3 Verify the keymap and the rest of the defaults still take effect on a first login, since this change moves how they are reached and must not change what they are. Compare a known value read from the running compositor against the one the previous arrangement produced
-- [ ] 2.4 Verify the marker still reaches the user's terminal, since it is set by the defaults and the defaults are now reached differently
-- [ ] 2.5 Verify both gates pass and account for the ownership gate's file count, which must fall by the loader this change stops shipping
+- [x] 2.1 Both branches exercised on the VM, each from a session provably newer than the state it tests.
+
+  **Nothing of the compositor's own present**: the log names `Using config: /etc/xdg/gridline/compositor/defaults.conf`, a Gridline-named path, with `gaps_in` at 4, forty bindings, `allow_session_lock_restore` set and no config errors. No autogenerated file appeared in the user's directory.
+
+  **A user configuration present**: the log names `Using config: /home/ubuntu/.config/hypr/hyprland.conf`, with `gaps_in` at 27 and one binding, both theirs, and the upstream nag suppression off because Gridline's configuration was not read at all. The user's file won and Gridline named nothing.
+
+  One reading along the way was ambiguous and the comparison that resolved it is worth keeping. `echo $TERM` returned `foot` in what looked like the second branch, which would have meant the branch failed. The session had started at `13:03:33` and the test configuration was written at `13:04:32`, so it was the first branch still running. A terminal name does not distinguish the branches; a timestamp does
+- [x] 2.2 The loader is gone from the source tree and the manifest, and `dpkg -c` on the built package shows no `/etc/xdg/hypr` entry at all. On a machine that already had it, the upgrade reported `Removing obsolete conffile /etc/xdg/hypr/hyprland.conf`, which is `dpkg-maintscript-helper rm_conffile` doing the work that dropping the manifest line does not: task 1.2 measured that an obsolete conffile is left in place, modified or not.
+
+  The helper is declared in `debian/gridline-config.maintscript` with no prior-version, which the manual says makes the operation try on every upgrade. That is right here rather than lazy: the project carries one package version, so there is nothing to gate on, and the removal is idempotent once the file is gone.
+
+  **The directory remains and that is deliberate.** `dpkg -S /etc/xdg/hypr` now matches nothing and `dpkg -L gridline-config` lists only paths under `/etc/xdg/gridline/` plus the shared parent `/etc/xdg`, which the requirement excludes from the count. The empty directory belongs to no package; removing it would mean deleting a path Gridline does not own, and empty it is read by nothing
+- [x] 2.3 Compared against the values the previous arrangement produced and recorded: `gaps_in` 4, forty bindings, `misc:allow_session_lock_restore` set, `hyprctl configerrors` empty. Identical, from a path reached differently
+- [x] 2.4 `GRIDLINE_CONFIG=1` in a process the compositor launched and in the systemd user manager's environment, so both halves of the marker survived the change of mechanism. In the branch where the user's own configuration is loaded it is absent from both, which is the same measurement serving the scenario about the absence being detectable
+- [x] 2.5 Both gates pass. The ownership gate reports 14 files against 15 before, which is exactly the loader this change stops shipping
 
 ## 3. The defaults reach no session but Gridline's
 

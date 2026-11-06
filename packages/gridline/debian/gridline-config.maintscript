@@ -1,0 +1,11 @@
+# The loader this package used to place at the compositor's own search path is
+# gone. dpkg leaves an obsolete conffile alone, measured in both the unmodified
+# and the edited case, so dropping the manifest line removes the file from new
+# installs and from nowhere else. Without this line the configuration would keep
+# reaching every session of that compositor on every machine that already has
+# Gridline, which is the condition this change exists to end.
+#
+# No prior-version: the helper then tries the removal on every upgrade. The
+# project carries one package version, so there is nothing to gate on, and the
+# operation is idempotent once the file is gone.
+rm_conffile /etc/xdg/hypr/hyprland.conf
