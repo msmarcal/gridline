@@ -48,9 +48,58 @@ divert_session_entries() {
         done
 }
 
+# The desktop shell components, by unit name. None of them is compositor
+# content: what makes a component compositor-specific is what it links and
+# requires, which docs/component-ownership.md records measuring for each of
+# these, so these names belong here rather than behind the substitution above.
+SHELL_UNITS="waybar.service mako.service hyprpaper.service"
+
+STATE_DIR=/var/lib/gridline
+DISABLED_RECORD=$STATE_DIR/disabled-user-units
+
+# Stop the shell components starting in every graphical session on the machine.
+#
+# Each of their packages enables its own unit from its postinst, with
+# deb-systemd-helper --user enable, which puts a symlink under
+# graphical-session.target.wants. That target belongs to every graphical
+# session, so declaring these as dependencies makes them start under GNOME too.
+# Measured there: the bar fails five times and gives up because GNOME
+# implements no layer shell, and the notification daemon exits at once because
+# GNOME already holds the D-Bus name. Nothing is visible, and two units are
+# left failed in a session Gridline promised not to touch, for reasons that are
+# accidents of the fallback desktop rather than anything Gridline arranged.
+#
+# This costs Gridline nothing. Upholds= and Wants= start a unit whatever its
+# enabled state, which hyprpolkitagent has demonstrated since it was declared:
+# it is disabled and the session target starts it.
+#
+# disable rather than mask. A masked unit cannot be started by anything, the
+# session target included, so masking would turn this off everywhere including
+# where Gridline wants it on.
+#
+# This is the same shape as the session-entry diversion: a reversible change to
+# state another package owns, recorded where the removal can read it back. It
+# differs in one way worth stating, because the postrm's own rule is to read
+# back from dpkg rather than from a list. dpkg knows which diversions are ours;
+# nothing knows who disabled a unit. So this writes the one record there is,
+# and writes only units it actually turned off, so that removing Gridline does
+# not enable something the administrator had disabled before installing it.
+disable_shell_units() {
+    for unit in $SHELL_UNITS; do
+        [ -e "/usr/lib/systemd/user/$unit" ] || continue
+        deb-systemd-helper --quiet --user was-enabled "$unit" || continue
+        deb-systemd-helper --user disable "$unit" >/dev/null || continue
+        mkdir -p "$STATE_DIR"
+        if ! grep -Fxq "$unit" "$DISABLED_RECORD" 2>/dev/null; then
+            echo "$unit" >>"$DISABLED_RECORD"
+        fi
+    done
+}
+
 case "$1" in
 configure | triggered)
     divert_session_entries
+    disable_shell_units
     ;;
 abort-upgrade | abort-remove | abort-deconfigure) ;;
 *)

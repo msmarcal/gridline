@@ -24,9 +24,39 @@ restore_session_entries() {
         done
 }
 
+STATE_DIR=/var/lib/gridline
+DISABLED_RECORD=$STATE_DIR/disabled-user-units
+
+# Enable again what the install disabled, and nothing else.
+#
+# The postinst turned off the shell components' own enable symlinks, which
+# their packages create and which would otherwise start them in every
+# graphical session on the machine. Those packages are still installed after
+# Gridline is removed, and on a machine without Gridline their own packaging
+# decision is theirs to keep.
+#
+# The record is read rather than the unit list, for the reason the postinst
+# states: only units this package actually turned off are listed, so a unit the
+# administrator had disabled before installing Gridline stays disabled.
+#
+# Failures here are tolerated per unit rather than aborting. A package removal
+# that stops halfway leaves a machine in a state nobody chose, and an enable
+# that did not happen is recoverable by hand while a half-removed package is
+# the worse outcome. The diversion above is the opposite case and is not
+# tolerated: a relocated file nobody can find is not recoverable by hand.
+restore_shell_units() {
+    [ -r "$DISABLED_RECORD" ] || return 0
+    while IFS= read -r unit; do
+        [ -n "$unit" ] || continue
+        deb-systemd-helper --user enable "$unit" >/dev/null 2>&1 || true
+    done <"$DISABLED_RECORD"
+    rm -f "$DISABLED_RECORD"
+}
+
 case "$1" in
 remove | purge | disappear)
     restore_session_entries
+    restore_shell_units
     ;;
 upgrade | failed-upgrade | abort-install | abort-upgrade) ;;
 *)
