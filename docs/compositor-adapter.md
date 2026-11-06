@@ -154,10 +154,15 @@ WARNING: Hyprland is being launched without start-hyprland.
          This is highly advised against.
 ```
 
-It renders that as an error box at the top of the screen, which is the first
-thing a user sees on a freshly installed session. `start-hyprland` ships in the
-same archive package and describes itself as "a binary to properly start
-Hyprland via a watchdog process".
+`start-hyprland` ships in the same archive package and describes itself as "a
+binary to properly start Hyprland via a watchdog process".
+
+**The banner no longer appears, and the question is still open.** Gridline's
+compositor defaults set `misc:disable_watchdog_warning`, so a user no longer
+meets this on first login. That is a presentation fix and nothing more: the
+session still starts the compositor directly, and everything below is as
+unresolved as it was when the banner was visible. This paragraph exists so that
+a quiet screen does not read as a settled question.
 
 **This is not only cosmetic, and that is why it is recorded rather than fixed in
 passing.** A watchdog exists to restart what it watches, and

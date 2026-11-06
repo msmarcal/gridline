@@ -151,6 +151,10 @@ The cost is that a second compositor needs a second session entry rather than an
 
 Consequence for `add-hyprland-session-baseline`: the adapter does not supply the identity. If it needs to know which compositor is active, it reads the second element of `XDG_CURRENT_DESKTOP`.
 
+**The compositor warns about this, and Gridline suppresses the warning rather than the arrangement.** It raises a notice that the XDG environment is externally managed, which is accurate: the display manager manages it, on purpose. Gridline's defaults set `misc:disable_xdg_env_checks`, and this paragraph is the other half of that decision, so the condition stays visible to a reader after it has stopped being visible on screen.
+
+The alternative is to make the warning go away by making it untrue, which means the session setting `XDG_CURRENT_DESKTOP` itself and the entry naming only the compositor. A third-party rebuild of `gridline-session` did that. The identity is what portal backend selection reads, so Gridline's own portal mapping is then never consulted, the session becomes indistinguishable from a plain compositor session, and the requirement that the session identify itself to the desktop stack is not met. That rebuild then shipped a portal configuration under the compositor's desktop name to recover screen capture, which changes portal resolution for every session of that compositor on the machine. Heeding this particular warning costs more than it reports.
+
 ## Downstream changes
 
 This architecture is delivered by the changes below. The authoritative attribution is the downstream table in `openspec/changes/establish-gridline-vision/proposal.md`; the change names here are the same set, with no change named in one table and missing from the other.

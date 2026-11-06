@@ -66,6 +66,23 @@ These come first because the rest is built on their answers. A task here that re
 
   **This exposed a scenario of this change's own delta being stricter than fail-safe allows, and the scenario was corrected rather than the behaviour.** With the locker dead the compositor still holds the session locked, so the screen is locked while logind reports it is not. The scenario as first written asked the two to agree. They cannot always: the exit status does not distinguish a locker that died after acquiring the lock from one that never acquired it, so clearing only on a clean exit would leave the hint true with the session unlocked, which is the direction that lets something skip locking. Clearing always chooses the direction that leaves the session protected. The delta now carries a scenario for the dead-locker case saying exactly that
 
+## 8. Upstream messaging on first login
+
+Added after the change was under way, from reading a third-party rebuild of
+`gridline-session` that someone sent in. Its value was pointing at the right
+part of the compositor binary; what it actually did with the finding is recorded
+in design.md as the wrong answer to a real problem.
+
+- [x] 8.1 All five present, read from `/usr/bin/Hyprland` with the fully qualified key: `ecosystem:no_update_news`, `ecosystem:no_donation_nag`, `misc:disable_watchdog_warning`, `misc:disable_xdg_env_checks`, `misc:disable_hyprland_guiutils_check`. Run with two controls rather than one: `misc:disable_hyprland_logo`, known to exist because `hyprctl getoption` had already answered for it, reported present; `misc:not_a_real_option` reported absent. Without the negative control the measurement could not be told apart from one that reports everything present.
+
+  The first attempt searched for the bare key and called the known-good control absent, which is what put the controls there
+- [ ] 8.2 Ship the three cosmetic suppressions in the defaults and verify each reads back from a running session with `hyprctl getoption`
+- [x] 8.3 Both shipped and both recorded in a live document rather than only in this change. `docs/compositor-adapter.md` now says the banner is gone, that the session still starts the compositor directly, and that everything in the open finding is as unresolved as when the banner was visible; the paragraph exists so a quiet screen does not read as a settled question. `docs/architecture.md` records that the compositor warns about the externally managed identity, that the warning is accurate because the display manager manages it on purpose, and what heeding it would cost.
+
+  Verified by grep: each option name appears in a live document as well as in the shipped file, and the underlying questions appear in `docs/` rather than only under `openspec/changes/`
+- [ ] 8.4 Verify a first login presents no banner from any integrated component, by counting `Creating the CHyprError` in the compositor log and confirming `hyprctl configerrors` is empty, rather than by looking at a screenshot
+- [ ] 8.5 Verify the identity warning was worth suppressing rather than heeding: confirm `XDG_CURRENT_DESKTOP` is still the composed `Gridline:Hyprland` and that the portal mapping still resolves through it, since the alternative the third-party package chose was to discard the identity instead
+
 ## 5. Recovery from a dead locker
 
 - [x] 5.1 Shipped in the defaults and read back from a running session as `int: 1`, from a startup that loaded the packaged loader rather than anything injected at runtime

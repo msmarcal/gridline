@@ -87,6 +87,19 @@ That entry point is also what sets `LockedHint`: true before the locker starts, 
 
 The failure to be careful about is the one that leaves the session exposed. If the hint is set and the locker then fails to start, the system believes a session is locked that is not. So the order matters and the implementation verifies it: the hint is cleared when the locker exits, whatever the reason it exits.
 
+### Suppressing upstream messaging, and the two cases where that is not cosmetic
+
+The compositor raises banners of its own: update news, a donation request, a missing-guiutils notice, a warning that it was not started through its watchdog wrapper, and a warning that the XDG environment is externally managed. On a freshly installed session they are the first thing a user sees, and the project's thesis is that the session should look finished rather than like the state of the projects it is assembled from. Five options turn them off, all confirmed present in the baseline binary.
+
+Three of them are cosmetic and need no more justification than the logo and splash settings this change already ships. **Two are not**, and the difference is the whole reason this is a design decision rather than five more lines:
+
+- `misc:disable_watchdog_warning` silences a warning about a question this project has open. `docs/compositor-adapter.md` records that the recommended launcher is a watchdog, that a watchdog restarting the compositor may contradict the requirement that a session end when its compositor exits, and that three things need measuring before anything changes.
+- `misc:disable_xdg_env_checks` silences a warning about something Gridline does deliberately. The desktop identity is composed by the display manager from the session entry, the launcher neither sets nor modifies it, and `docs/architecture.md` records that as a supersession rather than an accident.
+
+Silencing a warning is not the same as answering it, and the failure mode is specific: the screen goes quiet, and the next reader never learns the question existed. So both are suppressed **and** both conditions stay recorded where a reader meets them, which the new scenario in the delta requires rather than leaves to good intentions. That pairing is the decision; either half alone would be wrong.
+
+**The alternative, for the identity warning, was to heed it.** A third-party rebuild of `gridline-session` did exactly that: it exported `XDG_CURRENT_DESKTOP=Hyprland` from the launcher and set `DesktopNames=Hyprland` in the session entry, which makes the warning accurate by discarding the identity. The cost is not subtle. Gridline's portal mapping is keyed on its own desktop name and would never be read, the session becomes indistinguishable from a plain compositor session, and `desktop-session` requires the session to identify itself to the desktop stack. That rebuild then had to ship a portal configuration under the compositor's desktop name to get screen capture back, which changes portal resolution for every session of that compositor on the machine and breaks the guarantee that installing Gridline leaves other sessions alone. Two cascading defects to avoid a warning with a one-line switch, which is worth recording as the reason the switch is the right answer here.
+
 ## Risks / Trade-offs
 
 - **The loader approach depends on a directive whose behaviour with absolute paths is unmeasured.** → Measured first, before anything is built on it, and the design states what changes if it does not hold.
