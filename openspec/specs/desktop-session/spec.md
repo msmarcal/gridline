@@ -168,6 +168,8 @@ A session SHALL NOT start when a component the project records as blocking is ab
 
 A Gridline session SHALL be operable from the keyboard on first login, with Gridline's own defaults in effect, without the user having written any configuration. Configuration defaults are not a blocking component: their absence SHALL degrade the session rather than prevent it from starting.
 
+Gridline SHALL deliver those defaults by a mechanism scoped to a Gridline session, so that a session of the same component started outside Gridline resolves its configuration exactly as it would were Gridline not installed. Which mechanism achieves that is a matter for the component: naming a path the session passes, and a file whose name carries Gridline's desktop identity, both qualify.
+
 #### Scenario: The keyboard works on first login
 
 - **WHEN** a user logs into Gridline for the first time on a machine where they have written no configuration of their own
@@ -190,8 +192,13 @@ A Gridline session SHALL be operable from the keyboard on first login, with Grid
 
 #### Scenario: A user's own configuration does not silently discard the defaults
 
-- **WHEN** a user writes their own configuration for a component that resolves configuration by returning the first file it finds rather than by merging
-- **THEN** Gridline's defaults are either still in effect or their absence is recorded in a form a diagnostic can read, rather than the user losing every default with no indication that it happened
+- **WHEN** a user has written their own configuration for a component Gridline ships defaults for
+- **THEN** their configuration is the one in effect, as it would be on a machine where Gridline had shipped none, and the session running without Gridline's defaults is recorded in a form a diagnostic can read rather than discovered by a key that does nothing
+
+#### Scenario: The defaults reach no session but Gridline's
+
+- **WHEN** a user starts a session of a component Gridline ships defaults for, other than through Gridline
+- **THEN** that session resolves its configuration exactly as it would on a machine where Gridline were not installed, and none of Gridline's defaults applies to it
 
 #### Scenario: Absent defaults degrade rather than block
 

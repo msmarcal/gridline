@@ -6,7 +6,7 @@
 
 A Gridline session SHALL be operable from the keyboard on first login, with Gridline's own defaults in effect, without the user having written any configuration. Configuration defaults are not a blocking component: their absence SHALL degrade the session rather than prevent it from starting.
 
-Gridline SHALL reach those defaults by naming a path of its own rather than by placing a file where a component searches, so that the configuration applies to a Gridline session and to no other session of the same component.
+Gridline SHALL deliver those defaults by a mechanism scoped to a Gridline session, so that a session of the same component started outside Gridline resolves its configuration exactly as it would were Gridline not installed. Which mechanism achieves that is a matter for the component: naming a path the session passes, and a file whose name carries Gridline's desktop identity, both qualify.
 
 #### Scenario: The keyboard works on first login
 

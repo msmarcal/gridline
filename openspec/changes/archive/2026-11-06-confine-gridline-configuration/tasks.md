@@ -99,6 +99,12 @@
   One mention of the loader survives on purpose: a closing paragraph recording that the earlier arrangement existed, worked, and had two faults that appeared later. A reader who met the old mechanism should be able to tell it was replaced rather than find it deleted
 - [x] 7.4 Updated against `dpkg -c` on the built packages rather than against the previous wording. `gridline-config` now ships three files: the compositor defaults under a Gridline-named path, the portal mapping, and the terminal preference. `gridline-session` ships six, unchanged by this change. Nothing under `/etc/xdg/hypr` remains in either
 
+- [x] 7.5 Correct the clause this change added to the requirement, found by `/opsx:verify`. It read that Gridline shall reach its defaults "by naming a path of its own rather than by placing a file where a component searches", which specifies a mechanism where it should specify an outcome, and which **this change's own terminal work does not satisfy**: `gridline-xdg-terminals.list` sits in a directory the launcher searches, and is scoped by carrying Gridline's desktop name in its filename.
+
+  The fault was in the requirement, not the code. The clause now asks that the mechanism be scoped to a Gridline session, with the test being that a session of the same component started outside Gridline resolves as it would were Gridline not installed, and says that both mechanisms this change ships qualify. Archiving the earlier wording would have put a rule in the permanent spec that the code beside it breaks, leaving the next reader to decide which was wrong with less context than there is now.
+
+  The gate's assumption about manifest globs is recorded in its header alongside its other limits: a glob would be reported for carrying no project name, which is the right verdict for the wrong reason, and whoever adds the first one should make the check expand it
+
 ## Workflow follow-up
 
 - Run `/opsx:verify` once a session has started from the greeter with the defaults reached the new way, and once a compositor session outside Gridline has been observed.
