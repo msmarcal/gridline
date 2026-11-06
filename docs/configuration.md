@@ -121,6 +121,48 @@ configuration reaches a Gridline session and no other session of that
 compositor. [recovery.md](recovery.md) records what that changed for anyone
 running the compositor outside Gridline.
 
+### The desktop shell components
+
+The bar, the notification daemon and the wallpaper daemon follow the same rule
+as the compositor and reach it by a different route, because what starts them
+is a systemd unit the archive ships rather than a launcher Gridline wrote.
+
+Their shipped defaults live under `/etc/xdg/gridline/shell/`. A drop-in per
+unit routes `ExecStart` through `/usr/libexec/gridline/gridline-shell`, and
+that program decides, at start time, against two questions:
+
+| Question | If no |
+|---|---|
+| Is this a Gridline session, read from `XDG_CURRENT_DESKTOP`? | exec the component with no arguments |
+| Would the component find configuration of its own? | name Gridline's path |
+
+**The path is not in the drop-in on purpose.** A drop-in rewrites `ExecStart`
+for every session on the machine, so naming the configuration there would make
+Gridline's defaults reach these components started outside Gridline. That is
+the same leak the compositor's loader had, in a second place, and the session
+check is what keeps the drop-in from meaning anything elsewhere.
+
+**Which search bases count is narrower than each component's own search**, and
+the rule is measured per package: a system base counts only where the
+component's package ships nothing into it, so that a file being there means
+somebody put it there. The bar is the one of the three that ships its own
+system configuration, at `/etc/xdg/waybar/`, so that base is not consulted.
+Treating it as a user's choice made Gridline's bar configuration unreachable on
+every machine, because the archive's default is always present.
+
+What that gives up is worth stating: an administrator cannot override
+Gridline's bar configuration by editing the archive's file, because nothing can
+tell that edit apart from the file dpkg installed. The supported route is
+editing Gridline's own conffile, which is what the conffile rule below makes it
+for.
+
+**The wallpaper daemon's format is not the one its documentation shows.** The
+version the archive ships rewrote it: `preload` is gone, and `wallpaper` is a
+category with a block rather than a one-line value. A file in the older syntax
+parses without complaint and displays nothing, indistinguishable at runtime
+from no configuration at all, so a change to that file is checked against a
+running session rather than against an exit code.
+
 ## What belongs here and what does not
 
 `gridline-config` owns the shipped defaults, the default keybindings, the default themes, and the portal interface-to-backend mapping.

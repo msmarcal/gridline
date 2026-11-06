@@ -126,6 +126,40 @@ it, which is what establishes that the search deduplicates by filename. The same
 probe carrying `Hidden=true` removed the entry from the selector, which is what
 establishes that the display manager honours that key for session entries.
 
+## Getting the desktop shell back in another session
+
+Installing Gridline brings a status bar, a notification daemon and a wallpaper
+daemon, and each of those packages enables its own user unit. That unit lives
+under `graphical-session.target.wants`, which belongs to **every** graphical
+session, so without intervention they would start in your GNOME session too.
+`gridline-session` turns those three off at install, and enables again on
+removal the ones it turned off.
+
+Nothing of this is visible in a GNOME session, and that is not a reason to
+leave it: measured there, the bar fails five times before systemd gives up
+because GNOME implements no layer shell, and the notification daemon exits at
+once because GNOME already holds the notification D-Bus name. Two failed units
+in a session Gridline promised not to touch.
+
+If you do want one of them in another session, enable it yourself:
+
+```
+systemctl --user enable waybar.service
+```
+
+**Gridline will not undo that.** Each unit is turned off once, recorded in
+`/var/lib/gridline/disabled-user-units`, and left alone afterwards, so a later
+upgrade does not revisit your choice.
+
+Removing Gridline enables again only the units it disabled, so one you had
+disabled before installing Gridline stays that way.
+
+This is the second of two things a Gridline package does to another package.
+The first is the session-entry diversion above, and the two answer the same
+question from different ends: the diversion decides what the login screen
+offers, and this decides what starts once a session is running.
+[package-matrix.md](package-matrix.md) carries both with the reasoning.
+
 ## Why recovery does not depend on Gridline
 
 Every step above works when no Gridline component runs:

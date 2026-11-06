@@ -84,15 +84,21 @@ DISABLED_RECORD=$STATE_DIR/disabled-user-units
 # nothing knows who disabled a unit. So this writes the one record there is,
 # and writes only units it actually turned off, so that removing Gridline does
 # not enable something the administrator had disabled before installing it.
+# Each unit is turned off once and then left alone for good. This script runs
+# again on every upgrade and on every trigger, and an administrator who enables
+# one of these for a session of their own would otherwise find Gridline undoing
+# that at the next upgrade, with nothing on the machine explaining why. The
+# record is what makes "once" expressible: a unit named in it has been dealt
+# with, whatever its state now. A unit absent from it has not, which is also
+# what lets a component installed later than Gridline still be caught.
 disable_shell_units() {
     for unit in $SHELL_UNITS; do
         [ -e "/usr/lib/systemd/user/$unit" ] || continue
+        grep -Fxq "$unit" "$DISABLED_RECORD" 2>/dev/null && continue
         deb-systemd-helper --quiet --user was-enabled "$unit" || continue
         deb-systemd-helper --user disable "$unit" >/dev/null || continue
         mkdir -p "$STATE_DIR"
-        if ! grep -Fxq "$unit" "$DISABLED_RECORD" 2>/dev/null; then
-            echo "$unit" >>"$DISABLED_RECORD"
-        fi
+        echo "$unit" >>"$DISABLED_RECORD"
     done
 }
 

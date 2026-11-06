@@ -35,7 +35,16 @@ The test this has to pass is the one `compositor-abstraction` cares about: suppo
 
 **The portal mapping is configuration, not session logic.** The interface-to-backend mapping is a shipped default, so `gridline-config` owns it, even though the session is what consumes it. `gridline-portals.conf` follows the mapping into `gridline-config` for the same reason, and it installs to `/usr/share/xdg-desktop-portal/gridline-portals.conf`, lower-cased, because the frontend appends `xdg-desktop-portal/` to each base directory it searches and case-folds the desktop name before building the filename. `/etc/xdg` without that subdirectory is not a search path; `/etc/xdg-desktop-portal/` is, and it is reserved for administrator overrides rather than package content. It is a new file under a Gridline-specific name, so it owns no path another package claims.
 
-## One thing a Gridline package does to another package
+## Two things a Gridline package does to another package
+
+Both are `gridline-session`'s, both are reversible, and both are here because a
+package reaching into another package's state is the kind of thing that should
+be listed rather than discovered. They answer different halves of the same
+question, which is what a session that is not Gridline's sees on a machine
+where Gridline is installed: the first is what the login screen offers, the
+second is what starts once a session is running.
+
+### The session entries
 
 `gridline-session` diverts the session entries the compositor's package owns
 under `/usr/share/wayland-sessions`, so the login screen offers Gridline and not
@@ -79,6 +88,48 @@ verification rather than an intention:
   a list the package wrote, so it undoes what was done instead of what someone
   remembered to record. A written list would be a second copy of the same fact
   and the one more likely to drift.
+
+### The desktop shell's enable symlinks
+
+`gridline-session` disables `waybar.service`, `mako.service` and
+`hyprpaper.service` for the user, and enables again on removal the ones it
+turned off.
+
+**Why, measured rather than argued.** Each of those packages enables its own
+unit from its postinst, which puts a symlink under
+`graphical-session.target.wants`. That target belongs to every graphical
+session, so declaring these three as dependencies makes them start under GNOME
+too. In the stock Ubuntu session nothing appears, and both components fail: the
+bar five times before systemd gives up, because GNOME implements no layer
+shell, and the notification daemon at once, because GNOME already holds
+`org.freedesktop.Notifications`. Two permanently failed units in a session
+Gridline promised not to touch, and the only reason nothing draws over GNOME is
+which protocols the fallback desktop happens to implement.
+
+**It costs Gridline nothing**, which is what makes this a correction rather
+than a trade. `Upholds=` and `Wants=` start a unit whatever its enabled state,
+and `hyprpolkitagent` has demonstrated that since it was declared: it reads
+`disabled` and the session target starts it every session.
+
+**Three properties, each a verification rather than an intention:**
+
+- `disable` and not `mask`. A masked unit cannot be started by anything, the
+  session target included, so masking would turn these off where Gridline wants
+  them on.
+- Only units actually turned off are recorded, in
+  `/var/lib/gridline/disabled-user-units`, so removing Gridline does not enable
+  one the administrator had disabled before installing it.
+- This is the one case where a Gridline package writes its own record instead
+  of reading the state back, and the reason is that there is nothing to read
+  back: `dpkg-divert` knows which diversions are Gridline's, and nothing knows
+  who disabled a unit.
+
+To run one of these components in another session, enable it again:
+`systemctl --user enable waybar.service`. **Gridline will not undo that.** Each
+unit is turned off once and then left alone, which the record is what makes
+expressible: a unit named in it has been dealt with whatever its state now, so
+an upgrade does not revisit it. Without that, an administrator's choice would
+be reversed at the next upgrade with nothing on the machine explaining why.
 
 ## What no package does
 
