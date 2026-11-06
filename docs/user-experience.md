@@ -66,18 +66,23 @@ list.
 These need no new software and no code. They are compositor and component
 settings, and they are where most of the experience lives.
 
-| Element | Mechanism |
-| --- | --- |
-| Tiling, workspaces, focus and swap, resize, fullscreen, grouping, scratchpad | compositor settings |
-| A Super-centric keymap covering navigation, windows and launching | compositor key bindings |
-| Unified copy and paste that behaves the same in the terminal and elsewhere | key bindings plus terminal configuration |
-| Screenshot of region or window, screen recording, colour picker | archive capture tools bound to keys |
-| Idle detection and screen lock | the idle daemon and lock screen, retained from the 3.x stack |
-| Wallpaper, including per-theme backgrounds | the archive wallpaper daemon |
-| A status bar with workspaces, clock, tray, battery and media | the archive bar |
-| An application launcher with fuzzy matching | the archive launcher |
-| A polkit authentication agent inside the session | the archive agent |
-| Opinionated terminal, editor and system monitor defaults | component configuration |
+**Status is read from the shipped files, not from memory of what was intended.**
+A row reading "partly" names what is missing rather than rounding up, because a
+target table whose rows all say delivered stops being a target table.
+
+| Element | Mechanism | Status |
+| --- | --- | --- |
+| Tiling, workspaces, focus and swap, resize, fullscreen, grouping, scratchpad | compositor settings | **Partly.** Grouping and the scratchpad have no bindings at all, counted in the shipped defaults; the rest are there |
+| A Super-centric keymap covering navigation, windows and launching | compositor key bindings | **Delivered** |
+| Unified copy and paste that behaves the same in the terminal and elsewhere | key bindings plus terminal configuration | Not started |
+| Screenshot of region or window, screen recording, colour picker | archive capture tools bound to keys | Not started. Deliberately out of the desktop shell change, which recorded them as keybindings over three small packages with no styling or lifecycle question |
+| Idle detection and screen lock | the idle daemon and lock screen, retained from the 3.x stack | **Delivered** |
+| Notifications from applications reach the user | the archive notification daemon | **Delivered** |
+| Wallpaper, including per-theme backgrounds | the archive wallpaper daemon | **Shipped, not yet seen.** The daemon and its configuration are in place; the wallpaper has not been observed on screen, and the per-theme half waits on theming |
+| A status bar with workspaces, clock, tray, battery and media | the archive bar | **Partly.** Workspaces, clock, network and battery. No tray and no media |
+| An application launcher with fuzzy matching | the archive launcher | Not started. Deliberately held with the command menu below, since choosing a launcher first would constrain the menu |
+| A polkit authentication agent inside the session | the archive agent | **Delivered** |
+| Opinionated terminal, editor and system monitor defaults | component configuration | Not started. Deliberately out: a terminal is declared and named, which is not the same as configuring one |
 
 ### Gridline-authored integration
 

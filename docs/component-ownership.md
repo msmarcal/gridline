@@ -14,8 +14,24 @@ Two rules govern this table. First, **where Ubuntu already provides a component,
 - **Gridline ownership** names what Gridline itself owns. "Integration only" means Gridline owns how the session reaches the component and nothing about the component.
 - **Fallback** is the behavior when the component is absent or fails. Every Ubuntu-provided component falls into exactly one of three categories, and the cell says which:
   - **Session does not start.** The component's absence blocks startup. Six rows on this page carry it, and the table under [The blocking components](#the-blocking-components-and-who-declares-each) lists the same six.
-  - **Session starts**, followed by the capability that is lost. The component's absence degrades the session. Nine rows carry it, and each names what degrades rather than saying the session degrades generally.
+  - **Session starts**, followed by the capability that is lost. The component's absence degrades the session. Eleven rows carry it, and each names what degrades rather than saying the session degrades generally. This count said nine when there were eight, before the desktop shell added three; counting it is how that was found.
   - **Not applicable.** A deliberate category, not a missing entry: it marks a component that cannot be absent without the baseline itself being broken, so there is no Gridline-side degradation path to describe. Each such row states why.
+
+**"Reported as a capability gap" is not implemented, and saying so here is the
+point of this paragraph.** Seventeen cells across five live documents promise
+it, and two scenarios in `openspec/specs/` require it, and nothing on the
+machine does it. The launcher's only reporting path is `report_missing`, which
+ends in `exit 1`: it refuses a session and names the component, which is the
+blocking case and the opposite of this one. There is no non-blocking
+diagnostic, and `add-session-health-check`, which the project has named as its
+owner more than once, does not exist as a change, active or archived.
+
+So every cell below reading "Reported as a capability gap" describes what
+happens to the session, which is measured and true, and what Gridline intends
+to tell you about it, which is owed. A user today learns of a degraded
+component by noticing it, or by reading the journal of the unit that failed.
+This is recorded rather than quietly carried because an unimplemented promise
+that appears in seventeen places reads, from any one of them, like a feature.
 
   Gridline's own artifacts, the adapter, the session entry, the launcher, `gridline-portals.conf` and the backend mapping, are not Ubuntu-provided and are not classified this way. Their cells describe the failure they produce, which for several of them is neither a blocked start nor a degraded capability: a missing session entry means the session is never offered, which is not the same as failing.
 

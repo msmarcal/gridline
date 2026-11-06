@@ -194,8 +194,18 @@ Execution note: this group needs the session running on the VM, started from the
 ## 7. Coherence
 
 - [ ] 7.1 Verify each scenario of the added requirement is exercised or recorded as unexercised with a reason, naming the file or measurement for each, and that none is left unaccounted for. Count the scenarios from the delta file rather than from the proposal's description of them
-- [ ] 7.2 Verify the capability-gap half of the degradation scenario honestly. Nothing in this change reports a missing component, and the launcher must not look for these or they become blocking; if `add-session-health-check` still does not exist, record the half as owed rather than satisfied
-- [ ] 7.3 Verify the elements of the target table in `docs/user-experience.md` that this change delivers are marked as delivered, and that the ones deliberately left out are still readable as out rather than as forgotten
+- [x] 7.2 **Owed, not satisfied, and the shortfall is larger than this change.** `add-session-health-check` does not exist as a change, active or archived. The launcher's only reporting path is `report_missing`, and every one of its eight call sites ends in `exit 1`: it refuses a session and names the component, which is the blocking case and the opposite of this one. Nothing anywhere reports a component that is absent without blocking.
+
+  Counted rather than estimated: **seventeen cells across five live documents** promise "reported as a capability gap", and two scenarios in `openspec/specs/` require it. Three of those cells are this change's. No document said the promise was unimplemented.
+
+  Recorded in `docs/component-ownership.md`, where eleven of the cells are, stating that what the cells describe about the session is measured and true, and what they promise about being told is owed. An unimplemented promise appearing in seventeen places reads, from any one of them, like a feature.
+
+  **A second count was wrong and the checking found it.** The same section said nine rows carry the degrading fallback. There were eight before this change and there are eleven now, so it was off by one before anyone added anything
+- [x] 7.3 **The table had no status at all**, so nothing was marked as anything: it listed each element and the mechanism intended for it, and a reader could not tell the delivered from the planned. It now carries a Status column, read from the shipped files rather than from memory of what was intended, and the three rows that are deliberately out say so with the reason rather than reading as forgotten.
+
+  **It also had no row for notifications**, which this change delivers. Added.
+
+  **Two rows that this change might have been credited with are marked partly, and each names what is missing.** The bar's row asks for workspaces, clock, tray, battery and media; what ships is workspaces, clock, network and battery, with no tray and no media. And the tiling row asks for grouping and a scratchpad among other things, and the shipped compositor defaults contain **zero** bindings for either, counted rather than recalled. The wallpaper reads "shipped, not yet seen", which is the honest state while 4.7 is open
 
 ## Workflow follow-up
 
