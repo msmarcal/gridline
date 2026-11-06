@@ -1,0 +1,174 @@
+#!/bin/sh
+# Start one of the desktop shell components, with Gridline's configuration only
+# when that is the right thing to do.
+#
+# Why this program exists rather than a drop-in that passes --config directly.
+# A drop-in rewrites ExecStart for every session on the machine, not for
+# Gridline's, so naming the configuration path there would make Gridline's
+# defaults reach an instance of these components started outside Gridline.
+# That is the leak confine-gridline-configuration closed for the compositor,
+# and putting the path in a drop-in would reopen it somewhere else.
+#
+# So the decision is made at start time, here, against two questions: is this
+# a Gridline session, and would the component find configuration of its own?
+# Gridline's path is named only when the answers are yes and no. The second
+# half is the same precedence rule the compositor adapter applies, and for the
+# same reason: a user's own configuration wins by existing, so declining
+# Gridline's defaults means having a configuration rather than opting out.
+#
+# The search paths below are each component's own, read from its binary rather
+# than from documentation, and they are not alike. The notification daemon
+# searches no system path at all, so no file placement could have made these
+# defaults visible to it and naming the path is the only route there is.
+#
+# One rule decides which of a component's search bases are checked here, and it
+# is narrower than the component's own search: a base counts only when the
+# component's package ships nothing into it, so that a file being there means
+# somebody put it there. Measured per package. The bar is the one component of
+# the three that ships its own system configuration, at /etc/xdg/waybar/, so
+# that base is not checked: treating it as a user's choice made Gridline's bar
+# configuration unreachable, because the archive's own default is always
+# present and always wins. The other two ship nothing under /etc, so for them
+# a system file is an administrator's and is honoured.
+#
+# What this gives up is explicit. An administrator cannot override Gridline's
+# bar configuration by editing /etc/xdg/waybar/config.jsonc, because nothing
+# can tell that edit apart from the file the package installed. The supported
+# route is editing Gridline's own conffile, which is what package-delivery
+# makes it for.
+
+set -eu
+
+SHELL_CONFIG_DIR=/etc/xdg/gridline/shell
+DESKTOP_NAME=Gridline
+
+fail() {
+    echo "gridline-shell: $*" >&2
+    exit 64
+}
+
+# XDG_CURRENT_DESKTOP is a colon-separated list and the session entry puts
+# Gridline first in it. The launcher imports it into the user manager and
+# unsets it at teardown, which is what stops this answer surviving into
+# another session of the same user: the user manager outlives a session.
+gridline_session() {
+    saved_ifs=$IFS
+    IFS=:
+    for name in ${XDG_CURRENT_DESKTOP:-}; do
+        if [ "$name" = "$DESKTOP_NAME" ]; then
+            IFS=$saved_ifs
+            return 0
+        fi
+    done
+    IFS=$saved_ifs
+    return 1
+}
+
+# Is there a readable file at $1 under any of the configuration bases given as
+# the remaining arguments? An empty base is skipped rather than read as the
+# root directory, which is what an unset XDG variable would otherwise mean.
+found_under() {
+    subpath=$1
+    shift
+    for base in "$@"; do
+        [ -n "$base" ] || continue
+        if [ -r "$base/$subpath" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+role=${1-}
+[ -n "$role" ] || fail "no component named"
+
+own_config=no
+
+case $role in
+bar)
+    binary=/usr/bin/waybar
+    # Its own search, read from the binary, is $XDG_CONFIG_HOME/waybar/,
+    # $HOME/.config/waybar/ and /etc/xdg/waybar/, for config.jsonc or
+    # style.css. Only the first two are checked, for the reason at the top of
+    # this file: the package installs the third, so a file there is the
+    # archive's default rather than anybody's choice.
+    #
+    # The bare config name is checked too, because older versions read it and
+    # a user who wrote one meant it as configuration.
+    #
+    # Either file counts. Naming ours while it finds theirs would mix a user's
+    # modules with Gridline's styling, or the reverse, and a consistent
+    # decline is better than a desktop assembled from two intentions.
+    for subpath in waybar/config waybar/config.jsonc waybar/style.css; do
+        if found_under "$subpath" \
+            "${XDG_CONFIG_HOME:-}" \
+            "${HOME:+$HOME/.config}"; then
+            own_config=yes
+            break
+        fi
+    done
+    set -- \
+        --config "$SHELL_CONFIG_DIR/bar.jsonc" \
+        --style "$SHELL_CONFIG_DIR/bar-style.css"
+    ;;
+notifications)
+    binary=/usr/bin/mako
+    # Two paths and no system one, read from the binary as "%s/mako/config"
+    # and "%s/.mako/config". The first takes a configuration base, the second
+    # takes the home directory itself.
+    if found_under mako/config "${XDG_CONFIG_HOME:-}" "${HOME:+$HOME/.config}"; then
+        own_config=yes
+    elif [ -n "${HOME:-}" ] && [ -r "$HOME/.mako/config" ]; then
+        own_config=yes
+    fi
+    set -- --config "$SHELL_CONFIG_DIR/notifications.conf"
+    ;;
+wallpaper)
+    binary=/usr/bin/hyprpaper
+    # The same four-base search the compositor uses, for its own subpath.
+    # Gridline places nothing on it, which is the point of naming a path
+    # instead: a session that is not Gridline's finds nothing of ours there.
+    if found_under hypr/hyprpaper.conf \
+        "${XDG_CONFIG_HOME:-}" \
+        "${HOME:+$HOME/.config}" \
+        $(printf '%s' "${XDG_CONFIG_DIRS:-}" | tr ':' ' ') \
+        /etc/xdg; then
+        own_config=yes
+    fi
+    set -- --config "$SHELL_CONFIG_DIR/wallpaper.conf"
+    ;;
+*)
+    fail "unknown component: $role"
+    ;;
+esac
+
+[ -x "$binary" ] || fail "$role: $binary is not executable"
+
+# Outside a Gridline session this is the archive's unit behaving exactly as the
+# archive ships it. The drop-in that routes ExecStart here applies to the whole
+# machine; this branch is what keeps that from meaning anything elsewhere.
+if ! gridline_session; then
+    exec "$binary"
+fi
+
+if [ "$own_config" = yes ]; then
+    exec "$binary"
+fi
+
+# A shipped default that is not there degrades rather than blocks. gridline-config
+# can be removed while gridline-session stays, and the component then starts on
+# its own built-in defaults instead of failing because a path it was handed does
+# not resolve.
+for path in "$@"; do
+    case $path in
+    /*)
+        if [ ! -r "$path" ]; then
+            echo "gridline-shell: $role: $path is not readable," \
+                "starting without Gridline's configuration" >&2
+            exec "$binary"
+        fi
+        ;;
+    esac
+done
+
+exec "$binary" "$@"

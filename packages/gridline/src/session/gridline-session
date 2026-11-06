@@ -253,4 +253,11 @@ systemctl --user unset-environment WAYLAND_DISPLAY 2>/dev/null
 # which is the one thing the marker exists to tell apart.
 systemctl --user unset-environment GRIDLINE_CONFIG 2>/dev/null
 
+# The desktop identity goes too, for the same reason and with one more: this
+# session imported it, so this session removes it. The shell components decide
+# whether to use Gridline's configuration by reading it, and a value left
+# behind by lingering would answer that question with the previous session's
+# answer in a session that is not Gridline's.
+systemctl --user unset-environment XDG_CURRENT_DESKTOP 2>/dev/null
+
 exit "$compositor_status"

@@ -71,3 +71,25 @@ Wants=hyprpolkitagent.service
 # which is a worse desktop; a session without a locker cannot lock at all, which
 # is an unsafe one. Only the second refuses to start.
 Upholds=gridline-idle.service
+
+# The desktop shell: a status bar, a notification daemon and a wallpaper
+# daemon. Upholds= for the reason the idle daemon uses it. Each one's absence
+# degrades the desktop rather than making it unsafe, so none of them may refuse
+# a session, and each should come back if it stops.
+#
+# These name the units the archive ships rather than units Gridline authors, so
+# each component's own semantics stay in one place: the notification daemon's
+# Type=dbus and the D-Bus name it holds, the wallpaper daemon's
+# ConditionEnvironment, the bar's Requisite on graphical-session.target. What
+# Gridline adds to each is a drop-in routing ExecStart through gridline-shell,
+# which is also what keeps those units behaving as the archive ships them in
+# any session that is not Gridline's.
+#
+# Three entries take this target from two to five, and every Upholds= brings an
+# implicit After= with it under DefaultDependencies=yes, measured rather than
+# assumed. That is the shape that closed an ordering cycle once, so the cycle
+# is checked after this change rather than presumed absent because the earlier
+# fix held with one entry.
+Upholds=waybar.service
+Upholds=mako.service
+Upholds=hyprpaper.service
