@@ -27,6 +27,12 @@
 # is one the owning component actually reads. A Gridline-named file in an
 # unrelated directory passes here and is still wrong. That is a judgement about
 # a component's behaviour rather than about a name, and no pattern decides it.
+#
+# What it assumes: a manifest line naming one source file, which is the only
+# form the manifests use today. A glob would reach the check as a path ending
+# in the glob character and be reported for carrying no project name, which is
+# the right verdict for the wrong reason. Whoever introduces the first glob
+# should make the check expand it rather than trust that outcome.
 set -eu
 
 root=$(dirname "$0")/..
