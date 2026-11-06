@@ -4,11 +4,19 @@
 
 These come first because each one changes how much the session target has to declare. The design names them as open rather than assuming them, after an earlier change got the same question wrong in both directions on two different units.
 
-- [ ] 1.1 Establish, for each of the three packages, whether the shipped user unit is enabled. List **both** unit roots, `/usr/lib/systemd/user/` and `/etc/systemd/user/`, since an `enable` writes into the second and reading only the first answers a different question. Confirm against `dpkg -L` that any symlink found belongs to a package rather than to an experiment
-- [ ] 1.2 Establish what each shipped unit's `ExecStart` actually runs, and in particular whether the wallpaper's passes an explicit configuration path. Read the unit rather than the manual, since what matters is the command this machine will run
+- [x] 1.1 **None of the three ships an enable symlink**, read from the packages themselves rather than from an installed machine: zero `.wants/` entries in each. All three carry an `[Install] WantedBy=graphical-session.target` that is inert, the same state `hyprpolkitagent` was found in.
+
+  Both unit roots were listed on the machine as the task requires. One entry there is worth recording and is not ours: `foot` enables `foot-server.service` and `.socket` into `/etc/systemd/user/graphical-session.target.wants/`, so a dependency Gridline declared enabled units for every graphical session on the machine, GNOME included. It is that package's own packaging decision and harmless, being socket-activated, but it is a consequence of our dependency rather than of our code
+- [x] 1.2 Read from the units, which run a bare binary in all three cases: `/usr/bin/waybar`, `/usr/bin/mako`, `/usr/bin/hyprpaper`. **None passes a configuration path**, so the wallpaper's does not either, which the design left open and assumed would need answering.
+
+  Their shapes differ in a way that matters. `waybar.service` is a plain service. `mako.service` is `Type=dbus` with `BusName=org.freedesktop.Notifications`, and the package ships a matching D-Bus activation file, so it starts on demand when an application sends a notification and needs nothing to want it. `hyprpaper.service` is `Type=simple` with `ConditionEnvironment=WAYLAND_DISPLAY`
 - [ ] 1.3 Establish whether the wallpaper daemon honours `--config` as the design assumes, by pointing it at a file outside its search path and confirming a setting from that file takes effect. Verify by observing the running daemon rather than by the absence of an error, since a path it ignores and a path it reads both exit zero
-- [ ] 1.4 Establish how the bar is told which configuration and stylesheet to read, and whether both can be named explicitly. The answer decides whether `gridline-config` ships into a path the bar searches or into one Gridline names
-- [ ] 1.5 Confirm the notification daemon's configuration search, for the same reason, and record whether a user file replaces Gridline's entirely or merges with it. Those are different, and the scenario about a user declining the defaults is written against whichever this turns out to be
+- [x] 1.4 Both can be named explicitly: the binary carries `--config` and `--style`. It also searches `$XDG_CONFIG_HOME/waybar/` then `/etc/xdg/waybar/`, so unlike the other two it has a system path Gridline could ship into.
+
+  Its `include` directive has the precedence **inverted** from the compositor's `source`: the manual states that in case of duplicate options the first defined value wins, including file before included file. So a user who includes Gridline's configuration overrides it by writing their own values anywhere in their file, rather than by writing them after the include
+- [x] 1.5 It searches `$XDG_CONFIG_HOME/mako/config` and `~/.mako/config` and **no system path at all**, measured against the binary with a fabricated flag as a negative control. It accepts `--config`, and supports an `include` directive taking an absolute path.
+
+  The question this task asked cannot be answered as posed, because there is no system file for a user file to replace or merge with. What it exposes instead is the reverse problem, recorded in the pause below: passing `--config` is the only way to ship configuration for it, and doing so stops the user's own file being read at all
 
 ## 2. Selection and declaration
 
@@ -19,6 +27,12 @@ These come first because each one changes how much the session target has to dec
 - [ ] 2.5 Correct `docs/user-experience.md`, which lists the notification daemon among packages absent from the archive when the archive carries it under a different binary package name. Verify by grep that no live document still records it as unavailable, and leave the other four names on that line alone, since they were checked and are genuinely absent
 
 ## 3. Configuration and styling
+
+**Paused here, and the pattern comes from elsewhere.** Group 1 found that only the bar has a system configuration path, and then that using it would repeat a violation already shipped: `gridline-config` declares `/etc/xdg/hypr/hyprland.conf`, and `package-delivery` requires every declared path to carry a Gridline-identifying name. No gate caught it, because the ownership gate tests for collisions between Gridline packages rather than for Gridline-named-ness, and the manifest line that declares it sits in `debian/`, outside the isolation check.
+
+The answer for all three is the same as the answer for the compositor: a Gridline-named path, named explicitly with `--config`, rather than a file placed where the component searches. `confine-gridline-configuration` establishes that for the compositor and adds the gate; this change inherits the pattern rather than inventing it, which is why these tasks wait.
+
+
 
 - [ ] 3.1 Author each component's own configuration, in that component's format, outside the adapter path, since these are read by programs that are not the compositor. Verify the isolation check still reports zero references outside the adapter path, and that it does so with the name match as well as the content match
 - [ ] 3.2 Author the compositor-side configuration that launches and places these components, inside the adapter path, since that part is the compositor's vocabulary
