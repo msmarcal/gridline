@@ -23,6 +23,12 @@ This is the single largest gap between what Gridline promises and what the archi
 - `gridline-desktop` cannot live in main while it depends on universe, which is the central obstacle to official flavor candidacy.
 - The archive also lags upstream: Hyprland 0.53.3 in the baseline against 0.56.2 upstream.
 
+**A second obstacle to flavor candidacy is added deliberately, and this is the record of that choice.** `gridline-session` diverts the compositor's own session entry so that the login screen offers Gridline and not also the bare compositor. A package that diverts another maintainer's file by default is a serious objection in archive review, independent of the universe problem above, and the decision was taken knowing that.
+
+The reasoning it rests on is a measurement rather than a preference. The compositor's session entry exists on a Gridline machine **because Gridline pulled the compositor in**: `apt-mark showmanual` does not list it, so nobody chose it. Installing one thing added two entries to the login screen, one of which the user never asked for and which offers a session with Gridline's keybindings and none of Gridline's components. Hiding it restores what the machine offered before Gridline arrived rather than removing a choice someone made.
+
+Two obligations follow and both are verifiable rather than intentions. The diversion must be reverted when Gridline is removed, or the project leaves an archive package mutilated on a machine it is no longer on, which breaks the stock-removal requirement more seriously than it breaks flavor candidacy. And the compositor ships more than one session entry, one of which is currently withheld only because its `TryExec` names a binary the baseline does not install; a diversion covering one of them is a diversion that stops working the day the other becomes visible.
+
 **Gridline's declared position:** the gap is documented, not hidden. Patching responsibility for universe components rests with the operator, and Gridline's documentation must state this where a deploying administrator will read it, not only here. A Gridline-maintained PPA tracking upstream CVEs is recorded as a **future goal**, not a current commitment; promising a patch stream the project cannot yet staff would be worse than naming the gap.
 
 Any Gridline material that claims suitability for a regulated environment without reproducing this gap is wrong, and reviewers should treat it as a defect.

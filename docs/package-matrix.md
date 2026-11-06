@@ -35,6 +35,43 @@ The test this has to pass is the one `compositor-abstraction` cares about: suppo
 
 **The portal mapping is configuration, not session logic.** The interface-to-backend mapping is a shipped default, so `gridline-config` owns it, even though the session is what consumes it. `gridline-portals.conf` follows the mapping into `gridline-config` for the same reason, and it installs to `/usr/share/xdg-desktop-portal/gridline-portals.conf`, lower-cased, because the frontend appends `xdg-desktop-portal/` to each base directory it searches and case-folds the desktop name before building the filename. `/etc/xdg` without that subdirectory is not a search path; `/etc/xdg-desktop-portal/` is, and it is reserved for administrator overrides rather than package content. It is a new file under a Gridline-specific name, so it owns no path another package claims.
 
+## One thing a Gridline package does to another package
+
+`gridline-session` diverts the compositor's session entry at
+`/usr/share/wayland-sessions`, so the login screen offers Gridline and not also
+the bare compositor it is built on.
+
+This is the one place Gridline touches a file another package owns, and it is
+done with `dpkg-divert` because that is the mechanism Debian provides for it
+rather than by editing or deleting anything. The alternative with no such cost,
+a masking file in a higher-precedence directory, is not available to a package:
+the only directory with precedence is `/usr/local/share`, which Policy §9.1.2
+reserves for the local administrator.
+
+**Why a session package hides another's entry**, which is not obvious and should
+not be: the entry is on the machine because Gridline's dependency put it there.
+`apt-mark showmanual` does not list the compositor, so installing Gridline added
+a login option nobody chose, offering a session that inherits Gridline's
+keybindings and none of Gridline's components. The diversion restores what the
+login screen offered before Gridline was installed.
+
+**What this costs is recorded in
+[security-and-manageability.md](security-and-manageability.md)**, beside the
+obstacle to official flavor candidacy it adds to. The cost was accepted rather
+than overlooked.
+
+**Two things make it correct rather than merely effective**, and each is a
+verification rather than an intention:
+
+- The diversion is removed when the package is, so a machine without Gridline
+  offers the compositor's entry again. A package that leaves another package's
+  file diverted after its own removal has broken the stock-removal rule below,
+  which is the more serious of the two costs.
+- The compositor ships more than one session entry. One is currently invisible
+  because its `TryExec` names a binary the baseline does not carry, which is a
+  fact about the baseline and not a property of the entry. Covering one entry
+  and not the other produces a diversion that silently stops working.
+
 ## What no package does
 
 These apply to every package above, and come straight from `specs/package-delivery/spec.md`:
