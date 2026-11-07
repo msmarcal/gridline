@@ -1,0 +1,93 @@
+#!/bin/sh
+# A drop-in must start the component whose unit it modifies.
+#
+# The fact is split in two and nothing compared the halves. Each drop-in under
+# src/session/dropins/<unit>.service.d/ names a role, and gridline-shell maps a
+# role to a binary. A drop-in that named the wrong role would start one
+# component under another's unit, with that component's configuration, and
+# every symptom would belong to systemd rather than to the typo: the unit would
+# be active, its ExecStart would look deliberate, and the component the unit is
+# named for would simply never run.
+#
+# The build is where that is catchable, because both halves are files here and
+# neither is a file at runtime: the drop-in is installed under a directory
+# named for the unit, so the unit name is the thing the role has to agree with.
+#
+# What this does not check: whether the binary the role maps to is the one the
+# archive's unit would have run. That is the same question one level down, and
+# the unit names its own ExecStart, which is not Gridline's to read from here.
+set -eu
+
+root=$(dirname "$0")/..
+dropins=src/session/dropins
+wrapper=src/session/gridline-shell
+
+cd "$root"
+
+report=$(mktemp)
+trap 'rm -f "$report"' EXIT INT TERM
+
+checked=0
+
+[ -d "$dropins" ] || {
+    printf 'drop-in roles: %s does not exist\n' "$dropins" >&2
+    exit 1
+}
+
+[ -r "$wrapper" ] || {
+    printf 'drop-in roles: %s is not readable\n' "$wrapper" >&2
+    exit 1
+}
+
+for directory in "$dropins"/*.service.d; do
+    [ -d "$directory" ] || continue
+
+    unit=$(basename "$directory" .service.d)
+    conf=$directory/gridline.conf
+
+    [ -r "$conf" ] || {
+        printf 'drop-in roles: %s has no readable gridline.conf\n' \
+            "$directory" >> "$report"
+        continue
+    }
+
+    checked=$((checked + 1))
+
+    # The role is the last field of the ExecStart that names the wrapper.
+    role=$(sed -n 's|^ExecStart=.*/gridline-shell  *\([A-Za-z-]*\) *$|\1|p' "$conf")
+
+    [ -n "$role" ] || {
+        printf 'drop-in roles: %s sets no ExecStart through gridline-shell\n' \
+            "$conf" >> "$report"
+        continue
+    }
+
+    # What the wrapper runs for that role: the binary= assignment inside the
+    # matching case branch.
+    binary=$(awk -v role="$role" '
+        $0 ~ "^" role "\\)" { inside = 1; next }
+        inside && /^[a-z]*\)$/ { inside = 0 }
+        inside && /^ *binary=/ { sub(/^ *binary=/, ""); print; exit }
+    ' "$wrapper")
+
+    [ -n "$binary" ] || {
+        printf 'drop-in roles: %s names role %s, which %s does not handle\n' \
+            "$conf" "$role" "$wrapper" >> "$report"
+        continue
+    }
+
+    [ "$(basename "$binary")" = "$unit" ] || {
+        printf 'drop-in roles: %s modifies %s.service but role %s runs %s\n' \
+            "$conf" "$unit" "$role" "$binary" >> "$report"
+    }
+done
+
+hits=$(wc -l < "$report")
+[ "$hits" -eq 0 ] || cat "$report" >&2
+
+printf 'drop-in roles: %s checked, %s not matching their unit\n' "$checked" "$hits"
+
+[ "$hits" -eq 0 ] || {
+    printf 'drop-in roles: a drop-in must start the component its unit names\n' >&2
+    exit 1
+}

@@ -245,6 +245,12 @@ Execution note: this group needs the session running on the VM, started from the
 
   **Two rows that this change might have been credited with are marked partly, and each names what is missing.** The bar's row asks for workspaces, clock, tray, battery and media; what ships is workspaces, clock, network and battery, with no tray and no media. And the tiling row asks for grouping and a scratchpad among other things, and the shipped compositor defaults contain **zero** bindings for either, counted rather than recalled. The wallpaper reads "shipped, not yet seen", which is the honest state while 4.7 is open
 
+- [x] 7.4 **A gate for the half of the start mechanism that nothing compared**, added because the verification pass found the coupling rather than a defect in it. Each drop-in names a role and `gridline-shell` maps a role to a binary, so a drop-in naming the wrong role would start one component under another's unit, with that component's configuration, and every symptom would point at systemd rather than at the typo: the unit active, its `ExecStart` looking deliberate, and the component the unit is named for simply never running.
+
+  `tools/check-dropin-roles` compares the two halves and runs with the other three before `dh_builddeb`. Every file in the tree passes it today, which proves nothing, so three failures were planted and each was caught with the file and the mismatch named: a role belonging to another component, a role the wrapper does not handle, and an `ExecStart` that bypasses the wrapper. The tree was restored and the gate passes again.
+
+  What it deliberately does not check is whether the binary a role maps to is the one the archive's unit would have run. That is the same question one level down, and the unit names its own `ExecStart`, which is not Gridline's to read from a build gate
+
 ## Workflow follow-up
 
 - Run `/opsx:verify` once the session has been started from the greeter with all three components in place.
