@@ -80,24 +80,28 @@ target table whose rows all say delivered stops being a target table.
 | Notifications from applications reach the user | the archive notification daemon | **Delivered** |
 | Wallpaper, including per-theme backgrounds | the archive wallpaper daemon | **Shipped, not yet seen.** The daemon and its configuration are in place; the wallpaper has not been observed on screen, and the per-theme half waits on theming |
 | A status bar with workspaces, clock, tray, battery and media | the archive bar | **Partly.** Workspaces, clock, network and battery. No tray and no media |
-| An application launcher with fuzzy matching | the archive launcher | Not started. Deliberately held with the command menu below, since choosing a launcher first would constrain the menu |
+| An application launcher with fuzzy matching | the archive's application launcher | **Delivered**, on `SUPER D`. Fuzzy matching is the launcher's own default and Gridline does not override it. It was held back until the command menu could be designed with it, which is why both arrived together |
 | A polkit authentication agent inside the session | the archive agent | **Delivered** |
 | Opinionated terminal, editor and system monitor defaults | component configuration | Not started. Deliberately out: a terminal is declared and named, which is not the same as configuring one |
 
 ### Gridline-authored integration
 
 These are the parts of the experience that are not a setting and not a new
-desktop component. They are glue over archive tools, owned by Gridline, and each
-belongs to a downstream change rather than to the foundation.
+desktop component. They are glue over archive tools and owned by Gridline.
 
-| Element | Approach |
-| --- | --- |
-| A theme that restyles bar, terminal, editor, lock screen and wallpaper together | a Gridline mechanism applying a named theme across components |
-| A command menu over both applications and system actions | built on the archive's application launcher in dmenu mode, driven by Gridline-owned entries |
-| System panels for audio, bluetooth, network, display and power | menu entries wrapping the CLI tools already in the baseline |
-| A single Gridline command as the entry point for session operations | the `gridline` command, already required by `package-delivery` |
-| Editing configuration and restarting only what the edit affects | a Gridline mechanism over user services |
-| Reporting when the session is not in the state it should be | `gridline doctor`, already required |
+This table carried no status column while every row was still to come, and said
+in prose that each belonged to a downstream change. Two of them have since
+arrived, so it carries one now, by the same rule as the table above: status is
+read from the shipped files.
+
+| Element | Approach | Status |
+| --- | --- | --- |
+| A theme that restyles bar, terminal, editor, lock screen and wallpaper together | a Gridline mechanism applying a named theme across components | Not started |
+| A command menu over both applications and system actions | built on the archive's application launcher in dmenu mode, driven by Gridline-owned entries | **Partly.** `SUPER SHIFT D` offers the session's own actions - lock, log out, suspend, restart, power off. Applications are reached from the launcher on `SUPER D` rather than from this menu, so the single surface over both is not there |
+| System panels for audio, bluetooth, network, display and power | menu entries wrapping the CLI tools already in the baseline | Not started |
+| A single Gridline command as the entry point for session operations | the `gridline` command, already required by `package-delivery` | **Partly.** The command exists and `doctor` is its only subcommand |
+| Editing configuration and restarting only what the edit affects | a Gridline mechanism over user services | Not started |
+| Reporting when the session is not in the state it should be | `gridline doctor`, already required | **Delivered** |
 
 The command menu is the element worth the most to the experience. Omarchy's menu
 is the single surface through which most of the desktop is reached, and

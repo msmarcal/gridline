@@ -67,23 +67,34 @@ Architecture: all
 Depends: ${misc:Depends},
          xdg-desktop-portal,
          xdg-desktop-portal-gtk
-Description: Gridline configuration defaults and policy input (no content yet)
+Description: Gridline configuration defaults and policy input
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
- package will own the shipped defaults, the default keybindings and themes,
- the administrator's policy input, the lock declarations, and the destination
- of the generated configuration.
+ package owns the shipped defaults: the compositor configuration and its
+ keybindings, the configuration for the status bar, the notification daemon,
+ the wallpaper daemon and the application launcher, the terminal the session
+ opens, and the portal backend mapping.
  .
- It ships no content yet. This version establishes the directories it owns,
- keeping administrator-authored configuration and generated output in separate
- places from the start.
+ Everything here is a default a user can decline. Replacing any of these files
+ with your own, in the place the component itself searches, makes the session
+ use yours and stop naming Gridline's.
+ .
+ It will also own the administrator's policy input, the lock declarations and
+ the destination of the generated configuration, which are not built yet. The
+ directories keeping administrator-authored configuration separate from
+ generated output are established from the start.
 
 Package: gridline-tools
 Architecture: all
 Depends: ${misc:Depends}
-Description: Gridline command-line tools (no content yet)
+Description: Gridline command-line tools
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
- package will own the gridline command, gridline doctor, the theme and
- diagnostic commands, and the generator that produces the effective
- configuration.
+ package owns the gridline command. Its one subcommand is doctor, which
+ reports each component a Gridline session expects, whether it is running,
+ when that was last observed, and what its absence costs.
  .
- It ships no content yet. This version establishes the directory it owns.
+ doctor answers from what the session wrote down rather than by inspecting
+ the system, so it still reports when no session is running, which is the
+ case a user most needs it in.
+ .
+ It will also own the theme commands and the generator that produces the
+ effective configuration, which are not built yet.
