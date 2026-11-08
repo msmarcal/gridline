@@ -37,9 +37,25 @@ jobs:
           # to read a command line from.
           sudo apt-get install -y --no-install-recommends debhelper strace
 
-      - name: Build the packages, which runs the checks that read the tree
+      - name: Build the packages
         working-directory: packages/gridline
         run: dpkg-buildpackage -b -us -uc
+
+      - name: Run the checks that read the tree
+        # The build already ran these, through debian/rules, and running them
+        # again is deliberate. Two things come of it that the build alone does
+        # not give.
+        #
+        # A reader of this file sees the entry point named. Reached only
+        # through the build, a change that quietly removed the call from
+        # debian/rules would stop every automated check with nothing here
+        # looking different.
+        #
+        # And the count is in the log under its own step. A check that failed
+        # to run is indistinguishable from one that passed unless the run says
+        # how many it executed, which is why run-checks reports a number and
+        # not a verdict.
+        run: packages/gridline/tools/run-checks --require-all packages/gridline/debian
 
       - name: Install the components Gridline integrates with
         run: |

@@ -67,7 +67,7 @@ exactly what was asked.
 ## 2. One entry point
 
 - [x] 2.1 Add a program in `packages/gridline/tools/` that runs the project's checks in order and reports which failed, and make the package build call it rather than listing the four gates itself. Verify the build still fails when a gate fails, by planting a failure
-- [ ] 2.2 Verify a developer and the automated run call the same thing, by reading both: the workflow's job is to install dependencies and call the entry point, and it carries no list of its own
+- [x] 2.2 Verify a developer and the automated run call the same thing, by reading both: the workflow's job is to install dependencies and call the entry point, and it carries no list of its own
 
 ## 3. The package layer
 
@@ -100,7 +100,7 @@ exactly what was asked.
 ## 7. Coherence
 
 - [ ] 7.1 Verify each scenario of the added requirement is exercised or recorded as unexercised with a reason, counting scenarios from the delta file rather than from the proposal's description of them
-- [ ] 7.2 Verify the entry point is itself covered: a check that fails to run is indistinguishable from a check that passes, unless the run says how many checks it executed
+- [x] 7.2 Verify the entry point is itself covered: a check that fails to run is indistinguishable from a check that passes, unless the run says how many checks it executed
 
 ## Workflow follow-up
 
