@@ -24,6 +24,7 @@
 set -u
 
 LOCKER=/usr/bin/swaylock
+ADAPTER_DIR=/usr/libexec/gridline/adapters
 SESSION_OBJECT=/org/freedesktop/login1/session/auto
 SESSION_IFACE=org.freedesktop.login1.Session
 
@@ -79,3 +80,43 @@ trap 'set_locked_hint false' EXIT INT TERM
 
 set_locked_hint true
 "$LOCKER"
+locker_status=$?
+
+# A locker that exits does not mean the session was unlocked, and this is the
+# thing that cost a user their machine more than once.
+#
+# Measured: the locker exits with success both when somebody authenticates and
+# when it leaves on its own, so its status cannot tell the two apart. What does
+# tell them apart is whether the screen is still locked afterwards. The session
+# lock belongs to the compositor, which keeps holding it when its client goes
+# away, so the compositor is what gets asked.
+#
+# It is asked through the adapter, in Gridline's words rather than the
+# compositor's, because compositor-abstraction confines that vocabulary to the
+# adapter layer and this file is not in it.
+#
+# Exiting non-zero here is the whole mechanism: the unit carries
+# Restart=on-failure, so a session still locked with no locker gets another
+# one, and the unit's start limit stops that becoming a loop when it cannot
+# converge. No timeout is guessed at and no heuristic decides.
+# Found the way the launcher finds it, so there is one shape for this and not
+# two that can disagree about which adapter is active.
+adapter=
+for candidate in "$ADAPTER_DIR"/*/adapter; do
+    [ -x "$candidate" ] || continue
+    adapter=$candidate
+    break
+done
+
+# An adapter that cannot answer is not an adapter that said no. The condition
+# below restarts only on a definite yes, so a compositor that has gone away at
+# the end of a session leaves the lock alone rather than being restarted into
+# a session that is closing.
+if [ -n "$adapter" ] && "$adapter" session-locked 2>/dev/null; then
+    printf 'gridline-lock: the locker exited while the session is still locked\n' >&2
+    logger -t gridline-lock -p daemon.err \
+        "locker exited with status $locker_status while the session is still locked" 2>/dev/null
+    exit 1
+fi
+
+exit "$locker_status"

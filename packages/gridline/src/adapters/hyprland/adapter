@@ -152,6 +152,33 @@ capabilities)
     serves_screencast_portal && echo screencast
     exit 0
     ;;
+session-locked)
+    # Is the session still held locked, with or without a client holding it?
+    #
+    # The Gridline operation is "did the screen stay locked", and it exists
+    # because the lock entry point cannot tell a locker the user dismissed from
+    # one that left on its own: both exit with success, measured. The session
+    # still being locked afterwards settles it without anyone guessing, and
+    # without a timeout chosen out of the air.
+    #
+    # Exit status is the answer, because a caller in a trap wants a test and not
+    # a string: zero means still locked, one means not. A compositor that cannot
+    # be reached answers neither, and says so with a third status rather than
+    # letting a caller read "cannot ask" as "not locked", which is the direction
+    # that would leave a stranded session unattended.
+    # One look rather than the twenty-second wait the other verbs want. They are
+    # asked while a session is starting, when a compositor that is not there yet
+    # is worth waiting for. This one is asked when a locker has just exited,
+    # including at the end of a session, where the compositor being gone is the
+    # answer and not a reason to block the unit for twenty seconds.
+    READY_TIMEOUT=1
+    wait_for_compositor
+    case "$("$COMPOSITOR_CTL" locked 2>/dev/null)" in
+    true) exit 0 ;;
+    false) exit 1 ;;
+    *) fail "$COMPOSITOR_CTL did not report whether the session is locked" ;;
+    esac
+    ;;
 confirm)
     wait_for_compositor
     read_registry

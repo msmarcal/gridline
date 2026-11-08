@@ -99,12 +99,30 @@ Found while mitigating the first incident, and it is the more reproducible of th
 
 ## 5. The clean exit the restart policy does not catch
 
-- [ ] 5.3 **The locker exits zero, and that is why nothing ever noticed it.** Measured during the documentation walk on a locker that died unattended: `ExecMainStatus=0`, `ExecMainCode=0`, `Result=success`. It explains every blank in task 1.3 at once: apport wrote no report because nothing crashed, the journal said nothing because a clean exit says nothing, and `LockedHint` went false because the entry point's trap ran as it does on any normal exit.
+- [x] 5.3 **Answered by asking the compositor instead of guessing, which it turned out to be willing to say.** The locker exits zero whether somebody authenticated or it left on its own, measured, so its status cannot decide. What decides is whether the screen is still locked afterwards, and the compositor holds that lock and keeps holding it when its client goes away.
 
-  **And it goes through this change's own fix.** `Restart=on-failure` distinguishes a locker the user dismissed from one that died by its exit code, and a locker that exits zero without ever having taken the screen falls on the wrong side of that line. The case this change was built for is not the case it catches: killing the locker with a signal is caught, and what actually happened to a user here is not.
+  So the adapter gains a `session-locked` verb, answering in exit status because a caller in a trap wants a test rather than a string, and the lock entry point asks it after its locker returns. Still locked means that was not an unlock, whatever its exit code said, so the entry point exits non-zero and `Restart=on-failure` brings another locker. **No timeout is chosen and no heuristic decides**, which was the alternative and the one this project would have had to defend forever.
 
-  systemd cannot tell these apart, because from outside they are the same event. Something that knows whether the screen was ever locked has to decide, and the entry point is the only thing in the path that could know. Measure what it can observe before choosing a mechanism
-- [ ] 5.4 Establish the condition under which the locker exits early, because it is not every time: it took the screen and unlocked normally on several attempts in the same session, and exited within seconds on others, with no input either way. Until that is known, any fix is aimed at a symptom
+  Measured end to end, with a locker replaced by one that exits zero without locking anything:
+
+  ```
+  gridline-lock: the locker exited while the session is still locked
+  gridline-lock exit=1
+  ```
+
+  And the verb itself: `1` with the session unlocked, `0` with it locked, `0` in the stranded state where the compositor holds a lock with no client, which is the state that matters and the reason this works.
+
+  **It is asked through the adapter rather than by running the compositor's tool**, because `compositor-abstraction` confines that vocabulary and the entry point is not adapter content. The isolation gate reports zero references outside the adapter path, which is that rule being enforced rather than remembered.
+
+  **Three details that are decisions and not defaults.** The verb looks once instead of waiting twenty seconds like the adapter's other verbs, because it is asked when a locker has just exited, including at the end of a session where a compositor that has gone is the answer. An adapter that cannot answer is not an adapter saying no, so the entry point restarts only on a definite yes and leaves a closing session alone. And the adapter is found the way the launcher finds it, by the same glob, so there is one shape rather than two that can disagree about which adapter is active
+
+- [x] 5.4 **The obvious hypothesis is ruled out and the condition is still unknown.** Eight lockers were started in sequence, the first creating a session lock and the other seven restoring one the compositor already held: **eight survived, none exited on its own.** So the restore path is not what makes a locker leave, which was the reading the incident invited.
+
+  What the failing instance actually did, re-read rather than remembered: it started, **took the screen**, and exited with success minutes later. It did not fail to attach. And exiting with success is what this locker does when somebody authenticates.
+
+  **So the two candidate explanations now differ in what they imply and neither is established.** Either something dismissed the locker without a person doing it, or a person did and the compositor did not release the lock, which is a different failure in a different component. Telling them apart needs the compositor's own view of whether the session is still locked after its client leaves, which nothing in this project currently asks for.
+
+  Recorded as unknown rather than narrowed to whichever is easier to fix. A mechanism chosen now would be chosen for a symptom
 
 ## 6. Coherence
 
