@@ -92,7 +92,22 @@ Found while mitigating the first incident, and it is the more reproducible of th
 - [x] 5.1 **The row now describes both failures**, and its ownership cell stopped saying "integration only", which became false when Gridline took ownership of the unit that runs the locker and the entry point every lock request arrives through.
 
   **Correcting it broke a count, and the count was the interesting part.** The page's reading section asserts that every component falls into exactly one of three fallback categories. The locker now falls into two: absent at startup it blocks the session, and dying mid-session is a different failure with a different answer. Forcing the cell back into one category would have been the easy fix and would have reproduced the omission that left a user locked out with the documentation silent. The reading section says so instead, and the blocking table still lists the same six components
-- [ ] 5.2 Verify each scenario of the modified requirement is exercised or recorded as unexercised with a reason, counting scenarios from the delta file rather than from the proposal's description of them
+- [x] 5.2 **Eight scenarios, counted from the delta file, and counting them is what caught the error this change was built on.**
+
+  | Scenario | State |
+  |---|---|
+  | Manual lock requires authentication | Inherited. Exercised: the lock started through the unit, the password was accepted, the session returned |
+  | The session locks itself when idle | Inherited, **not exercised here**: the idle daemon was masked for most of this work as a mitigation, and the one idle lock that did fire is the incident this change exists for |
+  | The system agrees that the session is locked | Inherited. Exercised: `LockedHint=yes` while locked, through every lock in this change |
+  | A dead lock component is not reported as a session that is safe to treat as unlocked | Inherited. Exercised in 3.4: hint `no` with the compositor still holding, which is the protected direction |
+  | Lock holds across suspend | Inherited, **not exercised**: no suspend was performed. Worth noting that this change altered that path, since `before-sleep` no longer blocks on the locker exiting |
+  | Lock failure does not expose the session | Inherited. Exercised in 3.2: the locker was unstartable, the unit failed three times, and the screen never locked and never exposed anything it was holding |
+  | A dead locker is recoverable without another machine | Inherited, and **this is the one the shipped code did not satisfy**. Exercised in 3.1: killed, replaced, prompt returned, and the written path in 4.1 covers the cases the unit cannot |
+  | The recovery path names the locker the session actually uses | Added here. Exercised in 4.2, which also found that the compositor's screen misreports the terminal number |
+
+  **The proposal claimed nothing required recoverability and that was false.** The scenario has been in `platform-integration` since `add-gridline-configuration-defaults`, and it was missed by reading the requirement through a `head -24` that cut it off at the fourth scenario. A second scenario in the delta duplicated it and was removed; the delta adds one scenario rather than two.
+
+  That changes what this change is, which is why it is corrected in the proposal rather than quietly here: a gap in the specification is something to design, and a requirement the code did not meet is something that should have been caught by what the project runs, and was not
 
 ## Workflow follow-up
 

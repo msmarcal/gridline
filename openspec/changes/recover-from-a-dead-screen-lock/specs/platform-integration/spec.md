@@ -41,11 +41,6 @@ A Gridline session SHALL provide screen locking, and a locked session SHALL requ
 - **WHEN** the lock component dies while the session is locked and the session is correctly held locked
 - **THEN** the user can restore a working lock screen and return to their session from the machine itself, rather than the session being unrecoverable without ending it
 
-#### Scenario: A session whose lock component dies stays recoverable by its user
-
-- **WHEN** the lock component dies while the compositor holds the session locked
-- **THEN** the person at the machine is given a way to authenticate without using another machine, because a session that stays locked and cannot be unlocked by its owner has traded one failure for a worse one
-
 #### Scenario: The recovery path names the locker the session actually uses
 
 - **WHEN** a user has to recover a locked session by hand, following the project's documentation or whatever the compositor puts on the screen
