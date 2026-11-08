@@ -41,6 +41,23 @@ jobs:
         working-directory: packages/gridline
         run: dpkg-buildpackage -b -us -uc
 
+      - name: Install the components Gridline integrates with
+        run: |
+          # Before the install-and-remove check, not as part of it, and the
+          # distinction is what makes that check mean anything. It compares
+          # the machine before and after, and removing the Gridline packages
+          # leaves their dependencies installed - so a run that let the check
+          # pull the compositor in would see a session entry directory that
+          # legitimately differs afterwards and report it as a problem.
+          #
+          # Everything here arrives as a dependency anyway. Installing it in
+          # its own step only moves it to the other side of the snapshot.
+          sudo apt-get install -y --no-install-recommends \
+            hyprland waybar mako-notifier hyprpaper fuzzel \
+            swaylock swayidle hyprpolkitagent xdg-terminal-exec \
+            libnotify-bin ubuntu-wallpapers wayland-utils xwayland \
+            xdg-desktop-portal-hyprland
+
       - name: Check what installing and removing does to the machine
         run: sudo packages/gridline/tools/check-install-removal --yes-modify-this-machine packages
 

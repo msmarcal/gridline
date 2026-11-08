@@ -171,6 +171,12 @@ compositor_entries=$(
         dpkg -L "$package" 2>/dev/null | grep "^$SESSION_DIR/.*\.desktop$" || true
     done
 )
+
+# No entries means the compositor is not installed, and then the diversion
+# half of this check examines nothing and passes. That is the shape of defect
+# this project keeps finding in its own gates, so it is named here rather than
+# left to look like success.
+[ -n "$compositor_entries" ] || problem "no compositor session entry was found to divert, so that half was not checked"
 for entry in $compositor_entries; do
     printf '%s\n' "$after_diversions" | grep -Fxq "$entry" || {
         problem "$entry was not diverted"
