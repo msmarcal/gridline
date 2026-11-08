@@ -72,24 +72,19 @@ Wants=hyprpolkitagent.service
 # is an unsafe one. Only the second refuses to start.
 Upholds=gridline-idle.service
 
-# The desktop shell: a status bar, a notification daemon and a wallpaper
-# daemon. Upholds= for the reason the idle daemon uses it. Each one's absence
-# degrades the desktop rather than making it unsafe, so none of them may refuse
-# a session, and each should come back if it stops.
+# The desktop shell, held through a target of its own rather than directly.
 #
-# These name the units the archive ships rather than units Gridline authors, so
-# each component's own semantics stay in one place: the notification daemon's
-# Type=dbus and the D-Bus name it holds, the wallpaper daemon's
-# ConditionEnvironment, the bar's Requisite on graphical-session.target. What
-# Gridline adds to each is a drop-in routing ExecStart through gridline-shell,
-# which is also what keeps those units behaving as the archive ships them in
-# any session that is not Gridline's.
+# These three were listed here under Upholds=, which keeps a unit running
+# whatever happens. Measured, that is literal: it restarts a unit found
+# inactive or failed, continuously, 59 times in two minutes for a component
+# that could not start on that machine. The project decided a component that
+# cannot start should not be kept, which Restart= with a start limit already
+# expresses and which Upholds= defeats.
 #
-# Three entries take this target from two to five, and every Upholds= brings an
-# implicit After= with it under DefaultDependencies=yes, measured rather than
-# assumed. That is the shape that closed an ordering cycle once, so the cycle
-# is checked after this change rather than presumed absent because the earlier
-# fix held with one entry.
-Upholds=waybar.service
-Upholds=mako.service
-Upholds=hyprpaper.service
+# They sit under gridline-shell.target now, which wants them. Wants= here
+# rather than Upholds= because that target is reached once and stays reached;
+# it is not a component that can stop. And the launcher's blocking check,
+# which reads this Wants=, sees a target that is active whatever its own wants
+# did, so none of the three can refuse a session. gridline-shell.target
+# carries why that indirection exists rather than the simpler arrangement.
+Wants=gridline-shell.target

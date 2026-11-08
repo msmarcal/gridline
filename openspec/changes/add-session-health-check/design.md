@@ -36,20 +36,24 @@ So a component that is absent or fails leaves a record the session wrote, and `g
 
 What the record contains is the Gridline name of the component, which of absent and failed it is, whether it is blocking, and when. Not a unit name: a reader asking why their bar is missing should not have to know that the bar is `waybar.service`.
 
-### How a component stops being held is the part this design does not yet know
+### A component stops being held by not being held
 
-The decision is made and the mechanism is not. `Upholds=` has no "give up", so the candidates below each need measuring before one is chosen, and each is written here with the thing that would disqualify it.
+The four candidates this design listed all tried to make `Upholds=` give up, and the measurement says it does not. With a false condition the component stops being launched, 5 starts against 59 over two minutes, and systemd evaluates the condition **191 times in the same window**, about 1.6 times a second and still going when the window closed. A crash loop becomes a logging loop. `Upholds=` restarts a unit found inactive **or failed**, continuously, which is what the manual says it is for.
 
-| Candidate | What would disqualify it |
+So the answer is not to defeat `Upholds=`. It is to stop using it for these components, because the behaviour the requirement describes is what `Restart=` and the start limit already mean:
+
+| What the requirement says | What expresses it |
 |---|---|
-| Lengthen the interval with `RestartSteps` and `RestartMaxDelaySec` | It slows the loop rather than stopping it, which is not what was decided. It may still be worth doing underneath whatever stops it |
-| A condition on a flag the wrapper writes after repeated failure, so systemd skips the unit cleanly | Whether `Upholds=` leaves a condition-skipped unit alone, or starts it again every cycle because it is inactive. Measurable in minutes |
-| Have the session drop the `Upholds=` for a component that gave up | Needs something running to notice and act, which is a watcher, which is a non-goal |
-| Have the wrapper refuse to run after N failures and exit successfully | A unit that exits 0 is inactive, and `Upholds=` starts inactive units too |
+| A component that has run and stops is restarted | `Restart=always` in Gridline's drop-in |
+| A component that cannot start stops being started | `StartLimitBurst` exceeded, after which the unit stays failed because nothing upholds it |
 
-The second is the only candidate that is both cheap and plausibly correct, so it is the one to measure first. If it fails, this design is wrong about the mechanism and not about the decision, and that is the distinction to keep.
+**`Restart=always` and not `on-failure`, measured.** The notification daemon's shipped unit declares no `Restart=` at all, and the bar's and the wallpaper's declare `on-failure`. The components come back today when they are killed because `Upholds=` revives them, not because they restart themselves, so a clean kill would stop being recovered the moment `Upholds=` goes. The drop-in Gridline already ships for each is where this belongs.
 
-**Where the failure count lives matters more than it looks.** A component that failed five times in a session and a component that failed five times across a week are different conditions, and a count that survives logout would make a machine stop trying a component that failed once a day for a week. The count belongs to the session.
+**What this costs is the vocabulary, and it is worth naming.** The session target expresses blocking as `Wants=` and non-blocking as `Upholds=`, the launcher reads `Wants=` to decide what refuses a session, and the project documented that distinction. Moving these three to `Wants=` would make them blocking.
+
+They go under a Gridline-owned `gridline-shell.target` instead, which the session target `Wants=`. A target is active once reached even when units it wants have failed, so the launcher's check passes and no component here can refuse a session. The alternative considered was teaching the launcher to read an explicit list of blocking units rather than inferring it from `Wants=`, which is cleaner to read and rewrites a mechanism that is already verified; the cost of the indirection is smaller than the cost of that rewrite.
+
+**Where the failure count lives matters more than it looks.** A component that failed five times in a session and a component that failed five times across a week are different conditions, and a count that survives logout would make a machine stop trying a component that failed once a day for a week. The count belongs to the session, which is what the start limit's interval already expresses.
 
 ### The command exists because it is owed, not because this change wants a surface
 
@@ -63,6 +67,6 @@ The second is the only candidate that is both cheap and plausibly correct, so it
 
 ## Open Questions
 
-- Whether `Upholds=` leaves a unit alone when its condition fails, or starts it again on every cycle. This decides the mechanism above and is measurable in minutes on the verification VM, which already has a component that cannot start.
+- ~~Whether `Upholds=` leaves a unit alone when its condition fails.~~ **Answered: it does not**, and the answer sent the mechanism somewhere else entirely. The measurement is in the decision above.
 - Where the record lives so that the diagnostic can read it when the session is not running, without it becoming state that outlives the session's own lifetime.
 - Whether the diagnostic reports the compositor capabilities the adapter already knows about, which `compositor-abstraction` says are reported in a form the diagnostic commands can surface. That is a third promise of the same kind, and it is not in this change's scope, but the command's shape should not make it awkward to add.

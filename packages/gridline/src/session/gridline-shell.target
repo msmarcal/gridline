@@ -1,0 +1,34 @@
+# The desktop shell, as a target of its own.
+#
+# This target exists to hold three components under Wants= without making them
+# blocking, and that needs explaining because the obvious reading is wrong.
+#
+# gridline-session.target expresses blocking as Wants= and non-blocking as
+# Upholds=, and the launcher reads Wants= to decide what refuses a session.
+# These three were under Upholds=, which keeps a unit running whatever happens:
+# measured, it restarts a unit found inactive or failed, continuously and
+# without delay, 59 times in two minutes for a component that could not start
+# on that machine. A component that cannot start should not be held, which is
+# what Restart= with a start limit already means, and which Upholds= defeats.
+#
+# Moving them to the session target's own Wants= would have made them blocking.
+# Moving them here does not: a target is active once reached even when units it
+# wants have failed, so the launcher's check sees this target running and no
+# component below can refuse a session.
+#
+# The alternative was teaching the launcher to read an explicit list of
+# blocking units rather than inferring it from Wants=. It reads better and
+# rewrites a mechanism that is already verified, and one target costs less.
+
+[Unit]
+Description=Gridline desktop shell
+PartOf=graphical-session.target
+After=graphical-session.target
+
+# Wants and not Requires, for the reason the session target gives for its own:
+# a component that fails to start must not take anything down with it. The
+# restart policy and the start limit live in each component's Gridline drop-in,
+# where the component's own unit can be read beside them.
+Wants=waybar.service
+Wants=mako.service
+Wants=hyprpaper.service

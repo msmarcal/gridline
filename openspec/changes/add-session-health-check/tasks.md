@@ -4,14 +4,34 @@
 
 This comes first because it decides the mechanism for half the change, and because the design names what would disqualify each candidate rather than assuming one works.
 
-- [ ] 1.1 Establish what `Upholds=` does with a unit whose `Condition` fails: left alone, or started again on every cycle. Measure on the verification VM, which already has a component that cannot start, by giving that unit a condition that is false and counting starts over two minutes against the 59 already measured without one. A count near zero settles it; a count near 59 disqualifies the design's preferred candidate
-- [ ] 1.2 If 1.1 disqualifies it, measure the next candidate before writing any of it, and record which candidate the design named and what disqualified it. If 1.1 settles it, record that too: the design predicted this one and a prediction confirmed is worth as much as one corrected
-- [ ] 1.3 Establish where a record can live so that the diagnostic reads it when the session is not running, and so that it does not outlive the session that wrote it. Read what already exists rather than inventing: the session has a runtime directory, and the project has a `/var/lib/gridline` it created for a different purpose
+- [x] 1.1 **It does not leave the unit alone, and the design's preferred candidate is disqualified as a complete answer.** The baseline was reconfirmed live before the test rather than taken from the record: 29 starts in 60 seconds, which is the 5-per-10-seconds rate limit the unit declares.
+
+  With a false `ConditionPathExists`, over 120 seconds: **5 starts against 59, and 191 condition evaluations**, each one logged as `skipped, unmet condition`, at about 1.6 per second and still going when the window closed.
+
+  So the condition does the half it was chosen for, which is to stop the component being launched, and fails the half that was decided: `Upholds=` keeps trying, so a crash loop becomes a logging loop. The journal is noisier than before and the CPU cost is lower, and neither is "stops being started again"
+- [x] 1.2 **All four candidates the design listed are disqualified together, by the same fact.** Each tried to make `Upholds=` give up, and it does not: the manual says it restarts a unit found inactive **or** failed, continuously, and 1.1 measured that holding even when the unit is skipped rather than started.
+
+  The mechanism chosen instead is to stop using `Upholds=` for these components, because `Restart=always` plus the start limit already mean what the requirement says: a component that has run and stops is restarted, and one that cannot start stops being started because nothing revives it after the limit. The three move under a Gridline-owned `gridline-shell.target` that the session target `Wants=`, so that the launcher's blocking check, which reads `Wants=`, cannot be made to refuse a session by one of them.
+
+  **`Restart=always`, not `on-failure`, and that is a measurement and not a preference.** The notification daemon's shipped unit declares no `Restart=` at all; the other two declare `on-failure`. These components come back today when killed because `Upholds=` revives them, not because they restart themselves, so a clean kill would stop being recovered the moment it goes.
+
+  The alternative weighed and declined was teaching the launcher to read an explicit list of blocking units instead of inferring it from `Wants=`. It reads better and rewrites a verified mechanism, and the indirection of one target costs less
+- [x] 1.3 **`$XDG_RUNTIME_DIR/gridline/`, one file per component.** It is session-scoped by construction rather than by cleanup code, and it exists whenever the user has any session at all, including a text console opened after a graphical login failed, which is the case the requirement names. `/var/lib/gridline` was the other candidate and is wrong here: it is where the install records what it disabled, and a health record there would outlive the session that wrote it, which is exactly what the design says the failure count must not do.
+
+  One file per component rather than one file with a line each, because three components can stop at the same moment and an append race is a defect nobody would reproduce on purpose.
+
+  **A problem this task found rather than answered.** The wrapper knows a component is absent, because it checks before exec. It cannot know the component failed, because by then it has been replaced by it. systemd knows, and the Gridline-named drop-in already attached to each unit is where to ask: `ExecStopPost=` runs when the service stops and has `$SERVICE_RESULT` and `$EXIT_STATUS`. That keeps the recording inside a file Gridline owns rather than inspecting a unit it does not, which is the line the project context draws
 
 ## 2. The session records a gap
 
-- [ ] 2.1 Record a component that is absent or fails to start, at the point the session already knows, which is the program that starts each component. Verify by reading the record after a session with a component genuinely missing, not one staged by stopping a unit
-- [ ] 2.2 Record the Gridline name of the component rather than the unit name, and whether it is blocking. Verify by reading the record and confirming no unit name appears in it, since a reader asking why their bar is missing should not need to know which package provides it
+- [x] 2.1 Recorded by `gridline-component-state`, which one program owns so the format cannot drift between the three places that touch it. Two moments write it: the starting program, which knows a component is not there because it checks before replacing itself with it, and an `ExecStopPost` in the Gridline drop-in already attached to each unit, which is the only thing left that knows how a component ended.
+
+  Verified against the genuinely impossible case rather than a staged one: the wallpaper daemon on the verification VM records `state=failed`, `detail=core-dump dumped/SEGV`. The record reads `bar started`, `notifications started`, `wallpaper failed` against real states of active, active and failed.
+
+  **A defect found by the record disagreeing with the machine, and it was mine.** The record showed components as stopped while they were running. The recorder wrote its fields in a block ending with `[ -n "$detail" ] && printf`, and under `set -e` a false test makes the block fail, which sent the tolerant `|| exit 0` out before the move: written to the temporary file and never arriving. Every state carrying a detail was recorded and the one state without one, `started`, never was, which is why it looked like a race rather than a bug. Proven in isolation before fixing, and the comment at the site says so
+- [x] 2.2 The record is keyed on the Gridline name: `bar`, `notifications`, `wallpaper`, never `waybar.service` and never the package. Verified by reading the record directory, where the file names are the roles and no unit name appears in any field.
+
+  **Whether a component is blocking is deliberately not in the record.** It is not a property of what happened, it is a property of how the session is wired, and the session's own targets already declare it: `gridline-session.target` wants what refuses a session and `gridline-shell.target` wants what does not. Writing it into each record would be a second copy of a fact that already has a home, and the one that drifts
 - [ ] 2.3 Verify the record does not survive the session that wrote it, by logging out and back in with the component restored and confirming the record is gone rather than stale
 - [ ] 2.4 Verify that recording changes no startup decision: the launcher's refusal behaviour is unchanged, read from its code and from a session started with a non-blocking component absent
 
@@ -25,8 +45,8 @@ This comes first because it decides the mechanism for half the change, and becau
 
 ## 4. Stopping the hold
 
-- [ ] 4.1 Implement whichever mechanism group 1 established, so that a component that cannot start stops being started. Verify by counting starts over two minutes on the VM against the 59 measured before the change
-- [ ] 4.2 Verify a component that stops after having worked is still restarted, which is the distinction the requirement draws and the thing most likely to be broken by whatever stops the other case. Kill a healthy component and confirm it returns
+- [x] 4.1 **0 starts in two minutes, against 59.** The component that cannot start on the verification VM now reaches `failed` with `NRestarts=5`, the journal says `Start request repeated too quickly`, and nothing revives it. The three moved from `Upholds=` on the session target to `Wants=` on `gridline-shell.target`, which the session target wants; `systemctl --user show` reads back `Wants=hyprpolkitagent.service gridline-shell.target` and `Upholds=gridline-idle.service`, so the launcher's blocking check still sees one service and a target that is active whatever its own wants did
+- [x] 4.2 Killed and returned, both of them, with Gridline's configuration on the command line rather than the bare binary. This was the thing most likely to break and it needed the drop-in to carry `Restart=always`: the notification daemon's shipped unit declares no `Restart=` at all, and both components came back before this change only because `Upholds=` revived them. A clean `SIGTERM` is not a failure, so `on-failure` would not have been enough either
 - [ ] 4.3 Verify the failure count belongs to the session: a component that failed enough to be given up on is tried again in the next session, rather than staying given up on across a logout
 - [ ] 4.4 Verify giving up is reported, by confirming the component appears in the diagnostic after the session stopped holding it. A component that was quietly abandoned is worse than one that loops, because the loop is at least visible in the journal
 

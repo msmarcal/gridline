@@ -41,6 +41,7 @@ set -eu
 
 SHELL_CONFIG_DIR=/etc/xdg/gridline/shell
 DESKTOP_NAME=Gridline
+STATE_RECORDER=/usr/libexec/gridline/gridline-component-state
 
 fail() {
     echo "gridline-shell: $*" >&2
@@ -142,16 +143,29 @@ wallpaper)
     ;;
 esac
 
-[ -x "$binary" ] || fail "$role: $binary is not executable"
+# The record is written before anything that can fail, and never instead of
+# starting: a component is not held back because the session could not write
+# down what it was about to do.
+record_state() {
+    [ -x "$STATE_RECORDER" ] || return 0
+    "$STATE_RECORDER" record "$role" "$1" "${2-}" 2>/dev/null || true
+}
+
+if [ ! -x "$binary" ]; then
+    record_state absent "$binary"
+    fail "$role: $binary is not executable"
+fi
 
 # Outside a Gridline session this is the archive's unit behaving exactly as the
 # archive ships it. The drop-in that routes ExecStart here applies to the whole
 # machine; this branch is what keeps that from meaning anything elsewhere.
 if ! gridline_session; then
+    record_state started
     exec "$binary"
 fi
 
 if [ "$own_config" = yes ]; then
+    record_state started
     exec "$binary"
 fi
 
@@ -165,10 +179,12 @@ for path in "$@"; do
         if [ ! -r "$path" ]; then
             echo "gridline-shell: $role: $path is not readable," \
                 "starting without Gridline's configuration" >&2
+            record_state started
             exec "$binary"
         fi
         ;;
     esac
 done
 
+record_state started
 exec "$binary" "$@"

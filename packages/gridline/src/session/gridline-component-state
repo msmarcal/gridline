@@ -1,0 +1,132 @@
+#!/bin/sh
+# What the session knows about one component, written down.
+#
+# Three programs need this and only one may define it: the program that starts
+# a component knows when the component is not there at all, the unit's own
+# ExecStopPost knows how it ended, and the diagnostic reads both back. Spread
+# across three places the format would drift, and the first symptom would be a
+# diagnostic that reports nothing while the record is full.
+#
+# The record lives under the session's runtime directory, which is the whole of
+# how it is scoped: it is created with the user's first session and removed
+# with their last, so a component given up on in one session is tried again in
+# the next without any cleanup code existing to be forgotten. /var/lib/gridline
+# was the alternative and is wrong for this: a record there outlives the
+# session, which would make a machine stop trying a component that failed once
+# a day for a week.
+#
+# One file per component, not one file with a line each. Three components can
+# stop in the same instant, and an append race is a defect nobody reproduces on
+# purpose.
+
+set -eu
+
+STATE_SUBDIR=gridline/components
+
+fail() {
+    echo "gridline-component-state: $*" >&2
+    exit 64
+}
+
+state_dir() {
+    [ -n "${XDG_RUNTIME_DIR:-}" ] || return 1
+    printf '%s/%s' "$XDG_RUNTIME_DIR" "$STATE_SUBDIR"
+}
+
+usage() {
+    cat >&2 <<'EOF'
+usage: gridline-component-state record <component> <state> [detail]
+       gridline-component-state report <component>
+       gridline-component-state list
+       gridline-component-state stopped <component>
+
+States: started, stopped, failed, absent.
+EOF
+    exit 64
+}
+
+# A component is recorded under its Gridline name, never under the name of the
+# unit or the package that provides it. Someone asking why their bar is missing
+# should not have to know which of those is called waybar.
+valid_state() {
+    case $1 in
+    started | stopped | failed | absent) return 0 ;;
+    esac
+    return 1
+}
+
+command=${1-}
+[ -n "$command" ] || usage
+shift
+
+case $command in
+record)
+    component=${1-}
+    state=${2-}
+    detail=${3-}
+    [ -n "$component" ] && [ -n "$state" ] || usage
+    valid_state "$state" || fail "unknown state: $state"
+
+    # A session with no runtime directory is not a session this records for,
+    # and that is not an error: the recording must never be the thing that
+    # stops a component starting.
+    dir=$(state_dir) || exit 0
+    mkdir -p "$dir" 2>/dev/null || exit 0
+
+    # Written whole and moved into place, so a reader never sees half a record.
+    #
+    # The detail line is written with if and not with a trailing && test. As the
+    # last command of this block, a false test makes the block fail, and the
+    # tolerant `|| exit 0` below then returns before the move: the record is
+    # written to the temporary file and never arrives. That is not theoretical.
+    # It shipped here, and the symptom was that every state carrying a detail
+    # was recorded and the one state without one, started, never was.
+    tmp=$dir/.$component.$$
+    {
+        printf 'state=%s\n' "$state"
+        printf 'at=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+        if [ -n "$detail" ]; then
+            printf 'detail=%s\n' "$detail"
+        fi
+    } >"$tmp" 2>/dev/null || exit 0
+    mv -f "$tmp" "$dir/$component" 2>/dev/null || rm -f "$tmp"
+    ;;
+
+# Called from a unit's ExecStopPost, where systemd says how the service ended.
+# The wrapper cannot answer this: by the time a component fails it has already
+# replaced the wrapper, so the only thing left that knows is systemd.
+stopped)
+    component=${1-}
+    [ -n "$component" ] || usage
+    case "${SERVICE_RESULT:-success}" in
+    success) state=stopped ;;
+    *) state=failed ;;
+    esac
+    detail=${SERVICE_RESULT:-}
+    [ -n "${EXIT_STATUS:-}" ] && detail="$detail ${EXIT_CODE:-exit}/$EXIT_STATUS"
+    exec "$0" record "$component" "$state" "$detail"
+    ;;
+
+report)
+    component=${1-}
+    [ -n "$component" ] || usage
+    dir=$(state_dir) || exit 1
+    [ -r "$dir/$component" ] || exit 1
+    cat "$dir/$component"
+    ;;
+
+list)
+    dir=$(state_dir) || exit 0
+    [ -d "$dir" ] || exit 0
+    for record in "$dir"/*; do
+        [ -f "$record" ] || continue
+        case ${record##*/} in .*) continue ;; esac
+        printf '%s %s\n' "${record##*/}" \
+            "$(sed -n 's/^state=//p' "$record" 2>/dev/null)"
+    done
+    ;;
+
+*)
+    usage
+    ;;
+esac
