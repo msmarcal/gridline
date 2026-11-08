@@ -154,11 +154,20 @@
   </p>
   <p>
     The shell is stock archive software: the bar is waybar, the
-    notifications are mako, the wallpaper is hyprpaper. Every upstream
-    document and every dotfile the community has written for them applies
-    to Gridline unchanged. Configuration resolution, including where the
-    compositor's own file is searched, is written down in
+    notifications are mako, the wallpaper is hyprpaper, the launcher is
+    fuzzel. Every upstream document and every dotfile the community has
+    written for them applies to Gridline unchanged. Configuration
+    resolution, including where the compositor's own file is searched, is
+    written down in
     <a href="https://github.com/msmarcal/gridline/blob/main/docs/configuration.md">configuration.md</a>.
+  </p>
+  <p>
+    The terminal is a recommendation rather than a dependency, and that is
+    a practical difference: removing the one Gridline prefers leaves the
+    session installed and working. The keybinding names no terminal at all.
+    It asks the freedesktop mechanism for the terminal this machine uses,
+    so you change yours by registering one, not by editing anything of
+    Gridline's.
   </p>
 
   <h2 id="the-support-gap-stated-plainly">The support gap, stated plainly</h2>
@@ -205,11 +214,30 @@
     <li class="done">Session hygiene: shell components start only in a
     Gridline session, and the stock Ubuntu session was measured
     untouched</li>
+    <li class="done">A diagnostic that says when it last looked:
+    <code>gridline doctor</code> reports each component with the time its
+    state was recorded, so &ldquo;running&rdquo; is a statement about now
+    rather than about when you logged in</li>
+    <li class="done">Removal puts the machine back: the components Gridline
+    turns off are turned on again, and removing it was measured leaving the
+    GNOME desktop untouched</li>
+    <li class="done">Every push checked without a person: the packages build,
+    six gates run, installing and removing is measured against the machine,
+    and the session's wiring is verified &mdash; on a clean runner, in about
+    a minute</li>
     <li class="next">Portal integration</li>
     <li class="next">Full configuration defaults</li>
   </ul>
   <p>
     Everything is planned as tracked changes, not vapor.
+  </p>
+  <p>
+    A green run means the packaging and the wiring are intact. It does not
+    mean the desktop works: the automated run has no screen, so the
+    compositor starting, the bar drawing and the lock screen are all
+    unchecked, and someone still has to log in. What it cannot see is
+    <a href="https://github.com/msmarcal/gridline#what-a-green-run-does-not-mean">written
+    down</a> rather than left for you to discover.
   </p>
 
   <h2 id="follow-along">Follow along</h2>
@@ -219,7 +247,18 @@
     design documents. The design is written down before it is built, so the
     repository reads as a record of decisions, not just commits. The
     canonical development home is a self-hosted Forgejo mirror that
-    receives the same history; GitHub is where the project is visible.
+    receives the same history; GitHub is where the project is visible, and
+    where the checks run &mdash; the self-hosted side has no runner, so a
+    push there is unverified until it arrives here.
+  </p>
+  <p>
+    The record includes the dead ends. Where a measurement contradicted
+    what the project had written down, the correction is kept beside the
+    claim rather than replacing it, because the reason something changed
+    is usually worth more than the change. The first clean automated run
+    found a build dependency the author's own machine had been quietly
+    supplying for weeks, which is the kind of thing a project only learns
+    from a machine that has never seen it before.
   </p>
 </main>
 <footer>

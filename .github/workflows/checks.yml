@@ -46,15 +46,22 @@ jobs:
           # replaces itself with exits too fast on a machine with no display
           # to read a command line from.
           #
-          # build-essential and fakeroot are here because the first run failed
-          # without them, which is the kind of thing only a clean machine
-          # says. Every source package has an implicit build-dependency on
-          # build-essential and debhelper does not pull it - it depends on
-          # dpkg-dev alone - and dpkg-buildpackage's default root-command is
-          # fakeroot. A development machine has both from some earlier day and
-          # never mentions it.
+          # build-essential is here because the first run failed without it,
+          # which is the kind of thing only a clean machine says: every source
+          # package has an implicit build-dependency on it and debhelper does
+          # not pull it, depending on dpkg-dev alone. A development machine has
+          # it from some earlier day and never mentions it.
+          #
+          # fakeroot was here too and is not needed. The reasoning was that
+          # dpkg-buildpackage's --root-command defaults to fakeroot, which is
+          # true of the option and says nothing about whether it is used:
+          # debian/control declares Rules-Requires-Root: no, so the root
+          # command is never invoked. Measured by building as an ordinary user
+          # on a machine with no fakeroot installed, which worked. It was added
+          # alongside build-essential in one change and so was never tested on
+          # its own - two fixes at once, one of them for nothing.
           sudo apt-get install -y --no-install-recommends \
-            build-essential fakeroot debhelper strace
+            build-essential debhelper strace
 
       - name: Build the packages
         working-directory: packages/gridline
