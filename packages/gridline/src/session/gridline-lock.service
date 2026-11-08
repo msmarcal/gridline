@@ -1,0 +1,43 @@
+# The screen lock, as a unit of its own.
+#
+# It was not one. The lock entry point ran as a child of the idle daemon, so
+# the locker lived inside that daemon's cgroup, and anything that stopped the
+# daemon took the lock down with it. Measured: a `systemctl stop` of the idle
+# unit killed a running locker and left the session locked by the compositor
+# with nothing on screen to type into, recoverable only from another machine.
+# A package upgrade that restarts the unit, or a restart after a failure, does
+# the same thing for the same reason.
+#
+# A daemon that decides *when* to lock and a program that *holds* the screen
+# have different lifetimes. This file is that statement in systemd's words.
+
+[Unit]
+Description=Gridline screen lock
+Documentation=man:swaylock(1)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+# Nothing locks a session that has no display. The idle daemon carries the same
+# condition for the same reason.
+ConditionEnvironment=WAYLAND_DISPLAY
+
+# A locker that cannot start is not held, which is the rule the desktop shell
+# components already follow. Three attempts in a minute, and then it stays
+# failed rather than being started forever: an invisible loop in the lock path
+# is how a machine becomes unusable with nobody learning why.
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+ExecStart=/usr/libexec/gridline/gridline-lock
+
+# on-failure and not always, and the distinction is the whole behaviour. A
+# locker that exits zero was dismissed by the user, who authenticated: starting
+# it again would lock the screen they just unlocked. A locker that dies leaves
+# the session locked by the compositor with no client, which is the state this
+# unit exists to get out of, so that one is replaced.
+Restart=on-failure
+RestartSec=1
+
+Slice=session.slice

@@ -1,10 +1,15 @@
 #!/bin/sh
-# The session's one lock entry point.
+# The session's one lock entry point, and the ExecStart of gridline-lock.service.
 #
-# Everything that locks a Gridline session arrives here: the idle timeout, the
-# suspend hook, and the key binding, which asks logind to lock rather than
-# running a locker so that a request from anywhere on the system takes the same
-# route. session-manageability requires that lock policy be one policy rather
+# Everything that locks a Gridline session arrives here, and now arrives by
+# starting that unit: the idle timeout, the suspend hook, and the key binding,
+# which asks logind to lock rather than running a locker so that a request from
+# anywhere on the system takes the same route.
+#
+# It became a unit's ExecStart rather than something the idle daemon runs,
+# because as a child of that daemon the locker lived in its cgroup and died
+# with it. Measured: stopping the idle unit killed a running locker and left
+# the session locked with nothing to type into. session-manageability requires that lock policy be one policy rather
 # than several components configured independently, and this change does not
 # build that policy layer, but it should not build something the layer has to
 # undo first.
@@ -46,6 +51,10 @@ set_locked_hint() {
 
 # A second locker over the first would stack: the idle timeout can fire while
 # the user is already locked, and the suspend hook can fire on top of that.
+#
+# systemd now prevents that on the way in, because starting an active unit is a
+# no-op, so this guard covers the case systemd does not: someone running this
+# program by hand while the unit holds a locker.
 if pgrep -x "$(basename "$LOCKER")" >/dev/null 2>&1; then
     exit 0
 fi
@@ -60,6 +69,12 @@ fi
 # killed from outside. A hint left true is worse than one never set: the system
 # would believe an unlocked session is locked, which is the failure this
 # ordering exists to prevent rather than a tidiness concern.
+#
+# What the comment above did not anticipate is that the compositor keeps the
+# session locked when the locking client dies, so clearing the hint is right
+# for a different reason than tidiness: the system then believes a locked
+# session is unlocked, which is the direction that leaves it protected, and
+# platform-integration requires exactly that.
 trap 'set_locked_hint false' EXIT INT TERM
 
 set_locked_hint true

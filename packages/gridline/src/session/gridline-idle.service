@@ -20,10 +20,23 @@ ConditionEnvironment=WAYLAND_DISPLAY
 
 [Service]
 Type=simple
+# Each event asks systemd to start the lock rather than running the locker
+# here. Running it here is what put the locker inside this unit's cgroup, so a
+# stop or a restart of this unit killed a lock in progress; gridline-lock.service
+# carries that measurement.
+#
+# It also fixes before-sleep. Running the locker directly meant swayidle waited
+# for it to exit before releasing the sleep inhibitor, which is to say the
+# machine waited for the user to authenticate before suspending. Starting a
+# unit returns once the unit has started, which is what this event needs.
+#
+# Starting a unit that is already running is a no-op, so the lock cannot stack:
+# the idle timeout can fire while the user is already locked, and the suspend
+# hook can fire on top of that.
 ExecStart=/usr/bin/swayidle -w \
-    timeout 300 /usr/libexec/gridline/gridline-lock \
-    lock /usr/libexec/gridline/gridline-lock \
-    before-sleep /usr/libexec/gridline/gridline-lock \
+    timeout 300 'systemctl --user start gridline-lock.service' \
+    lock 'systemctl --user start gridline-lock.service' \
+    before-sleep 'systemctl --user start gridline-lock.service' \
     idlehint 300
 Restart=on-failure
 Slice=session.slice
