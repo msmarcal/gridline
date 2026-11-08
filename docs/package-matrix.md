@@ -180,7 +180,7 @@ Gridline ships almost no code of its own: the binaries that make a Gridline sess
 | `unattended-upgrades` | 2.12ubuntu9 | main | Update path |
 | `wayland-utils` | 1.3.0-1 | **universe** | Wayland registry query, used by the compositor adapter |
 | `xdg-terminal-exec` | 0.14.0-1 | main | Launches the terminal the system is configured to use |
-| `kitty` | 0.45.0-1build1 | **universe** | Terminal emulator, declared because a recommend is not a guarantee |
+| `kitty` | 0.45.0-1build1 | **universe** | Terminal emulator, **recommended rather than declared**. The session reaches a terminal through `xdg-terminal-exec`, so this one is a preference the mechanism can resolve past; removing it leaves the session installed and working |
 | `waybar` | 0.15.0-1 | **universe** | Status bar. 16 packages and 13.5 MiB installed, the largest component declared |
 | `mako-notifier` | 1.10.0-1build1 | **universe** | Notification daemon. Packaged under this name, not `mako` |
 | `hyprpaper` | 0.8.3-1 | **universe** | Wallpaper daemon, admitted by accepting `--config` rather than by what it links |
@@ -201,7 +201,11 @@ These rows were confirmed against the archive by `define-supported-ubuntu-integr
 
 **[component-ownership.md](component-ownership.md) is authoritative for component facts.** Where that page and this one carry the same version or archive component, it wins, because it is the one organized by component and it carries what each component's absence does. This table is the packaging-side view of the same measurement.
 
-**Which terminal a Gridline session opens is named rather than left to chance.** `gridline-config` ships `/usr/share/xdg-terminal-exec/gridline-xdg-terminals.list`, keyed on Gridline's desktop name, which is how the launcher finds it and why it applies in a Gridline session and in no other. Without it the launcher walks every application on the machine in the order the directory scan produced and takes the first carrying the terminal category: measured on the baseline, 114 candidates with three terminals at positions 9, 76 and 102, so installing or removing an unrelated application could change which terminal a keybinding opens. Other desktops already ship such a file of their own; Gridline was the only session falling through to that list.
+**Which terminal a Gridline session opens is named rather than left to chance.** `gridline-config` ships `/usr/share/xdg-terminal-exec/gridline-xdg-terminals.list`, keyed on Gridline's desktop name, which is how the resolver finds it and why it applies in a Gridline session and in no other. Without it the resolver walks every application on the machine in the order the directory scan produced and takes the first carrying the terminal category: measured on the baseline, 114 candidates with three terminals at positions 9, 76 and 102, so installing or removing an unrelated application could change which terminal a keybinding opens. Other desktops already ship such a file of their own; Gridline was the only session falling through to that list.
+
+**The file holds two entries, and the second one is what makes the first safe to weaken.** `declare-baseline-prerequisites` turned the terminal from a dependency into a recommendation, so a Gridline session can now run on a machine where the first entry resolves to nothing, and the single-entry version of this file justified itself on the terminal being mandatory. The second entry names what Ubuntu lists for itself.
+
+What happens without it stopped being hypothetical. With the preferred terminal removed from a machine carrying two, the scan found the other one and the fallback looked safe. Installing `xterm` - a package with nothing to do with this project, added only so the scan would have a third candidate - changed the answer to one that needs X11, and in a Wayland session the keybinding then opened nothing at all: no window, no message. One `apt install` of an unrelated package had broken a working binding. With the second entry present the same removal opened the terminal Gridline names.
 
 **One row is a candidate rather than a dependency**, marked as such in the Role column: `hyprpaper` for the wallpaper. No requirement rests on it, so it is in no package's `Depends`, and the change that adds the wallpaper owns the choice.
 

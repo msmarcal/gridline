@@ -47,6 +47,15 @@ Description: Gridline session integration
  package owns the session entry the display manager reads, the session
  launcher, and the compositor adapter layer.
  .
+ This package assumes a display manager and does not install or require one.
+ The session entry is a file only a display manager reads, so on a machine
+ without one it is inert: nothing is broken and nothing offers Gridline.
+ Installing a display manager later is all that is needed. Nothing is declared
+ because no dependency expresses it - x-display-manager is provided by six
+ packages and four of them cannot offer a Wayland session at all - and because
+ a desktop session package that installed a login screen would be deciding
+ something its owner had already decided.
+ .
  Selecting Gridline at the login screen runs the launcher, which asks the
  active adapter what the compositor provides and starts the session only when
  every required capability is reported. A missing one ends the launch with its
@@ -65,14 +74,23 @@ Description: Gridline session integration
  the unit in its own target rather than enabling it, so installing Gridline
  changes nothing about a GNOME session on the same machine.
  .
- This package also depends on a status bar, a notification daemon and a
- wallpaper daemon, so that selecting Gridline presents a desktop rather than a
- bare compositor. None of the three is blocking: each one's absence degrades
- the desktop and leaves the session usable, because a desktop that shows less
- is worse and not unsafe.
+ This package also depends on a status bar, a notification daemon, a wallpaper
+ daemon and an application launcher, so that selecting Gridline presents a
+ desktop rather than a bare compositor. None of the four is blocking: each
+ one's absence degrades the desktop and leaves the session usable, because a
+ desktop that shows less is worse and not unsafe.
+ .
+ The terminal is recommended rather than depended on, and it is the only
+ component here that is. The session reaches it through xdg-terminal-exec, the
+ freedesktop mechanism for the terminal a system uses, so the keybinding names
+ no terminal and replacing it is a package operation rather than an edit.
+ Installing this package brings the recommended one; removing that one leaves
+ the session installed and working, on the terminal the mechanism then
+ resolves.
  .
  Every package this one depends on is in the universe component except
- xwayland, xdg-terminal-exec and ubuntu-wallpapers, which are in main. The
+ xwayland, xdg-terminal-exec, libnotify-bin and ubuntu-wallpapers, which are
+ in main. The
  last of those is depended on for one file: the symlink it maintains at the
  release's own wallpaper, which the shipped wallpaper configuration names so
  that a per-release rename does not leave the desktop blank. Universe carries no

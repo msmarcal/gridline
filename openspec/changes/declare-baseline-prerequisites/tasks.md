@@ -20,20 +20,73 @@ These land together or not at all. The list's comment justifies its single entry
 
 ## 3. What the package says it assumes
 
-- [ ] 3.1 State the display manager assumption in `gridline-session`'s long description: that the session entry is read by one, that Gridline installs none, and that the entry is inert without one. Verify by reading `dpkg-deb -f gridline-session Description` from the built package
-- [ ] 3.2 Verify the description still matches what the package ships, by comparing it against `dpkg-deb -c`. Three descriptions in this project have claimed "no content yet" while shipping files, so this comparison is the one that catches it
-- [ ] 3.3 Verify no second place now states the same assumption as a dependency, which the added requirement forbids: grep the control file and the docs for a display manager declaration
+- [x] 3.1 State the display manager assumption in `gridline-session`'s long description: that the session entry is read by one, that Gridline installs none, and that the entry is inert without one. Verify by reading `dpkg-deb -f gridline-session Description` from the built package
+- [x] 3.2 Verify the description still matches what the package ships, by comparing it against `dpkg-deb -c`. Three descriptions in this project have claimed "no content yet" while shipping files, so this comparison is the one that catches it
+- [x] 3.3 Verify no second place now states the same assumption as a dependency, which the added requirement forbids: grep the control file and the docs for a display manager declaration
 
 ## 4. Removal still returns a stock desktop
 
-- [ ] 4.1 Verify removing all three Gridline packages with `autoremove` leaves `ubuntu-desktop`, `gnome-shell`, `gdm3` and `mutter` installed, after the dependency changes rather than before. The earlier measurement was taken with the old dependencies and does not carry over
-- [ ] 4.2 Verify the measurement is not reading the test machine's history: check whether each package involved is marked manual or auto before quoting the result, because the first attempt at this reported five packages surviving for no reason other than having been installed by hand
+- [x] 4.1 Verify removing all three Gridline packages with `autoremove` leaves `ubuntu-desktop`, `gnome-shell`, `gdm3` and `mutter` installed, after the dependency changes rather than before. The earlier measurement was taken with the old dependencies and does not carry over
+- [x] 4.2 Verify the measurement is not reading the test machine's history: check whether each package involved is marked manual or auto before quoting the result, because the first attempt at this reported five packages surviving for no reason other than having been installed by hand
 
 ## 5. Coherence
 
-- [ ] 5.1 Correct `docs/package-matrix.md` where it describes the terminal preference, which states that the terminal named there is a dependency of `gridline-session` and explains the single entry by it
-- [ ] 5.2 Correct `docs/component-ownership.md`'s terminal row if it states the dependency relationship, found by grep rather than by recall
-- [ ] 5.3 Verify each scenario of the two added requirements is exercised or recorded as unexercised with a reason, counting scenarios from the delta file rather than from the proposal's description of them
+- [x] 5.1 Correct `docs/package-matrix.md` where it describes the terminal preference, which states that the terminal named there is a dependency of `gridline-session` and explains the single entry by it
+- [x] 5.2 Correct `docs/component-ownership.md`'s terminal row if it states the dependency relationship, found by grep rather than by recall
+- [x] 5.3 Verify each scenario of the two added requirements is exercised or recorded as unexercised with a reason, counting scenarios from the delta file rather than from the proposal's description of them
+
+## Scenario accounting
+
+Seven scenarios across the two added requirements, counted from
+`specs/package-delivery/spec.md`. Six were exercised; one is recorded as
+unexercised with its reason rather than counted as passing.
+
+**A package states what it assumes and does not declare**
+
+1. **The session says what it needs a machine to already have** - the paragraph
+   is in `gridline-session`'s long description and was read back from the built
+   package with `dpkg-deb -f`, not from the source file.
+2. **What the package ships is described, not promised** - all three packages
+   compared against `dpkg-deb -c`: 16, 9 and 1 files, none claiming to ship
+   none. The same comparison also checked each component the description names
+   against the field that declares it. It found the description listing three
+   non-blocking components when there are four, and `libnotify-bin` missing
+   from the sentence about which dependencies are in main; both corrected.
+3. **An assumption that becomes a dependency stops being an assumption** -
+   **unexercised.** Nothing in this change makes that transition: the terminal
+   moved from a dependency to a recommendation, which is the other direction,
+   and the display manager assumption is new. The scenario is a rule for the
+   change that declares a display manager one day, and exercising it would mean
+   declaring one in order to test the rule against it.
+
+**A component reached through a mechanism is replaceable without removing Gridline**
+
+4. **The preferred component can be removed on its own** - `apt-get remove -s
+   kitty` lists only `kitty`. Before this change it listed `gridline-session`
+   with it.
+5. **The preference still applies when nothing else expresses one** - with the
+   terminal installed, the session opened it, read from the compositor's own
+   client list rather than from the command.
+6. **Removing the preferred component degrades to the mechanism's answer** -
+   and this one nearly passed for the wrong reason. With the terminal removed
+   from a machine carrying two, the list and the scan give the same answer, so
+   the measurement could not tell which had answered. A third terminal was
+   installed to make them disagree. The scan then picked one that needs X11 and
+   the session opened nothing at all; with Gridline's second entry present the
+   same removal opened the terminal Gridline names.
+7. **A component Gridline configures by name stays a dependency** - the bar,
+   the notification daemon, the wallpaper daemon and the application launcher
+   are each still in `Depends`, checked from the built package against the
+   description that names them.
+
+## Findings
+
+- **An unrelated package can break a keybinding, and nothing says so.**
+  Installing `xterm` changed which terminal a Gridline session opens, from a
+  working one to one that cannot run under Wayland, and the failure is a key
+  that does nothing. The second list entry fixes it for the terminal. Nothing
+  in the session notices or reports it, and whether that is worth reporting is
+  not this change's question.
 
 ## Workflow follow-up
 
