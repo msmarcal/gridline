@@ -25,6 +25,16 @@ jobs:
   checks:
     runs-on: ubuntu-26.04
 
+    # Without this a hung step runs to GitHub's default of six hours, and that
+    # is not hypothetical: the display probe in this directory hung for
+    # fifteen minutes on a pipe nothing closed, and would have gone on.
+    #
+    # Fifteen minutes against a run that takes about seventy seconds, longest
+    # step twenty-one. The headroom is for a slow archive mirror rather than
+    # for the checks themselves, which are seconds. A run that reaches this
+    # limit has stopped rather than slowed.
+    timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
 

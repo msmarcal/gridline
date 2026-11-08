@@ -32,6 +32,10 @@ jobs:
   probe:
     runs-on: ubuntu-26.04
 
+    # The compositor step carries its own eight minutes. This bounds the job
+    # as a whole, because the step that hangs next will be a different one.
+    timeout-minutes: 20
+
     steps:
       - name: What kernel and what privileges
         run: |
