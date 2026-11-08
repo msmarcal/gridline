@@ -162,6 +162,11 @@ A Gridline session SHALL provide screen locking, and a locked session SHALL requ
 - **WHEN** the lock component dies while the session is locked and the session is correctly held locked
 - **THEN** the user can restore a working lock screen and return to their session from the machine itself, rather than the session being unrecoverable without ending it
 
+#### Scenario: The recovery path names the locker the session actually uses
+
+- **WHEN** a user has to recover a locked session by hand, following the project's documentation or whatever the compositor puts on the screen
+- **THEN** the instructions Gridline owns name the locker Gridline ships, so that a user is not sent after a program that is not installed
+
 ### Requirement: Privileged actions can be authorized from within the session
 
 A Gridline session SHALL provide a polkit authentication agent so that actions requiring authorization can be completed without leaving the session.
