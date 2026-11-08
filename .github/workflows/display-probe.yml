@@ -52,26 +52,42 @@ jobs:
 
       - name: Try to load it
         run: |
-          if sudo modprobe vkms 2>&1; then
-            echo "loaded"
+          # The status is captured on its own line rather than read inside the
+          # message, where $? would report the echo that preceded it.
+          sudo modprobe vkms 2>&1 && status=0 || status=$?
+          if [ "$status" = 0 ]; then
+            echo "modprobe vkms: loaded"
           else
-            echo "modprobe refused or failed, status $?"
+            echo "modprobe vkms: refused or failed, status $status"
           fi
           echo "/dev/dri after:"
           ls -la /dev/dri 2>&1 || echo "  still absent"
 
       - name: If there is a card, try the compositor on it
+        timeout-minutes: 8
         run: |
-          if [ ! -e /dev/dri/card0 ]; then
+          # Any card, not card0. The runner already carries card1 before
+          # anything is loaded, and the first version of this step asked for
+          # card0 by name - which is the sort of thing that reads as "no
+          # display available" when the truth is "the display is numbered
+          # differently".
+          cards=$(ls /dev/dri/card* 2>/dev/null | tr '\n' ' ')
+          if [ -z "$cards" ]; then
             echo "no card, so the compositor was not attempted"
             exit 0
           fi
+          echo "cards: $cards"
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends hyprland
           export XDG_RUNTIME_DIR=/run/user/$(id -u)
           sudo loginctl enable-linger "$USER"
           sleep 3
-          # Fifteen seconds is enough to reach a Wayland socket or to fail
-          # trying, and the failure message is the thing worth keeping.
-          timeout 15 Hyprland 2>&1 | head -30 || true
-          echo "wayland sockets: $(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -c '^wayland-' || echo 0)"
+          # Written to a file rather than piped, and killed rather than asked.
+          # The first version was `timeout 15 Hyprland | head -30`, which hung
+          # for fifteen minutes: timeout's SIGTERM did not end it, and head
+          # went on waiting for a pipe that nothing closed. A probe that hangs
+          # costs runner minutes and answers nothing.
+          timeout --kill-after=5 15 Hyprland >/tmp/hypr.log 2>&1 || true
+          echo "--- what the compositor said:"
+          head -40 /tmp/hypr.log || true
+          echo "--- wayland sockets: $(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -c '^wayland-' || echo 0)"
