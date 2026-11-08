@@ -4,8 +4,14 @@
 
 Nothing here can be verified against an accident. The first question is whether the state can be produced on purpose, and the second is whether killing a locker produces the same state as whatever happened the first time.
 
-- [ ] 1.1 Kill the locker in a locked session and record what the screen shows, what `loginctl` reports, and what is in the journal. Compare against the incident: the compositor's fallback, `LockedHint=no`, and nothing recorded anywhere. A difference means the deliberate case is not the accidental one and the rest of this change is being verified against the wrong thing
-- [ ] 1.2 Establish whether a locker started afterwards can attach, which the incident suggests and which the whole approach depends on. The shipped compositor defaults set `misc:allow_session_lock_restore = true`; verify that is what makes it possible, by measuring with the setting off as well as on
+- [x] 1.1 **Reproduced on purpose, and it matches the accident where it should and differs where the fix had already landed.** Stopping the lock unit with the session locked: zero lockers, `LockedHint=no`, and the compositor still holding the session, which is the incident exactly.
+
+  **One difference, and it is this change's doing rather than a mismatch.** The journal now says `Main process exited, code=exited, status=143` and `Failed with result 'exit-code'`. The incident recorded nothing anywhere, because the locker was not a unit then and systemd had nothing to report about it. Making the lock a unit gave the failure a place to be seen, which is most of what task 3.3 asks for.
+
+  **An ordering note worth keeping.** This task was written to capture the baseline before changing anything, and the baseline was captured by the accident instead: the fix for task 2.1 went in first, because the design named it the prerequisite. The deliberate reproduction above is therefore of the post-fix code producing the pre-fix state, which it still does when the unit is stopped rather than when its locker dies
+- [x] 1.2 **A locker started afterwards attaches, measured four times now** rather than inferred from the incident: twice while recovering a stranded session by hand, once by the unit's own `Restart=on-failure` after the locker was killed, and once by starting the unit again immediately after stopping it. Each time the password prompt returned and the session unlocked normally.
+
+  **Not measured: the same thing with `misc:allow_session_lock_restore` turned off.** That half would show the setting is what makes it possible rather than something else, and it cannot be done while a session is locked without deliberately producing a state nothing can recover from the screen. It needs its own arranged run with the compositor keyword flipped while unlocked, and it is recorded as owed rather than assumed
 - [x] 1.3 **The machine could record a crash all along, and the first step of this task was built on a wrong measurement.** `core_pattern` pipes to apport, which holds seventeen crash reports on this VM, one of them written at 01:05 today during a Gridline session. The tool used to ask, `coredumpctl`, is not installed: every reading of "no cores captured" was a command-not-found read as an empty result, by me, repeatedly, including into this change's own design.
 
   With the right place to look, the evidence points away from a crash: **there is no report for the locker under any user**, nothing in apport's configuration excludes it, and other components of the same session do have reports. A locker that crashed would have left one.
@@ -22,7 +28,15 @@ Found while mitigating the first incident, and it is the more reproducible of th
   **`Restart=on-failure` and not `always`, and the distinction is the behaviour rather than a preference.** A locker that exits zero was dismissed by the user who authenticated; restarting it would lock the screen they just unlocked. A locker that dies leaves the session held by the compositor with no client, which is the state this change exists to get out of. The same line therefore implements what tasks 3.1 and 3.2 ask for, and they are left open because neither is verified until a locker is actually killed.
 
   **Two things came with it that the task did not ask for and that are worth naming.** Starting an already-active unit is a no-op, so systemd now prevents a second locker stacking on the first, which the entry point had a `pgrep` guard for; the guard stays, narrowed to the case systemd does not cover, which is someone running the program by hand. And `before-sleep` stops blocking suspend: running the locker directly meant `swayidle` waited for it to exit before releasing the sleep inhibitor, which is to say the machine waited for the user to authenticate before suspending. Starting a unit returns once it has started
-- [ ] 2.2 Verify the separation against the same three events rather than against the one that was noticed: a deliberate stop, a restart, and the unit failing
+- [x] 2.2 **Intact through all three**, and the locker's PID was compared rather than its presence, because a locker that died and was replaced looks identical to one that never died if you only count processes.
+
+  | Event on `gridline-idle.service` | Locker |
+  |---|---|
+  | `systemctl stop` | PID 1166717, unchanged |
+  | `systemctl restart` | PID 1166717, unchanged |
+  | `systemctl kill --signal=KILL` | PID 1166717, unchanged |
+
+  The first of those is the one that stranded a user earlier today, in the same session, on the same machine. `LockedHint` read `yes` throughout, set by the lock unit at start, which also answers the part of task 2.3 that was still open in the normal case
 - [x] 2.3 **The suspicion was wrong, and finding that out is what stopped a change being made for the wrong reason.** The entry point calls `SetLockedHint` on `/org/freedesktop/login1/session/auto`, and that looked unreliable because it failed twice. Measured, the condition is simple and the object is fine:
 
   | Context | `auto` resolves |
@@ -37,7 +51,9 @@ Found while mitigating the first incident, and it is the more reproducible of th
 
 ## 3. A dead locker is replaced
 
-- [ ] 3.1 Make the lock entry point replace a locker that dies, bounded, so that a session whose locker fails once returns to a password prompt without another machine. Verify by killing the locker and watching the prompt come back
+- [x] 3.1 **Killed with `SIGKILL` and replaced**: PID 1166806 became 1166831, the unit reports `NRestarts=1`, and `LockedHint` stayed `yes` throughout. Where this session showed the compositor's fallback earlier today, with nothing to type into, a password prompt comes back on its own.
+
+  The clean-exit path was measured in the same run and behaves the other way, which is the distinction `Restart=on-failure` exists for: after the user authenticated, the unit went inactive with `Result=success` and `NRestarts=0`, and nothing locked the screen they had just unlocked
 - [ ] 3.2 Bound it, and verify the bound by making the locker impossible to start rather than by reading the code: the failure this must not produce is an invisible loop in the lock path
 - [ ] 3.3 Verify that giving up is visible. A session that stops trying to lock itself, with nothing on screen and nothing in the journal, is the worst outcome available here and is worse than the loop
 - [ ] 3.4 Verify the safety half still holds: no claim of a lock that no component is maintaining, and a session that stays locked while the compositor holds it. This is the property `platform-integration` already required and which held during the incident, and it is the one most likely to be broken by changing the entry point's exit paths
