@@ -26,8 +26,16 @@ execute_before_dh_installdeb:
 	tools/generate-maintainer-scripts src/config/gridline-session.postinst.in \
 		debian/gridline-session.postinst
 
+# One entry point, and this file no longer holds the list.
+#
+# It did, and the list would have been copied the moment anything else needed
+# to run the same checks - which is what an automated run is. Two lists is one
+# list that goes stale, and the copy nobody reads is the one that stops
+# matching: a check added here and not there would be a check the automated run
+# silently stops making.
+#
+# --require-all because a build has a staging tree, so every check can answer,
+# and a check that could not would mean the anchor below is wrong rather than
+# that the check is optional.
 execute_before_dh_builddeb:
-	tools/check-path-ownership debian
-	tools/check-adapter-isolation
-	tools/check-declared-paths
-	tools/check-dropin-roles
+	tools/run-checks --require-all debian

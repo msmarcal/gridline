@@ -1,0 +1,105 @@
+#!/bin/sh
+# Every check this project runs, in one place.
+#
+# There are two callers and they must not drift: the package build, which runs
+# this immediately before dh_builddeb, and whatever runs it without a person.
+# Before this file, debian/rules held the list, so an automated run would have
+# carried a second copy of it - and the copy that goes stale is the one nobody
+# reads, which on a project with no CI would have been the one in CI.
+#
+# This adds no checks of its own. It knows which ones exist, in what order, and
+# whether each can answer where it is being run. That last part is not
+# bookkeeping: a check that cannot answer must say so rather than pass.
+
+set -eu
+
+# Run from the package root whichever directory the caller is in, so that a
+# developer typing tools/run-checks and a build invoking it from debian/rules
+# reach the same files.
+cd "$(dirname "$0")/.."
+
+# --require-all turns a skipped check into a failure, and exists because the
+# two callers want different things from the same run. A developer in a clean
+# tree has not built anything yet and should get the three checks that can
+# answer, with the fourth named as absent. An automated run has no reader to
+# notice a warning scrolling past, so for it a check that could not answer is
+# the run not having happened.
+require_all=no
+case ${1-} in
+--require-all) require_all=yes; shift ;;
+esac
+
+STAGING=${1:-debian}
+
+failed=0
+ran=0
+skipped=0
+
+report() {
+    printf '  %-26s %s\n' "$1" "$2"
+}
+
+run() {
+    name=$1
+    shift
+    if "$@" >/dev/null 2>&1; then
+        report "$name" "ok"
+        ran=$((ran + 1))
+    else
+        report "$name" "FAILED"
+        failed=$((failed + 1))
+        ran=$((ran + 1))
+        # Run it again, visibly. Capturing the output the first time and
+        # replaying it would be fewer lines and one more thing to get wrong
+        # about ordering and interleaving; a check that failed is cheap enough
+        # to run twice.
+        "$@" 2>&1 | sed 's/^/      /' || true
+    fi
+}
+
+printf 'gridline checks\n'
+
+# The package-layer check reads the staging trees the build produces, so it can
+# only answer during a build. Run outside one it finds no trees, examines
+# nothing, and reports success - measured: "0 files and 0 declared directories,
+# each claimed once", exit 0.
+#
+# That is the failure this project is most afraid of in an automated run: a
+# green line that guarded nothing. So the condition is tested here rather than
+# trusted, and a check that cannot answer is reported as skipped, which is not
+# the same word as ok and is counted separately.
+if [ -d "$STAGING" ] && [ -n "$(find "$STAGING" -maxdepth 1 -name 'gridline-*' -type d -print -quit 2>/dev/null)" ]; then
+    run "path ownership" tools/check-path-ownership "$STAGING"
+else
+    report "path ownership" "skipped: no staging tree under $STAGING/"
+    skipped=$((skipped + 1))
+fi
+
+# The remaining three read the source tree and answer anywhere.
+run "adapter isolation" tools/check-adapter-isolation
+run "declared paths"    tools/check-declared-paths
+run "drop-in roles"     tools/check-dropin-roles
+
+printf '\n'
+if [ "$failed" -gt 0 ]; then
+    printf '%s of %s checks failed' "$failed" "$ran"
+    if [ "$skipped" -gt 0 ]; then
+        printf ', %s skipped' "$skipped"
+    fi
+    printf '\n'
+    exit 1
+fi
+
+printf '%s checks passed' "$ran"
+if [ "$skipped" -eq 0 ]; then
+    printf '\n'
+    exit 0
+fi
+
+printf ', %s skipped\n' "$skipped"
+printf 'A skipped check guarded nothing. Run this from a build, or with the\n'
+printf 'staging root as its argument, for the full set.\n'
+if [ "$require_all" = yes ]; then
+    printf '\n--require-all was given, so a check that could not answer is a failure.\n'
+    exit 1
+fi
