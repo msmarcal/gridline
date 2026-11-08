@@ -89,7 +89,9 @@ Found while mitigating the first incident, and it is the more reproducible of th
 
 ## 5. Coherence
 
-- [ ] 5.1 Correct the screen locker row in `docs/component-ownership.md`, whose fallback cell describes a session that refuses to start. That is what happens when the locker is absent at startup; it is not what happens when the locker dies later, and the row covers only the first
+- [x] 5.1 **The row now describes both failures**, and its ownership cell stopped saying "integration only", which became false when Gridline took ownership of the unit that runs the locker and the entry point every lock request arrives through.
+
+  **Correcting it broke a count, and the count was the interesting part.** The page's reading section asserts that every component falls into exactly one of three fallback categories. The locker now falls into two: absent at startup it blocks the session, and dying mid-session is a different failure with a different answer. Forcing the cell back into one category would have been the easy fix and would have reproduced the omission that left a user locked out with the documentation silent. The reading section says so instead, and the blocking table still lists the same six components
 - [ ] 5.2 Verify each scenario of the modified requirement is exercised or recorded as unexercised with a reason, counting scenarios from the delta file rather than from the proposal's description of them
 
 ## Workflow follow-up
