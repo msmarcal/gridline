@@ -8,6 +8,10 @@ See proposal.md for motivation. What is known about the incident, and what is no
 
 **Not known, and not guessed at here.** Why the locker died. Nothing recorded it: no journal entry from the locker, nothing from `gridline-lock`, which does write its failures, nothing in the compositor's log, and no usable core, on a machine whose `coredumpctl` captures nothing even for a crash systemd itself reports as dumped. A cause written down without evidence would be worse than the blank, because the next person would stop looking.
 
+**A second way to lose the locker, found while mitigating the first and more reproducible than it.** Stopping `gridline-idle.service` killed the running locker and stranded the session: the journal reads `Stopping gridline-idle.service`, then `swayidle: Terminated`, then the lock entry point's trap firing. The entry point runs as a child of the idle daemon, inside that unit's cgroup, so the unit going down takes the lock with it. A deliberate stop did it here; a package upgrade that restarts the unit, or `Upholds=` reacting to a failure, would do the same. **This one does not need an unexplained crash to happen.**
+
+**`SetLockedHint` is called on an object that does not always resolve.** The entry point uses `/org/freedesktop/login1/session/auto`. It failed twice in one session, once from a context with no session of its own and once from the entry point's own trap during its unit's shutdown, and it succeeded at least once earlier the same day. The explicit session path works from the same context where `auto` fails, measured. So `auto` is conditionally reliable and the condition is not understood, which is a different statement from either "it works" or "it is broken".
+
 **Why this is a change rather than a bug report.** The locker is a blocking component precisely because a desktop that cannot lock must not run. That reasoning covers the machine being left open. It does not cover the machine being left shut, and this incident is the second kind: the session was protected throughout and its owner was locked out of it.
 
 ## Goals / Non-Goals
@@ -25,6 +29,12 @@ See proposal.md for motivation. What is known about the incident, and what is no
 - Watching the locker in general. This is about one failure with one response, not a supervisor.
 
 ## Decisions
+
+### Separating the lock's lifetime from the idle daemon's comes first
+
+A daemon that decides *when* to lock and a program that *holds* the screen have different lifetimes, and today the second lives inside the first's cgroup. Everything else in this design is built on a locker that can outlive the thing that scheduled it, so this is the prerequisite rather than a second improvement: replacing a dead locker is worth little if stopping an unrelated unit kills the replacement too.
+
+What that means mechanically is open. The lock could be its own unit that the idle daemon starts rather than runs, or the entry point could detach from the cgroup it was invoked in. The first is more systemd-shaped and makes the lock startable by anything, which is the same concern the restart decision below raises.
 
 ### Replacing the locker, not supervising it
 
