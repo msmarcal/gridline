@@ -89,14 +89,29 @@ Found while mitigating the first incident, and it is the more reproducible of th
 - [x] 4.2 Named, and **the screen is wrong in a second way that only showed up on reading it again**. It tells the user to press `Ctrl+Alt+F[N]` with the terminal number it prints, and it printed `tty 0` for a session measured on `tty2`: following it sends someone to a terminal that does not exist. So the written path depends on neither claim, and says why: it asks `loginctl list-sessions` for the number instead of trusting the screen, and names `swaylock` rather than the locker the screen suggests.
 
   Gridline cannot change that screen. What it can do is make its own instructions correct and say plainly which parts of the other ones to ignore
-- [ ] 4.3 Verify the written path by following it from a second machine, exactly as written, against a session in the failed state. A recovery path that has not been walked is a draft
+- [x] 4.3 **Walked by someone who did not write it, against a real stranded session, and it failed at step one.**
 
-## 5. Coherence
+  `Ctrl+Alt+F3` never reached the machine: it was captured by the computer the person was sitting at, because the session was being watched through a window. The path assumed physical access and said so nowhere. `docs/recovery.md` now names that case and the way around it, which for this hypervisor is `lxc console`.
 
-- [x] 5.1 **The row now describes both failures**, and its ownership cell stopped saying "integration only", which became false when Gridline took ownership of the unit that runs the locker and the entry point every lock request arrives through.
+  Steps two to four then worked as written. Starting the unit brought the lock back, `loginctl list-sessions` answered the terminal question unambiguously, with one row carrying a seat and its `TTY` reading `tty2`, and the password returned the desktop.
+
+  **The walk also produced the day's most useful measurement, which no amount of rereading would have.** One of the lockers started during it exited on its own within seconds, with nobody touching the machine, and systemd recorded `ExecMainStatus=0`, `Result=success`, `NRestarts=0`. That is task 5.3's finding and it came from following instructions rather than from testing the thing it concerns
+
+## 5. The clean exit the restart policy does not catch
+
+- [ ] 5.3 **The locker exits zero, and that is why nothing ever noticed it.** Measured during the documentation walk on a locker that died unattended: `ExecMainStatus=0`, `ExecMainCode=0`, `Result=success`. It explains every blank in task 1.3 at once: apport wrote no report because nothing crashed, the journal said nothing because a clean exit says nothing, and `LockedHint` went false because the entry point's trap ran as it does on any normal exit.
+
+  **And it goes through this change's own fix.** `Restart=on-failure` distinguishes a locker the user dismissed from one that died by its exit code, and a locker that exits zero without ever having taken the screen falls on the wrong side of that line. The case this change was built for is not the case it catches: killing the locker with a signal is caught, and what actually happened to a user here is not.
+
+  systemd cannot tell these apart, because from outside they are the same event. Something that knows whether the screen was ever locked has to decide, and the entry point is the only thing in the path that could know. Measure what it can observe before choosing a mechanism
+- [ ] 5.4 Establish the condition under which the locker exits early, because it is not every time: it took the screen and unlocked normally on several attempts in the same session, and exited within seconds on others, with no input either way. Until that is known, any fix is aimed at a symptom
+
+## 6. Coherence
+
+- [x] 6.1 **The row now describes both failures**, and its ownership cell stopped saying "integration only", which became false when Gridline took ownership of the unit that runs the locker and the entry point every lock request arrives through.
 
   **Correcting it broke a count, and the count was the interesting part.** The page's reading section asserts that every component falls into exactly one of three fallback categories. The locker now falls into two: absent at startup it blocks the session, and dying mid-session is a different failure with a different answer. Forcing the cell back into one category would have been the easy fix and would have reproduced the omission that left a user locked out with the documentation silent. The reading section says so instead, and the blocking table still lists the same six components
-- [x] 5.2 **Eight scenarios, counted from the delta file, and counting them is what caught the error this change was built on.**
+- [x] 6.2 **Eight scenarios, counted from the delta file, and counting them is what caught the error this change was built on.**
 
   | Scenario | State |
   |---|---|

@@ -105,6 +105,14 @@ Switch to another virtual terminal and log in there:
 Ctrl+Alt+F3
 ```
 
+**On a virtual machine this step may not work, and the reason is not Gridline's.**
+If you are watching the machine through a window on another computer, that key
+combination is usually captured by the computer you are sitting at and never
+reaches the guest. Use whatever second console your hypervisor provides
+instead: with LXD that is `lxc console <name>` from the host, which gives a
+text login inside the machine without needing the keystroke. Some viewers also
+have a menu for sending key combinations through.
+
 Start the lock again:
 
 ```
