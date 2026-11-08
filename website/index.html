@@ -16,12 +16,19 @@
 <div class="sheet">
 <nav>
   <a class="brand" href="index.html">gridline</a>
-  <a href="install.html">install</a>
-  <a href="https://github.com/msmarcal/gridline/tree/main/docs">docs</a>
-  <a class="push" href="https://github.com/msmarcal/gridline">source</a>
+  <a class="ws" href="index.html" aria-current="page"><span class="n">1</span>home</a>
+  <a class="ws" href="install.html"><span class="n">2</span>install</a>
+  <a class="ws" href="https://github.com/msmarcal/gridline/tree/main/docs"><span class="n">3</span>docs</a>
+  <a class="ws push" href="https://github.com/msmarcal/gridline"><span class="n">4</span>source</a>
 </nav>
 <main>
   <header class="hero">
+    <pre class="ascii" aria-hidden="true"> ██████╗ ██████╗ ██╗██████╗ ██╗     ██╗███╗   ██╗███████╗
+██╔════╝ ██╔══██╗██║██╔══██╗██║     ██║████╗  ██║██╔════╝
+██║  ███╗██████╔╝██║██║  ██║██║     ██║██╔██╗ ██║█████╗
+██║   ██║██╔══██╗██║██║  ██║██║     ██║██║╚██╗██║██╔══╝
+╚██████╔╝██║  ██║██║██████╔╝███████╗██║██║ ╚████║███████╗
+ ╚═════╝ ╚═╝  ╚═╝╚═╝╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝</pre>
     <p class="hero-tag">Ubuntu LTS &middot; Wayland &middot; apt only</p>
     <h1>A tiling session that is just a package away.</h1>
     <p class="lede">
@@ -30,13 +37,14 @@
       Install it, pick it at the login screen, and your stock GNOME session
       stays installed, selectable, and supported as the fallback.
     </p>
-    <pre class="cmd"><span class="ps1">$</span> sudo apt install gridline-desktop</pre>
+    <pre class="cmd"><span class="ps1">$</span> sudo apt install gridline-desktop<span class="cursor"></span></pre>
     <p class="cmd-note">
       That one-liner is the target, not the present: the packages are not in
       a PPA yet, and this site does not pretend otherwise. Today the honest
       path is <a href="install.html">building the source package</a>, which
       takes minutes on Ubuntu 26.04.
     </p>
+    <div class="frame">
     <svg class="mockup" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Schematic of the Gridline desktop: a status bar across the top and three tiled windows below it">
       <rect x="0" y="0" width="720" height="400" fill="var(--cmd-bg)"/>
       <!-- status bar -->
@@ -67,6 +75,7 @@
       <rect x="498" y="261" width="140" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
       <rect x="498" y="279" width="190" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
     </svg>
+    </div>
     <p class="mockup-caption">waybar on top. hyprland tiles below. all of it from the Ubuntu archive.</p>
   </header>
 
@@ -135,7 +144,8 @@
     rather not start than start as a broken desktop you cannot explain.
   </p>
 
-  <h2 id="make-it-yours">Make it yours</h2>
+  <h2 id="make-it-yours">Rice it</h2>
+  <div class="ansi" aria-hidden="true"><i class="c0"></i><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i><i class="c5"></i><i class="c6"></i><i class="c7"></i></div>
   <p>
     The shipped defaults live under <code>/etc/xdg/gridline/</code>, and
     anything you write in <code>~/.config</code> wins over them. That is
@@ -185,8 +195,8 @@
     <li class="done">Styled notifications; critical ones stay until
     dismissed</li>
     <li class="done">Wallpaper anchored to the release's own image</li>
-    <li class="done">Application launcher on SUPER&nbsp;D, command menu on
-    SUPER&nbsp;SHIFT&nbsp;D; the menu dispatches on entries, not typed text,
+    <li class="done">Application launcher on <kbd>SUPER</kbd>&nbsp;<kbd>D</kbd>, command menu on
+    <kbd>SUPER</kbd>&nbsp;<kbd>SHIFT</kbd>&nbsp;<kbd>D</kbd>; the menu dispatches on entries, not typed text,
     so a free-typed word that matches nothing cannot fire a destructive
     action</li>
     <li class="done">Fail-safe screen lock: a locker that exits without an
