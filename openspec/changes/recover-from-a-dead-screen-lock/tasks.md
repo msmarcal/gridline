@@ -22,7 +22,11 @@ Nothing here can be verified against an accident. The first question is whether 
 
 Found while mitigating the first incident, and it is the more reproducible of the two problems: stopping the idle unit killed the running locker and stranded the session. This is not an accident that needs waiting for.
 
-- [ ] 2.0 Reproduce it deliberately: with a session locked, stop `gridline-idle.service` and confirm the locker dies with it. The journal of the first occurrence reads `Stopping gridline-idle.service`, then `swayidle: Terminated`, then the lock entry point's trap firing, which is a locker killed by the unit's cgroup going down rather than by anything about the locker
+- [x] 2.0 **The deliberate reproduction now produces the opposite, which is the fix working rather than the task failing.** Stopping `gridline-idle.service` with the session locked leaves the locker's PID unchanged, measured in 2.2 along with a restart and a kill.
+
+  The pre-fix behaviour is recorded from the accident that produced it, in the journal: `Stopping gridline-idle.service`, then `swayidle: Terminated`, then the lock entry point's trap firing. That is a locker killed by its unit's cgroup going down rather than by anything about the locker, and it cannot be produced again because the locker no longer lives there.
+
+  Same ordering note as task 1.1: this was written to capture the baseline first, and the baseline was captured by the accident instead, because the design named the separation as the prerequisite and it went in before anything else
 - [x] 2.1 **The lock is a unit now.** `gridline-lock.service` runs the entry point, and the idle daemon asks systemd to start it rather than running the locker itself, so the locker lives in its own cgroup and the daemon's lifetime is no longer the lock's. Read back from systemd: `ExecStart=/usr/libexec/gridline/gridline-lock`, `Restart=on-failure`, `StartLimitBurst=3`, and `systemd-analyze verify` reports nothing against either unit.
 
   **`Restart=on-failure` and not `always`, and the distinction is the behaviour rather than a preference.** A locker that exits zero was dismissed by the user who authenticated; restarting it would lock the screen they just unlocked. A locker that dies leaves the session held by the compositor with no client, which is the state this change exists to get out of. The same line therefore implements what tasks 3.1 and 3.2 ask for, and they are left open because neither is verified until a locker is actually killed.
@@ -97,7 +101,7 @@ Found while mitigating the first incident, and it is the more reproducible of th
   | Scenario | State |
   |---|---|
   | Manual lock requires authentication | Inherited. Exercised: the lock started through the unit, the password was accepted, the session returned |
-  | The session locks itself when idle | Inherited, **not exercised here**: the idle daemon was masked for most of this work as a mitigation, and the one idle lock that did fire is the incident this change exists for |
+  | The session locks itself when idle | Inherited. **Exercised, and not on purpose**: recorded as unexercised, and then the session locked itself five minutes later while this table was being written. `Started gridline-lock.service` with nothing else in the journal, nobody having asked for it, and `IdleHint=yes`, which is the idle daemon firing through the path this change replaced it with |
   | The system agrees that the session is locked | Inherited. Exercised: `LockedHint=yes` while locked, through every lock in this change |
   | A dead lock component is not reported as a session that is safe to treat as unlocked | Inherited. Exercised in 3.4: hint `no` with the compositor still holding, which is the protected direction |
   | Lock holds across suspend | Inherited, **not exercised**: no suspend was performed. Worth noting that this change altered that path, since `before-sleep` no longer blocks on the locker exiting |
