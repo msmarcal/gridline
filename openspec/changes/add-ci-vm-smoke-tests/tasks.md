@@ -94,7 +94,7 @@ exactly what was asked.
 ## 6. What nobody is checking
 
 - [x] 6.1 Write down what the automated run does not cover and why, naming each: the compositor starting, the bar drawing, a notification appearing, the wallpaper, the lock screen, and the judgements that need a person, such as whether a value on screen is current rather than merely present
-- [ ] 6.2 Establish whether a compositor can be started on a hosted runner at all, and at what cost. The cheap route is disqualified by measurement already: a headless backend failed with `Cannot open backend: no allocator available`. Produce either a working display or the reason there cannot be one, and record which
+- [x] 6.2 Establish whether a compositor can be started on a hosted runner at all, and at what cost. The cheap route is disqualified by measurement already: a headless backend failed with `Cannot open backend: no allocator available`. Produce either a working display or the reason there cannot be one, and record which
 - [x] 6.3 Correct `docs/packaging.md`, whose table promises the gate is re-run in CI, and the three other live documents that name this change. Verify by grep that no live document still describes this as planned
 
 ## 7. Coherence
@@ -128,6 +128,34 @@ the automated run itself rather than by a person deciding it had worked.
    each caught with a message naming the file and the problem. Planting
    `StartLimitBurst` in `[Service]` is correctly *not* caught, because systemd
    honours it there; `StartLimitIntervalSec` is the one it ignores.
+
+## Can a compositor be given a display on a hosted runner?
+
+Asked of the machine rather than argued about. The answer is no, and the
+reason is worth more than the answer, because it is not the reason anybody
+expected.
+
+**A display device is obtainable, and cheaply.** The runner carries
+`/dev/dri/card1` before anything is loaded. It has passwordless sudo. `vkms`
+ships in the Azure kernel's module tree, `modprobe vkms` loads it, and
+`/dev/dri/card0` appears. Every step of the route this project had written
+down as expensive turned out to be free.
+
+**And the compositor still cannot start on it.** With both cards present it
+aborted: `terminate called after throwing an instance of 'std::runtime_error'
+what(): CBackend::create() failed!`, a core dump, and zero Wayland sockets.
+
+So the two failures are different and both are now recorded. The cheap route,
+a headless backend, fails with `Cannot open backend: no allocator available`.
+The vkms route gets a real DRM device and fails at backend creation anyway.
+What a hosted runner cannot provide is not a card: it is whatever the
+compositor's backend needs behind one.
+
+**What this settles.** The graphical layer stays out of the automated run, and
+now for a measured reason rather than a presumed cost. Re-asking is cheap -
+the probe is one dispatch - and worth doing when the compositor, the kernel
+or the runner image changes, because the thing that failed is specific enough
+that any of the three could change it.
 
 ## What the first runs established
 

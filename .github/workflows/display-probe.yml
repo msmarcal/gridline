@@ -1,27 +1,35 @@
 # Can a compositor be given a display on a hosted runner, and at what cost?
 #
-# This answers one question and then should be deleted. It is not part of the
-# checks: it runs only when somebody asks it to, because its whole purpose is
-# to turn an open question into a recorded fact.
+# Answered, on 2026-11-08, and kept so it can be asked again. It is not part
+# of the checks and never runs on a push: dispatch it by hand.
 #
-# What is already known, by measurement rather than by reading:
+# WHAT IT FOUND
 #
-#   The cheap route is disqualified. A compositor started with its headless
-#   backend on this project's own VM failed with "Cannot open backend: no
-#   allocator available" - it wants a GPU allocator, not merely the absence of
-#   a monitor.
+#   A display device is obtainable and cheap. The runner carries
+#   /dev/dri/card1 before anything is loaded, has passwordless sudo, and ships
+#   vkms in the Azure kernel's module tree. `modprobe vkms` loads, and card0
+#   appears. The route this project had recorded as expensive is free.
 #
-#   The known answer elsewhere is a virtual KMS device, which is a kernel
-#   module. Loading one needs a privileged modprobe and a kernel built with
-#   it, which is why projects that do this run a VM with their own kernel
-#   rather than loading a module on a runner. Whether a GitHub runner permits
-#   it is the question, and nobody here has asked the machine.
+#   The compositor still cannot start on it. With both cards present it
+#   aborted: CBackend::create() failed!, a core dump, zero Wayland sockets.
 #
-# The steps below are deliberately tolerant: each records what happened and
-# the job does not fail. A probe that goes red teaches nothing beyond "no",
-# while one that reports what it found distinguishes "the module is absent"
-# from "the module exists and loading it is refused", and those two have
-# different answers.
+#   So the two failures are different. A headless backend fails with "Cannot
+#   open backend: no allocator available"; vkms gets a real DRM device and
+#   fails at backend creation anyway. What a runner cannot provide is not a
+#   card - it is whatever the backend needs behind one.
+#
+# WHY IT IS KEPT RATHER THAN DELETED
+#
+#   The header first said this should be deleted once it had answered. It is
+#   kept because the answer is specific enough to expire: a change to the
+#   compositor, the kernel, or the runner image could each turn it over, and
+#   re-asking costs one dispatch against writing this again from nothing.
+#
+# The steps are deliberately tolerant: each records what happened and the job
+# does not fail. A probe that goes red teaches nothing beyond "no", while one
+# that reports what it found distinguishes "the module is absent" from "the
+# module loads and the compositor still refuses", and those have different
+# answers.
 
 name: display probe
 
