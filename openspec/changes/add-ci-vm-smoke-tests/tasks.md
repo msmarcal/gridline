@@ -71,7 +71,7 @@ exactly what was asked.
 
 ## 3. The package layer
 
-- [ ] 3.1 Build the packages and run the gates. Verify the run fails when a gate fails, with a planted defect, rather than only confirming it passes today
+- [x] 3.1 Build the packages and run the gates. Verify the run fails when a gate fails, with a planted defect, rather than only confirming it passes today
 - [ ] 3.2 Check what each package contains and declares: the paths, the dependencies read from the built package rather than from `debian/control`, and conffile registration compared against the package's own `/etc` contents entry by entry
 - [ ] 3.3 Run `systemd-analyze verify` on every unit and drop-in Gridline ships, reading its **stderr** and not its exit status. Measured on the baseline: it exits 0 for a unit carrying an unknown key, so a check that tests the status passes on everything and guards nothing. Verify it catches a deliberately malformed one by planting `StartLimitIntervalSec` in `[Service]`, which is the directive systemd genuinely ignores there and warns about
 - [ ] 3.4 Exercise install and removal: the session entries diverted and given back, the shell units disabled and restored, and the record of what was disabled. Verify against a machine state before and after rather than against the scripts' own output

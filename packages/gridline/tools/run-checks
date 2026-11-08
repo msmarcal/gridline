@@ -13,11 +13,6 @@
 
 set -eu
 
-# Run from the package root whichever directory the caller is in, so that a
-# developer typing tools/run-checks and a build invoking it from debian/rules
-# reach the same files.
-cd "$(dirname "$0")/.."
-
 # --require-all turns a skipped check into a failure, and exists because the
 # two callers want different things from the same run. A developer in a clean
 # tree has not built anything yet and should get the three checks that can
@@ -29,7 +24,28 @@ case ${1-} in
 --require-all) require_all=yes; shift ;;
 esac
 
+# The staging root is resolved against the caller's directory, before the cd
+# below moves out of it. Doing that in the other order is a defect this file
+# shipped for about ten minutes: the argument silently became relative to the
+# package root, so every caller that was not already standing there got a
+# staging root that does not exist, and --require-all then failed the run for
+# a reason that had nothing to do with the project.
+#
+# It worked from debian/rules by luck - that recipe runs in the package root
+# already, so the path it passes means the same before and after. The caller
+# this change exists to add does not, which is exactly the caller that would
+# have found it last.
 STAGING=${1:-debian}
+case $STAGING in
+/*) ;;
+*) STAGING=$(cd "$(dirname "$STAGING")" 2>/dev/null && pwd)/$(basename "$STAGING") || STAGING=$STAGING ;;
+esac
+
+# Run from the package root whichever directory the caller is in, so that a
+# developer typing tools/run-checks and a build invoking it from debian/rules
+# reach the same files.
+cd "$(dirname "$0")/.."
+
 
 failed=0
 ran=0
