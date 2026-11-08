@@ -14,7 +14,7 @@ The same question reaches further than one dependency. Gridline declares none of
 - States the baseline assumption where it belongs, so that a machine without an Ubuntu desktop is a machine the package declines or warns about rather than one it installs onto silently.
 - Settles whether the GNOME fallback is a guarantee Gridline enforces or an assumption Gridline documents. These are different packages and different costs: enforcing it means depending on the desktop and accepting that installing Gridline installs GNOME, while documenting it means the fallback holds only on machines that already had one.
 - Declares the relationship between Gridline's own packages, which is undeclared in one direction. `gridline-tools` depends on nothing, and `gridline doctor` reads `/usr/libexec/gridline/gridline-component-state`, which `gridline-session` ships. Removing `gridline-session` is an ordinary operation that leaves a `gridline` command which cannot answer. It declines clearly rather than crashing, which is why this has gone unnoticed, and a dependency that holds only by accident of what people happen to install is not declared.
-- Settles whether the terminal is a dependency or a preference, because the project already treats it as both. `gridline-session` carries `Depends: kitty`, so removing the terminal removes the session; and the compositor configuration binds Return to `xdg-terminal-exec` rather than to a terminal, with a comment saying a user changes terminal by registering one. Both cannot be true.
+- Settles whether the terminal is a dependency or a preference, because the project already treats it as both. `gridline-session` carries `Depends: kitty`, so removing the terminal removes the session; and the compositor configuration binds Return to `xdg-terminal-exec` rather than to a terminal, with a comment saying a user changes terminal by registering one. Both cannot be true. **Settled as a preference**: `Recommends: kitty`, so apt still installs it alongside Gridline and removing it no longer removes the session, with a second entry in the terminal list so that the preference degrades to the desktop's own terminal rather than to the arbitrary scan this project already eliminated once.
 
 **Out of scope.** Anything about what Gridline does once a session starts. The session health check and the application launcher, which are their own changes.
 
@@ -28,8 +28,15 @@ None.
 
 ### Modified Capabilities
 
-- `package-delivery`: gains or modifies a requirement about what the session package declares. The capability already governs what each package owns and what no package does; what it does not say is what a package must declare to be installable onto a machine where it can work.
-- `desktop-session`: possibly one requirement modified, depending on how the fallback question is settled. Its requirement that the GNOME session remains installed and supported is written as non-interference, "installing or removing Gridline SHALL leave" it so. If the project decides Gridline must guarantee rather than preserve the fallback, that requirement changes meaning and has to say so. If it decides to document the assumption instead, this capability is untouched and only `package-delivery` moves.
+- `package-delivery`: two requirements are **added**. Nothing is modified: the capability already requires each package to declare what it needs, and already says a component whose absence blocks the session is a dependency rather than a recommendation. What it does not say is what a package should do about something it assumes and does not declare, nor what may be a recommendation rather than a dependency.
+
+### Not modified, and the decision is recorded here
+
+- `desktop-session` is **untouched**. The question of whether Gridline guarantees the GNOME fallback or assumes it was settled as assume-and-document, so the existing requirement keeps its meaning: installing or removing Gridline leaves the GNOME session as it was, which is non-interference rather than provision.
+
+  Three things decided it. The archive's own convention: `sway`, `hyprland` and `labwc` each ship a session entry and none declares a display manager. The virtual package that would express it does not: `x-display-manager` is provided by `gdm3`, `xdm`, `wdm`, `slim`, `sddm` and `nodm`, and four of those six cannot offer a Wayland session at all. And the cost of the alternative: depending on `ubuntu-desktop` would install the whole GNOME desktop onto a machine whose owner had already chosen otherwise.
+
+  What the session entry does without a display manager is nothing, which is the harmless failure. The gap this leaves is that installing onto a machine with no desktop says nothing, and the added requirement below is what closes it - in the package's own description rather than in its dependencies.
 
 ## Impact
 
