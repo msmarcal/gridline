@@ -1,0 +1,179 @@
+#!/bin/sh
+# What installing and removing Gridline does to a machine.
+#
+# The maintainer scripts do two things no other check can see, because both
+# are about a machine rather than about a file in the tree: they divert the
+# compositor's own session entry so the login screen offers Gridline and not
+# the compositor it is built on, and they disable the desktop shell units the
+# archive ships enabled, recording which ones so removal can put them back.
+#
+# Both are reversible by design and the reversal is the part that rots. A
+# diversion left behind outlives the package that made it; a unit disabled and
+# not recorded is a unit nobody re-enables. Neither failure is visible at
+# install time, and both are invisible in the scripts' own output, which is
+# why this reads the machine instead.
+#
+# This modifies the machine it runs on. It installs packages, removes them,
+# and puts back what it found - so it refuses to run without being told to,
+# and it says what it is about to do.
+
+set -eu
+
+root=$(dirname "$0")/..
+cd "$root"
+
+SESSION_DIR=/usr/share/wayland-sessions
+DIVERTED_SUFFIX=.gridline-diverted
+DISABLED_RECORD=/var/lib/gridline/disabled-user-units
+SHELL_UNITS="waybar.service mako.service hyprpaper.service"
+
+usage() {
+    cat >&2 <<'EOF'
+usage: check-install-removal --yes-modify-this-machine [package-dir]
+
+Installs the built Gridline packages, checks what that did to the machine,
+removes them, and checks that what it did was undone. Leaves nothing behind
+that it did not find.
+
+Nothing happens without the flag, because a check that silently installed
+packages would be a surprise the one time somebody ran it on the wrong
+machine.
+EOF
+    exit 64
+}
+
+[ "${1-}" = "--yes-modify-this-machine" ] || usage
+shift
+pkgdir=${1:-..}
+
+[ "$(id -u)" = 0 ] || {
+    printf 'check-install-removal: needs root to install and remove packages\n' >&2
+    exit 1
+}
+
+report=$(mktemp)
+trap 'rm -f "$report"' EXIT INT TERM
+
+note() { printf '  %s\n' "$*"; }
+problem() { printf 'install/removal: %s\n' "$*" >> "$report"; }
+
+# What a diverted entry looks like from dpkg's side, which is the only side
+# that matters: the file renamed and the diversion owned by our package.
+diverted_entries() {
+    dpkg-divert --list "*$DIVERTED_SUFFIX" 2>/dev/null |
+        while read -r _ _ original _ _ _ owner; do
+            [ "$owner" = "gridline-session" ] || continue
+            printf '%s\n' "$original"
+        done
+}
+
+# Enablement is read from the machine rather than from deb-systemd-helper,
+# which refuses to answer: run outside dpkg it prints "was not called from
+# dpkg. Exiting." and returns failure, so every unit would look disabled and
+# this check would pass having measured nothing.
+#
+# What enablement actually is, for a user unit, is a symlink under
+# /etc/systemd/user/<target>.wants/ named after the unit. The target comes
+# from the unit's own [Install] WantedBy, so it is read rather than assumed -
+# all three happen to say graphical-session.target today and a fourth need
+# not.
+enabled_shell_units() {
+    for unit in $SHELL_UNITS; do
+        path=/usr/lib/systemd/user/$unit
+        [ -e "$path" ] || continue
+        wanted_by=$(sed -n 's/^WantedBy=//p' "$path" | tr ' ' '\n' | grep -v '^$' || true)
+        for target in $wanted_by; do
+            if [ -L "/etc/systemd/user/$target.wants/$unit" ]; then
+                printf '%s\n' "$unit"
+                break
+            fi
+        done
+    done
+}
+
+printf 'install/removal\n'
+
+# The state before, so that what is checked afterwards is the difference this
+# package made rather than whatever the machine already was.
+before_diversions=$(diverted_entries | sort)
+before_enabled=$(enabled_shell_units | sort)
+before_entries=$(ls "$SESSION_DIR" 2>/dev/null | sort)
+note "before: $(printf '%s' "$before_entries" | wc -w) session entries, $(printf '%s' "$before_enabled" | wc -w) shell units enabled"
+
+debs=$(ls "$pkgdir"/gridline-*_*.deb 2>/dev/null | tr '\n' ' ')
+[ -n "$debs" ] || {
+    printf 'install/removal: no built packages under %s/\n' "$pkgdir" >&2
+    exit 1
+}
+
+apt-get install -y --allow-downgrades $debs >/dev/null 2>&1 || {
+    printf 'install/removal: installing the packages failed\n' >&2
+    exit 1
+}
+
+after_diversions=$(diverted_entries | sort)
+after_enabled=$(enabled_shell_units | sort)
+
+note "installed"
+
+# The compositor's entry must be gone from the directory and present under the
+# diverted name, and the diversion must be ours.
+#
+# Which package that is comes from the adapter's own declaration, the same file
+# the maintainer scripts are generated from, rather than from a name written
+# here. The build gate that keeps compositor vocabulary inside the adapter
+# caught this file naming one directly, which is the gate working: a check that
+# hard-codes a compositor is a check that stops being true when the project
+# gains a second adapter, and nothing would have said so.
+compositor_packages=$(cat src/adapters/*/compositor-package 2>/dev/null | tr '\n' ' ')
+compositor_entries=$(
+    for package in $compositor_packages; do
+        dpkg -L "$package" 2>/dev/null | grep "^$SESSION_DIR/.*\.desktop$" || true
+    done
+)
+for entry in $compositor_entries; do
+    printf '%s\n' "$after_diversions" | grep -Fxq "$entry" || {
+        problem "$entry was not diverted"
+        continue
+    }
+    [ -e "$entry$DIVERTED_SUFFIX" ] || problem "$entry is diverted but $entry$DIVERTED_SUFFIX does not exist"
+    [ -e "$entry" ] && problem "$entry still exists at its original name after being diverted"
+done
+
+[ -e "$SESSION_DIR/gridline.desktop" ] || problem "the Gridline session entry is not in $SESSION_DIR"
+
+# Every unit that was enabled before must now be disabled and recorded.
+for unit in $before_enabled; do
+    printf '%s\n' "$after_enabled" | grep -Fxq "$unit" && \
+        problem "$unit was enabled before and is still enabled after installing"
+    grep -Fxq "$unit" "$DISABLED_RECORD" 2>/dev/null || \
+        problem "$unit was disabled and is not in $DISABLED_RECORD"
+done
+
+apt-get remove -y gridline-session gridline-config gridline-tools >/dev/null 2>&1 || {
+    printf 'install/removal: removing the packages failed\n' >&2
+    exit 1
+}
+
+note "removed"
+
+final_diversions=$(diverted_entries | sort)
+final_enabled=$(enabled_shell_units | sort)
+final_entries=$(ls "$SESSION_DIR" 2>/dev/null | sort)
+
+[ "$final_diversions" = "$before_diversions" ] || \
+    problem "diversions after removal do not match what was there before"
+
+[ "$final_enabled" = "$before_enabled" ] || \
+    problem "enabled shell units after removal do not match what was there before"
+
+[ "$final_entries" = "$before_entries" ] || \
+    problem "the session entry directory does not match what was there before"
+
+[ -e "$DISABLED_RECORD" ] && problem "$DISABLED_RECORD survives removal"
+
+hits=$(wc -l < "$report")
+[ "$hits" -eq 0 ] || cat "$report" >&2
+
+printf 'install/removal: install and removal checked, %s problems\n' "$hits"
+[ "$hits" -eq 0 ] || exit 1

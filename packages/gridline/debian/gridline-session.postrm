@@ -44,11 +44,21 @@ DISABLED_RECORD=$STATE_DIR/disabled-user-units
 # that did not happen is recoverable by hand while a half-removed package is
 # the worse outcome. The diversion above is the opposite case and is not
 # tolerated: a relocated file nobody can find is not recoverable by hand.
+# systemctl --user --global, and not deb-systemd-helper, which this used and
+# which did nothing. Measured by installing and removing the packages on a
+# clean machine and reading the enablement afterwards: three units enabled
+# before, three disabled after, and not a word anywhere about it.
+#
+# The helper refuses to re-enable a unit it holds no state for, treating that
+# as the administrator's deliberate choice. These three are enabled by their
+# own packages through a path that leaves it no state, so it declined - and
+# the tolerated failure above, which exists for good reasons, is what made the
+# refusal silent.
 restore_shell_units() {
     [ -r "$DISABLED_RECORD" ] || return 0
     while IFS= read -r unit; do
         [ -n "$unit" ] || continue
-        deb-systemd-helper --user enable "$unit" >/dev/null 2>&1 || true
+        systemctl --user --global enable "$unit" >/dev/null 2>&1 || true
     done <"$DISABLED_RECORD"
     rm -f "$DISABLED_RECORD"
 }

@@ -91,12 +91,45 @@ DISABLED_RECORD=$STATE_DIR/disabled-user-units
 # record is what makes "once" expressible: a unit named in it has been dealt
 # with, whatever its state now. A unit absent from it has not, which is also
 # what lets a component installed later than Gridline still be caught.
+# systemctl --user --global, and not deb-systemd-helper, which this used until
+# a check installed and removed the packages and read the machine afterwards.
+#
+# The helper refuses to re-enable a unit it has no state for, by design: it
+# treats the absence of its own record as the administrator having turned the
+# unit off deliberately. These three units are enabled by their own packages
+# through a path that leaves the helper no state here - measured, no .dsh-also
+# file exists for any of them - so the helper disabled them happily and then
+# silently declined to put them back. Removing Gridline left a machine with
+# three components disabled that had been enabled before it was installed,
+# which is the opposite of what package-delivery requires of removal.
+#
+# The deeper reason is that the helper was never the right tool here. It
+# manages the units of the package that calls it, and these belong to three
+# other packages. systemctl --user --global is the interface for exactly this:
+# machine-wide enablement of a user unit, whoever owns it. It works in both
+# directions, says what it did, and needs no state of its own.
+#
+# Enablement is read as the symlink it is, rather than through the helper's
+# was-enabled, which answers only when called from dpkg. The target comes from
+# each unit's own [Install] rather than being assumed, because all three happen
+# to say graphical-session.target and a fourth need not.
+unit_is_enabled() {
+    unit=$1
+    path=/usr/lib/systemd/user/$unit
+    [ -e "$path" ] || return 1
+    for target in $(sed -n 's/^WantedBy=//p' "$path" | tr ' ' '\n'); do
+        [ -n "$target" ] || continue
+        [ -L "/etc/systemd/user/$target.wants/$unit" ] && return 0
+    done
+    return 1
+}
+
 disable_shell_units() {
     for unit in $SHELL_UNITS; do
         [ -e "/usr/lib/systemd/user/$unit" ] || continue
         grep -Fxq "$unit" "$DISABLED_RECORD" 2>/dev/null && continue
-        deb-systemd-helper --quiet --user was-enabled "$unit" || continue
-        deb-systemd-helper --user disable "$unit" >/dev/null || continue
+        unit_is_enabled "$unit" || continue
+        systemctl --user --global disable "$unit" >/dev/null 2>&1 || continue
         mkdir -p "$STATE_DIR"
         echo "$unit" >>"$DISABLED_RECORD"
     done
