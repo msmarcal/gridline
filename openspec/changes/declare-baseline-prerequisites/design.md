@@ -40,13 +40,15 @@ The alternative, `Recommends: gdm3 | sddm`, was considered and rejected on the m
 
 **Inert is the right failure and worth naming.** A session entry nothing reads costs nothing and breaks nothing. The only harm is silence, and silence is what the description fixes.
 
+**One of the added scenarios is addressed to a change that has not happened.** The requirement says that an assumption which later becomes a dependency stops being stated as an assumption, because two places describing what a package needs is how one of them goes stale - which this project has already shipped once, in a page asserting a fact about a package that had stopped being true. Nothing here makes that transition, so the scenario is recorded as unexercised rather than counted as passing. Whoever declares a display manager one day is the one it is written for, and the paragraph above is what they have to remove.
+
 ### The terminal becomes a recommendation, and the list grows a second line
 
 `Recommends: kitty`, so apt still installs it with Gridline and removing it no longer removes the session.
 
 This is allowed by the requirement that already exists - a component whose absence blocks the session must be a dependency, and the terminal's absence does not block it, measured - but allowed is not the same as right, which is why this change adds the requirement that says *why* it should be a recommendation.
 
-**The second line in the terminal list is not optional and the two cannot ship apart.** `gridline-xdg-terminals.list` holds one entry, and its comment justifies that by the terminal being a dependency: *"a second line would be unreachable."* The moment it stops being a dependency, that sentence is false and the file holds a preference that can fail to resolve. So the list gains `org.gnome.Ptyxis.desktop:new-window`, which is what Ubuntu lists for itself, and the comment is rewritten to say what it now does.
+**The second line in the terminal list was not optional, and the two could not ship apart.** `gridline-xdg-terminals.list` held one entry, and its comment justified that by the terminal being a dependency: *"a second line would be unreachable."* The moment it stopped being a dependency, that sentence was false and the file held a preference that could fail to resolve. So the list gained `org.gnome.Ptyxis.desktop:new-window`, which is what Ubuntu lists for itself, and the comment was rewritten to say what it now does.
 
 **Without that second line the failure is "no terminal", and it arrives silently.** This was measured rather than argued, and the measurement went further than the argument had.
 
@@ -58,9 +60,9 @@ With Gridline's second entry present and the same three terminals installed, the
 
 ### `gridline-tools` declares `gridline-session`
 
-The `gridline` command reads `/usr/libexec/gridline/gridline-component-state`, which `gridline-session` ships, and `gridline-tools` declares nothing. Removing the session is an ordinary operation that leaves a `gridline` command which cannot answer.
+The `gridline` command reads `/usr/libexec/gridline/gridline-component-state`, which `gridline-session` ships, and `gridline-tools` declared nothing. Removing the session was an ordinary operation that left a `gridline` command which could not answer. Reproduced before the fix: the command survived, the file it reads did not.
 
-It declines with a clear message rather than crashing, which is why nobody noticed. That is good behaviour and not a substitute for the declaration: the requirement already in `package-delivery` says each package declares what it requires, so this is a defect against a requirement that predates the change rather than something this change invents.
+It declined with a clear message rather than crashing, which is why nobody noticed. That is good behaviour and not a substitute for the declaration: the requirement already in `package-delivery` says each package declares what it requires, so this was a defect against a requirement that predates the change rather than something this change invented.
 
 **Which direction, and it is only one.** `gridline-tools` depends on `gridline-session`; the reverse is not true and must not be added, because a session has no need of the diagnostic and adding it would make the command unremovable.
 
