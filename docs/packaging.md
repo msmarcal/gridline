@@ -45,7 +45,7 @@ That half is not a requirement. A version-control rule is not behavior of the sh
 | Role | Change |
 |---|---|
 | Implements the gate in the build | `add-debian-package-skeleton` |
-| Re-runs the gate in CI | `add-ci-vm-smoke-tests` |
+| Re-runs the gate in CI | `add-ci-vm-smoke-tests`, **delivered**. `tools/run-checks` is the one list of the project's checks, called by the package build and by the workflow, so a check added to it is a check both make |
 
 Those are the changes named in the attribution table in this change's `proposal.md`. This document specifies that the gate exists, not how it is written.
 
@@ -158,7 +158,7 @@ Every dependency resolves on the supported baseline using the Ubuntu archive alo
 
 Generated configuration is removed with its owning package, which is consistent with the clean-removal requirement already in `openspec/specs/package-delivery/spec.md`: removal returns the system to a stock desktop, leaving nothing behind except what an administrator authored. Generated output is not authored, so nothing is lost by removing it.
 
-These behaviors become testable when `add-debian-package-skeleton` produces packages, and verified when `add-ci-vm-smoke-tests` exercises them on the supported baseline.
+These behaviors became testable when `add-debian-package-skeleton` produced packages, and `add-ci-vm-smoke-tests` exercises them: `tools/check-install-removal` installs the packages, reads what that did to the machine, removes them, and reads whether it was undone. It found one thing that was not - three components left disabled that had been enabled before - which is recorded in that change.
 
 ## Related documents
 

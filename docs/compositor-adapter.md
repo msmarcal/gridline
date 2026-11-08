@@ -104,7 +104,7 @@ A proposed implementation that needs an undocumented behavior to work does not m
 
 **`add-hyprland-session-baseline` owns the mechanical adapter isolation check.** It is assigned there because that change creates both the adapter layer and the first adapter, so the check and the thing it constrains arrive together rather than one of them arriving later to find the other already violating it.
 
-**`add-ci-vm-smoke-tests` re-runs the same check in CI**, so a later change cannot reintroduce a leak that passed review.
+**`add-ci-vm-smoke-tests` re-runs the same check in CI, delivered**, so a later change cannot reintroduce a leak that passed review.
 
 This matches the attribution in `openspec/changes/establish-gridline-vision/proposal.md`, which assigns the check to `add-hyprland-session-baseline` and the CI re-run to `add-ci-vm-smoke-tests`.
 

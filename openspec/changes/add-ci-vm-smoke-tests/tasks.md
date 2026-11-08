@@ -89,13 +89,13 @@ exactly what was asked.
 
 - [ ] 5.1 Add the workflow to the GitHub replica and verify it runs on a push, reporting a failure in a way that reaches whoever would merge
 - [ ] 5.2 Verify the failure report names the check and what it found, not just that something exited non-zero. A red mark with no name sends a contributor to read the whole log
-- [ ] 5.3 Record in the project's documentation that verification happens on the replica and not on the self-hosted remote, including the delay that implies, where a contributor reads it rather than where a maintainer does
+- [x] 5.3 Record in the project's documentation that verification happens on the replica and not on the self-hosted remote, including the delay that implies, where a contributor reads it rather than where a maintainer does
 
 ## 6. What nobody is checking
 
 - [ ] 6.1 Write down what the automated run does not cover and why, naming each: the compositor starting, the bar drawing, a notification appearing, the wallpaper, the lock screen, and the judgements that need a person, such as whether a value on screen is current rather than merely present
 - [ ] 6.2 Establish whether a compositor can be started on a hosted runner at all, and at what cost. The cheap route is disqualified by measurement already: a headless backend failed with `Cannot open backend: no allocator available`. Produce either a working display or the reason there cannot be one, and record which
-- [ ] 6.3 Correct `docs/packaging.md`, whose table promises the gate is re-run in CI, and the three other live documents that name this change. Verify by grep that no live document still describes this as planned
+- [x] 6.3 Correct `docs/packaging.md`, whose table promises the gate is re-run in CI, and the three other live documents that name this change. Verify by grep that no live document still describes this as planned
 
 ## 7. Coherence
 

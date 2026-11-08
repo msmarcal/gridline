@@ -19,8 +19,25 @@
 
 set -eu
 
+# The package directory is resolved against the caller's directory, before the
+# cd below leaves it. run-checks shipped the other order for about ten minutes
+# and every caller not already standing in the package root got a path that
+# does not exist; this file had the same defect and it is fixed here for the
+# same reason, found by sweeping for it rather than by hitting it twice.
+resolve() {
+    case $1 in
+    /*) printf '%s' "$1" ;;
+    *)
+        # ${dir%/} because pwd is "/" when the argument has no directory part
+        # and the caller is standing at the root, and "/" + "/name" reads as a
+        # defect in every message that then quotes it.
+        dir=$(cd "$(dirname "$1")" 2>/dev/null && pwd)
+        printf '%s/%s' "${dir%/}" "$(basename "$1")"
+        ;;
+    esac
+}
+
 root=$(dirname "$0")/..
-cd "$root"
 
 SESSION_DIR=/usr/share/wayland-sessions
 DIVERTED_SUFFIX=.gridline-diverted
@@ -44,7 +61,8 @@ EOF
 
 [ "${1-}" = "--yes-modify-this-machine" ] || usage
 shift
-pkgdir=${1:-..}
+pkgdir=$(resolve "${1:-..}")
+cd "$root"
 
 [ "$(id -u)" = 0 ] || {
     printf 'check-install-removal: needs root to install and remove packages\n' >&2
@@ -92,6 +110,28 @@ enabled_shell_units() {
 }
 
 printf 'install/removal\n'
+
+# Gridline has to be absent for the before-and-after to mean anything. Run with
+# it already installed, the snapshot taken first is a machine Gridline has
+# already changed - the session entry diverted, the shell units disabled - and
+# every comparison afterwards comes out wrong for a reason that is about this
+# check rather than about the packages.
+#
+# Measured, by running it that way: three problems reported, none of them real.
+# Refusing is better than removing first, because removing first would make
+# this check quietly destroy an installation somebody meant to keep.
+installed=
+for pkg in gridline-session gridline-config gridline-tools; do
+    case $(dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null) in
+    *' installed') installed="$installed $pkg" ;;
+    esac
+done
+[ -z "$installed" ] || {
+    printf 'install/removal: already installed:%s\n' "$installed" >&2
+    printf 'install/removal: this check compares a machine before and after, so it needs\n' >&2
+    printf 'install/removal: Gridline absent to start with. Remove it and run again.\n' >&2
+    exit 1
+}
 
 # The state before, so that what is checked afterwards is the difference this
 # package made rather than whatever the machine already was.

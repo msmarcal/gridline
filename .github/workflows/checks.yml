@@ -1,0 +1,69 @@
+# Gridline's checks, run without a person.
+#
+# This runs on the GitHub replica rather than on the project's own remote,
+# which is self-hosted and has no runner. A push to the self-hosted remote is
+# therefore not checked until it reaches here, and docs/packaging.md says so
+# where a contributor reads it.
+#
+# ubuntu-26.04 and not ubuntu-latest, which is still 24.04 - checked against
+# the runner-images list rather than assumed. The distinction is not cosmetic:
+# the compositor and half the desktop shell are not in 24.04's archive at all,
+# so a job on ubuntu-latest could not install what it is meant to check.
+#
+# The job calls tools/run-checks and the two machine-level checks by name, and
+# carries no list of its own. The list lives in run-checks, which the package
+# build also calls, so a check added there is a check this makes too. That was
+# the point of having an entry point.
+
+name: checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install what the build and the checks need
+        run: |
+          sudo apt-get update
+          # debhelper builds the packages; strace is how the session check
+          # reads what the start program decided, because the component it
+          # replaces itself with exits too fast on a machine with no display
+          # to read a command line from.
+          sudo apt-get install -y --no-install-recommends debhelper strace
+
+      - name: Build the packages, which runs the checks that read the tree
+        working-directory: packages/gridline
+        run: dpkg-buildpackage -b -us -uc
+
+      - name: Check what installing and removing does to the machine
+        run: sudo packages/gridline/tools/check-install-removal --yes-modify-this-machine packages
+
+      - name: Install the packages and give this user a systemd manager
+        run: |
+          sudo apt-get install -y ./packages/gridline-session_*.deb \
+                                  ./packages/gridline-config_*.deb \
+                                  ./packages/gridline-tools_*.deb
+          # Without lingering there is no user manager and no XDG_RUNTIME_DIR:
+          # a job runs as a user with no login session, so there is nothing for
+          # systemctl --user to talk to. Measured, and it is the whole
+          # prerequisite for everything below.
+          sudo loginctl enable-linger "$USER"
+          for _ in 1 2 3 4 5 6 7 8 9 10; do
+            [ -d "/run/user/$(id -u)" ] && break
+            sleep 1
+          done
+          systemctl --user show -p Version >/dev/null
+
+      - name: Check the session layer
+        run: |
+          # The runtime directory is named for this user's id, which is not
+          # written here because a literal would be a guess about a machine
+          # nobody has looked at.
+          export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+          packages/gridline/tools/check-session-layer --yes-use-my-user-manager

@@ -166,3 +166,25 @@ an OpenSpec change with requirements and scenarios, not as a patch.
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/)
 `1.0.0-beta.2`, with the subject line kept to 72 characters.
+
+### Where your push is checked, and when
+
+`packages/gridline/tools/run-checks` is every check this project makes. The
+package build calls it, so building is checking - you do not have to remember
+to run anything. Two further checks need a machine rather than a source tree,
+and `run-checks` names them with their flags rather than running them: one
+installs and removes the packages and reads what that did, the other drives a
+systemd user manager.
+
+**The automated run is on the GitHub replica, not on the project's own
+remote.** The remote this project is developed against is self-hosted and has
+no runner. So a push there is not checked until it reaches GitHub, and if the
+two are out of step the checks are reporting on the older one. If you are
+pushing to the self-hosted remote, push to both or expect the delay.
+
+**A check that cannot answer says so rather than passing.** `run-checks`
+reports a check it could not run as skipped, which is a different word from
+ok and is counted separately, and the automated run passes `--require-all` so
+that for it a skipped check is a failure. That distinction exists because one
+of the checks reads the trees a build produces, and outside a build it finds
+nothing, examines nothing, and would otherwise report success.

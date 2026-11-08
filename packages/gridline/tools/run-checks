@@ -38,7 +38,10 @@ esac
 STAGING=${1:-debian}
 case $STAGING in
 /*) ;;
-*) STAGING=$(cd "$(dirname "$STAGING")" 2>/dev/null && pwd)/$(basename "$STAGING") || STAGING=$STAGING ;;
+*)
+    staging_dir=$(cd "$(dirname "$STAGING")" 2>/dev/null && pwd) || staging_dir=
+    [ -n "$staging_dir" ] && STAGING=${staging_dir%/}/$(basename "$STAGING")
+    ;;
 esac
 
 # Run from the package root whichever directory the caller is in, so that a
