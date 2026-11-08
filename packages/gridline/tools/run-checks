@@ -110,6 +110,17 @@ if [ "$failed" -gt 0 ]; then
     exit 1
 fi
 
+# Two checks exist that this never runs, and naming them is the point. They
+# need a machine rather than a tree: one installs and removes the packages and
+# reads what that did, the other drives a systemd user manager. Running either
+# from a build would be a surprise, and leaving them out of this summary
+# entirely would recreate the second list this file exists to prevent - the
+# one that quietly stops matching.
+printf 'not run here, each needing a machine rather than a source tree:\n'
+printf '  tools/check-install-removal   --yes-modify-this-machine\n'
+printf '  tools/check-session-layer     --yes-use-my-user-manager\n'
+printf '\n'
+
 printf '%s checks passed' "$ran"
 if [ "$skipped" -eq 0 ]; then
     printf '\n'

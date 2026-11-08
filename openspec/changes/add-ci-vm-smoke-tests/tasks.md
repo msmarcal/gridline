@@ -78,12 +78,12 @@ exactly what was asked.
 
 ## 4. The session layer, as far as it reaches
 
-- [ ] 4.1 Verify the session target's wiring: `Wants=` naming the blocking components and the shell target, `Upholds=` naming the idle daemon, and the launcher's blocking check reading one of them. This is the shape a change can break without any test noticing today
-- [ ] 4.2 Verify each component's effective `ExecStart` resolves through Gridline's drop-in to the start program with the right role, read from systemd rather than from the file on disk
-- [ ] 4.3 Verify the start program's decisions: no desktop identity gives the bare binary, a Gridline session with nothing of the user's gives Gridline's paths, a planted user configuration gives the bare binary, and an unreadable shipped default gives the bare binary. Four cases, read from the process that replaced it
+- [x] 4.1 Verify the session target's wiring: `Wants=` naming the blocking components and the shell target, `Upholds=` naming the idle daemon, and the launcher's blocking check reading one of them. This is the shape a change can break without any test noticing today
+- [x] 4.2 Verify each component's effective `ExecStart` resolves through Gridline's drop-in to the start program with the right role, read from systemd rather than from the file on disk
+- [x] 4.3 Verify the start program's decisions: no desktop identity gives the bare binary, a Gridline session with nothing of the user's gives Gridline's paths, a planted user configuration gives the bare binary, and an unreadable shipped default gives the bare binary. Four cases, read from the process that replaced it
 - [ ] 4.4 Verify a component killed returns with its configuration, and a component that cannot start stops being started after its limit. Both are behaviour this project changed deliberately and neither has anything watching it
-- [ ] 4.5 Verify the diagnostic answers with no session at all, and that its exit codes are what they claim, measured without a pipe
-- [ ] 4.6 Verify everything in this group fails when it should, by planting a defect for each rather than by observing a green run
+- [x] 4.5 Verify the diagnostic answers with no session at all, and that its exit codes are what they claim, measured without a pipe
+- [x] 4.6 Verify everything in this group fails when it should, by planting a defect for each rather than by observing a green run
 
 ## 5. Running it where a runner exists
 

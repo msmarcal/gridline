@@ -1,0 +1,219 @@
+#!/bin/sh
+# What the session is wired to do, checked without a display.
+#
+# Most of what this project has verified by hand never needed a screen. The
+# target's wiring, each component's effective ExecStart, what the start program
+# decides before replacing itself, and what the diagnostic answers with no
+# session at all are all questions a systemd user manager answers on a machine
+# with no graphics at all. Measured: a user manager in a container reports
+# Wants= and Upholds= separately, gives a target its implicit After=, resolves
+# ExecStart through drop-ins, honours Restart=, and reaches a start limit -
+# all of it correctly, with loginctl enable-linger as the only prerequisite.
+#
+# What it cannot answer is named rather than skipped, because a check that
+# quietly covers less than its name says is worse than one that is absent.
+#
+# This starts and stops units in the calling user's manager, so it says so and
+# refuses without being told.
+
+set -eu
+
+root=$(dirname "$0")/..
+cd "$root"
+
+SESSION_TARGET=gridline-session.target
+SHELL_TARGET=gridline-shell.target
+START_PROGRAM=/usr/libexec/gridline/gridline-shell
+SHELL_CONFIG_DIR=/etc/xdg/gridline/shell
+
+usage() {
+    cat >&2 <<'EOF'
+usage: check-session-layer --yes-use-my-user-manager
+
+Checks the session's wiring, each component's effective ExecStart, what the
+start program decides, and what the diagnostic answers, against a running
+systemd user manager. Starts and stops units belonging to the calling user.
+
+Needs the Gridline packages installed and a user manager running, which on a
+machine with no login session means loginctl enable-linger for this user.
+EOF
+    exit 64
+}
+
+[ "${1-}" = "--yes-use-my-user-manager" ] || usage
+
+report=$(mktemp)
+unreachable=$(mktemp)
+trap 'rm -f "$report" "$unreachable"' EXIT INT TERM
+
+problem() { printf 'session layer: %s\n' "$*" >> "$report"; }
+cannot() { printf '  %s\n' "$*" >> "$unreachable"; }
+note() { printf '  %s\n' "$*"; }
+
+# Whether the manager answers, which is not the same as whether it is healthy.
+# is-system-running returns non-zero for "degraded", and a degraded manager -
+# one unrelated unit failed - answers every question below perfectly well. Used
+# as the liveness test it reported no manager at all on a machine where one was
+# running, which is how a check comes to skip itself.
+systemctl --user show -p Version >/dev/null 2>&1 || {
+    printf 'session layer: no user manager answering. Try loginctl enable-linger.\n' >&2
+    exit 1
+}
+
+printf 'session layer\n'
+
+# ---- the target's wiring -------------------------------------------------
+#
+# Wants= for what the session needs running and Upholds= for what it needs
+# kept running are different promises, and systemd reports them separately.
+# The launcher reads Wants= back to decide whether the session may start, so
+# the two must agree about which units are in which.
+#
+# The screen lock is deliberately in neither. It runs when something asks for
+# a lock, not for the life of the session, and the launcher checks that its
+# program is installed rather than that a unit is running.
+session_wants=$(systemctl --user show -p Wants --value "$SESSION_TARGET" | tr ' ' '\n' | sort | tr '\n' ' ')
+session_upholds=$(systemctl --user show -p Upholds --value "$SESSION_TARGET" | tr ' ' '\n' | sort | tr '\n' ' ')
+shell_wants=$(systemctl --user show -p Wants --value "$SHELL_TARGET" | tr ' ' '\n' | sort | tr '\n' ' ')
+
+note "session target wants:    $session_wants"
+note "session target upholds:  $session_upholds"
+note "shell target wants:      $shell_wants"
+
+case $session_wants in
+*gridline-shell.target*) ;;
+*) problem "$SESSION_TARGET does not want $SHELL_TARGET" ;;
+esac
+case $session_wants in
+*hyprpolkitagent.service*) ;;
+*) problem "$SESSION_TARGET does not want the authentication agent" ;;
+esac
+case $session_upholds in
+*gridline-idle.service*) ;;
+*) problem "$SESSION_TARGET does not uphold the idle daemon" ;;
+esac
+case $session_wants in
+*gridline-lock.service*)
+    problem "$SESSION_TARGET wants the lock unit, which runs on demand and must not be wanted"
+    ;;
+esac
+for unit in waybar.service mako.service hyprpaper.service; do
+    case $shell_wants in
+    *"$unit"*) ;;
+    *) problem "$SHELL_TARGET does not want $unit" ;;
+    esac
+done
+
+# The implicit After= a Wants= gives a target. Losing it would let a component
+# start before the thing it depends on, and nothing would report it.
+session_after=$(systemctl --user show -p After --value "$SESSION_TARGET")
+case $session_after in
+*gridline-shell.target*) ;;
+*) problem "$SESSION_TARGET has no implicit ordering after $SHELL_TARGET" ;;
+esac
+
+# ---- each component's effective ExecStart --------------------------------
+#
+# Read from systemd rather than from the drop-in on disk, because what matters
+# is what the manager resolved. A drop-in that failed to apply looks correct
+# in the file and wrong here.
+for pair in waybar:bar mako:notifications hyprpaper:wallpaper; do
+    unit=${pair%%:*}.service
+    role=${pair#*:}
+    exec_line=$(systemctl --user show -p ExecStart --value "$unit" 2>/dev/null |
+        sed 's/.*argv\[\]=//;s/ ; ignore.*//')
+    case $exec_line in
+    "$START_PROGRAM $role") ;;
+    *) problem "$unit resolves to [$exec_line] rather than [$START_PROGRAM $role]" ;;
+    esac
+done
+
+# ---- what the start program decides --------------------------------------
+#
+# Captured with strace rather than from /proc. The component it replaces
+# itself with dies immediately on a machine with no display, far too fast to
+# read a command line from, and the decision is the execve rather than the
+# process that briefly results from it.
+decision() {
+    trace=$(mktemp)
+    env "$@" strace -f -e trace=execve -o "$trace" \
+        "$START_PROGRAM" bar >/dev/null 2>&1 || true
+    line=$(grep -oE 'execve\("/usr/bin/waybar"[^]]*\]' "$trace" 2>/dev/null | head -1)
+    rm -f "$trace"
+    case $line in
+    *--config*) printf 'gridline' ;;
+    '') printf 'nothing' ;;
+    *) printf 'bare' ;;
+    esac
+}
+
+if command -v strace >/dev/null 2>&1; then
+    got=$(decision XDG_CURRENT_DESKTOP=Gridline:wlroots)
+    [ "$got" = gridline ] || problem "in a Gridline session the start program gave [$got] rather than Gridline's configuration"
+
+    got=$(decision XDG_CURRENT_DESKTOP=)
+    [ "$got" = bare ] || problem "with no desktop identity the start program gave [$got] rather than the bare binary"
+
+    got=$(decision XDG_CURRENT_DESKTOP=GNOME)
+    [ "$got" = bare ] || problem "in another session the start program gave [$got] rather than the bare binary"
+
+    # A configuration of the user's own wins. Planted and removed here, so the
+    # machine is as it was afterwards.
+    user_config=$HOME/.config/waybar/config.jsonc
+    if [ -e "$user_config" ]; then
+        cannot "a user configuration of waybar's already exists, so the declining case was not planted"
+    else
+        mkdir -p "$(dirname "$user_config")"
+        printf '{}\n' > "$user_config"
+        got=$(decision XDG_CURRENT_DESKTOP=Gridline:wlroots)
+        rm -f "$user_config"
+        rmdir "$(dirname "$user_config")" 2>/dev/null || true
+        [ "$got" = bare ] || problem "with the user's own configuration present the start program gave [$got] rather than the bare binary"
+    fi
+
+    # An unreadable shipped default degrades rather than blocking.
+    if [ -w "$SHELL_CONFIG_DIR" ] || [ "$(id -u)" = 0 ]; then
+        cannot "the shipped default was not made unreadable: that needs root and this is checking a user manager"
+    else
+        cannot "the shipped default was not made unreadable: needs root"
+    fi
+else
+    cannot "the start program's decisions were not checked: strace is not installed"
+fi
+
+# ---- the diagnostic ------------------------------------------------------
+#
+# Its exit status is read directly and never through a pipe, because a pipe
+# reports the last command in it. That mistake has been made in this project
+# often enough to be worth the sentence.
+out=$(gridline doctor 2>&1) && doctor_status=0 || doctor_status=$?
+printf '%s' "$out" | grep -q . || problem "the diagnostic printed nothing"
+case $doctor_status in
+0 | 1) ;;
+*) problem "the diagnostic exited $doctor_status, which is neither healthy nor unhealthy" ;;
+esac
+
+gridline >/dev/null 2>&1 && usage_status=0 || usage_status=$?
+[ "$usage_status" = 64 ] || problem "the command with no subcommand exited $usage_status rather than 64"
+
+gridline nonsense >/dev/null 2>&1 && bad_status=0 || bad_status=$?
+[ "$bad_status" = 64 ] || problem "the command with an unknown subcommand exited $bad_status rather than 64"
+
+note "diagnostic: exit $doctor_status with no session, usage errors exit $usage_status"
+
+# ---- what this machine cannot answer -------------------------------------
+cannot "a component killed and returning with its configuration: the components exit at once with no display, so there is nothing to kill"
+cannot "a component reaching its start limit through Gridline's drop-in: it does reach one here, but because no display exists rather than because of anything Gridline arranged"
+
+printf '\n'
+unreachable_count=$(wc -l < "$unreachable")
+[ "$unreachable_count" -eq 0 ] || {
+    printf 'session layer: %s thing(s) this machine cannot answer:\n' "$unreachable_count"
+    cat "$unreachable"
+}
+
+hits=$(wc -l < "$report")
+[ "$hits" -eq 0 ] || cat "$report" >&2
+
+printf 'session layer: checked, %s problems\n' "$hits"
+[ "$hits" -eq 0 ] || exit 1
