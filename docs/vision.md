@@ -64,7 +64,7 @@ Project-wide, for the foreseeable future:
 - **AI features.**
 - **Any change that replaces or removes GNOME.** This is the one non-goal that is a hard constraint rather than a priority call.
 
-Two further exclusions are matters of sequence rather than principle: a status bar or launcher choice, and ISO or Remix work. Both may happen later; neither is in scope now.
+Two further exclusions are matters of sequence rather than principle: a status bar or application launcher choice, and ISO or Remix work. Both may happen later; neither is in scope now.
 
 ## The name
 

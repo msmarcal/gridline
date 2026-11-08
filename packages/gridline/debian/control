@@ -22,6 +22,8 @@ Depends: ${misc:Depends},
          waybar,
          mako-notifier,
          hyprpaper,
+         fuzzel,
+         libnotify-bin,
          ubuntu-wallpapers
 Description: Gridline session integration
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This

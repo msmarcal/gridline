@@ -6,3 +6,4 @@ src/config/bar.jsonc etc/xdg/gridline/shell/
 src/config/bar-style.css etc/xdg/gridline/shell/
 src/config/notifications.conf etc/xdg/gridline/shell/
 src/config/wallpaper.conf etc/xdg/gridline/shell/
+src/config/menu.ini etc/xdg/gridline/shell/

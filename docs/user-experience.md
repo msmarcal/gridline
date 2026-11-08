@@ -9,7 +9,7 @@ question or promise a feature the baseline cannot deliver.
 ## The moving target
 
 Omarchy 4.0 "Quattro" replaced its entire desktop with a single Quickshell
-process that provides the bar, launcher, menu, notifications, on-screen
+process that provides the bar, application launcher, menu, notifications, on-screen
 displays, system panels, lock screen and polkit agent together. That release
 dropped Waybar, Walker, Mako, SwayOSD, swaybg, hyprlock, hypridle and
 polkit-gnome, and moved its compositor configuration to Lua.
@@ -93,7 +93,7 @@ belongs to a downstream change rather than to the foundation.
 | Element | Approach |
 | --- | --- |
 | A theme that restyles bar, terminal, editor, lock screen and wallpaper together | a Gridline mechanism applying a named theme across components |
-| A command menu over both applications and system actions | built on the archive launcher, driven by Gridline-owned entries |
+| A command menu over both applications and system actions | built on the archive's application launcher in dmenu mode, driven by Gridline-owned entries |
 | System panels for audio, bluetooth, network, display and power | menu entries wrapping the CLI tools already in the baseline |
 | A single Gridline command as the entry point for session operations | the `gridline` command, already required by `package-delivery` |
 | Editing configuration and restarting only what the edit affects | a Gridline mechanism over user services |
@@ -101,8 +101,32 @@ belongs to a downstream change rather than to the foundation.
 
 The command menu is the element worth the most to the experience. Omarchy's menu
 is the single surface through which most of the desktop is reached, and
-reproducing it over the archive launcher is the clearest usability difference
+reproducing it over the archive's application launcher is the clearest usability difference
 between Gridline and a bare tiling compositor.
+
+**Both are bound, and the bindings are one modifier apart.** `SUPER D` opens the
+application launcher, `SUPER SHIFT D` opens the command menu. The same letter,
+because they are the same gesture - asking the session for something - and a
+user who learns one has learned the other.
+
+The command menu offers locking the screen, logging out, suspending, restarting
+and powering off. Each one is a way of *asking* for something the system already
+does rather than a second implementation of it: locking goes to logind by the
+same route as `SUPER Escape` and the idle timeout, which is what keeps lock
+policy a single policy, and logging out asks the compositor adapter so that the
+compositor leaves the way it means to.
+
+**Nothing in it asks twice**, including the two entries that lose work. A
+confirmation a user always accepts teaches them to accept without reading, which
+removes the protection and keeps the cost, and logind already refuses to power
+off when another session would lose work. That is a decision to revisit with
+evidence: somebody losing work to a keystroke is the measurement that reopens
+it.
+
+Neither binding names the program it runs. Both name a Gridline program, which
+is the rule the shipped compositor configuration states about itself, and it is
+why replacing the launcher is a change to one Gridline file rather than to
+anybody's keybindings.
 
 ### Not reachable on this baseline
 

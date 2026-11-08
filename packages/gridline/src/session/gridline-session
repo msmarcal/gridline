@@ -61,15 +61,41 @@ report_missing() {
 REQUIRED_COMPONENTS="locker:/usr/bin/swaylock:ready
 polkit-agent:/usr/libexec/hyprpolkitagent:started"
 
+# Components checked and written down, and never required. Same three fields,
+# same check, and the only difference is what a missing one costs: these are
+# recorded and the session continues.
+#
+# This list exists because of what the diagnostic said without it. Both of
+# these run on demand, so nothing records them until the user presses a key,
+# and a session that starts with the launcher uninstalled therefore reported
+# whatever the last session had left behind. Measured: a fresh session with the
+# launcher moved aside, and the diagnostic reading `app-launcher ready` from a
+# record six minutes older than the session it was claiming to describe.
+#
+# The record's age made that visible to a careful reader, which is what the age
+# is for, and desktop-session asks for more than visible: an absent launcher is
+# to be reported as a capability gap. A gap nobody is told about until they go
+# looking is not reported.
+#
+# The three desktop shell components need no entry here. Each has a unit that
+# starts at session start, and its wrapper records before it execs, so they are
+# written down within seconds of the session beginning.
+OPTIONAL_COMPONENTS="app-launcher:/usr/bin/fuzzel:ready
+command-menu:/usr/bin/fuzzel:ready"
+
 # What the session knows, written where the diagnostic can read it. This is a
 # record and never a gate: a session is refused by the check below, not by
 # whether the recording worked.
 STATE_RECORDER=/usr/libexec/gridline/gridline-component-state
 
+# Severity is passed in rather than assumed, because this now writes for both
+# lists. Recording a non-blocking component as blocking would have the
+# diagnostic tell a user that a missing application launcher refuses a session,
+# which is the opposite of what this change spent its effort establishing.
 record_component() {
     [ -x "$STATE_RECORDER" ] || return 0
-    GRIDLINE_COMPONENT_BLOCKING=yes \
-        "$STATE_RECORDER" record "$1" "$2" "${3-}" 2>/dev/null || true
+    GRIDLINE_COMPONENT_BLOCKING=$1 \
+        "$STATE_RECORDER" record "$2" "$3" "${4-}" 2>/dev/null || true
 }
 
 for entry in $REQUIRED_COMPONENTS; do
@@ -78,12 +104,27 @@ for entry in $REQUIRED_COMPONENTS; do
     component=${entry#*:}
     component=${component%:*}
     if [ -x "$component" ]; then
-        record_component "$name" "$healthy"
+        record_component yes "$name" "$healthy"
         continue
     fi
-    record_component "$name" absent "$component"
+    record_component yes "$name" absent "$component"
     report_missing "session component" \
         "$(basename "$component") is not installed at $component"
+done
+
+# The same check, and nothing is refused by it. A session with no application
+# launcher is a session where one key does nothing, which desktop-session calls
+# a degraded desktop rather than an unsafe one.
+for entry in $OPTIONAL_COMPONENTS; do
+    name=${entry%%:*}
+    healthy=${entry##*:}
+    component=${entry#*:}
+    component=${component%:*}
+    if [ -x "$component" ]; then
+        record_component no "$name" "$healthy"
+    else
+        record_component no "$name" absent "$component"
+    fi
 done
 
 if [ ! -d "$ADAPTER_DIR" ]; then

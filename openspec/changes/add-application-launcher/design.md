@@ -40,6 +40,21 @@ The alternative was binding `fuzzel` directly, which is one fewer file. It break
 
 The command menu is the same binary in a different mode, reading its entries on standard input. So the actions are a list a Gridline program prints, and the menu is a way of choosing from it. That keeps the action list in a shell program where it can be read, and means the launcher's configuration and appearance apply to both without being described twice.
 
+**And it dispatches on the index, not on the text.** Measured, because the obvious reading of dmenu mode is wrong in a way that matters: plain `--dmenu` returns *whatever the user typed* when it matches no entry, with exit 0. A menu that acted on that string would try to perform an action the user invented by mistyping, and the five actions here include powering off.
+
+`--index` closes it. A chosen entry returns its position; a cancellation returns nothing with exit 2; **text matching nothing returns `-1` with exit 0**, which is a sentinel a program can test rather than a string it has to recognise. So the menu performs an action only for an index within the list it printed, and `-1`, exit 2 and anything else do nothing at all.
+
+This also frees the labels. Because dispatch is positional, what the user reads can be plain words - `Power off`, not a command - which is what the spec asks for and would otherwise have been in tension with matching the returned text.
+
+### Measured about the launcher before anything was configured
+
+Four facts that shaped the above, each from the shipped 1.12.0 rather than from documentation:
+
+- **Its own package ships `/etc/xdg/fuzzel/fuzzel.ini`.** Gridline cannot put its configuration there without overwriting a file another package owns, which the project forbids. This is the bar's defect exactly - waybar ships `/etc/xdg/waybar/config.jsonc` and made Gridline's unreachable on every machine - and it is why the Gridline program names the path with `--config` instead.
+- **It reads its configuration before connecting to Wayland**, so configuration can be checked without a session.
+- **It rejects an unknown key, an unknown section and an out-of-range value**, naming the file and line. That is the opposite of the wallpaper daemon, which accepts unknown keys in silence. `--check-config` exits 0 or 1 on exactly this question, so the launcher's shipped configuration is machine-checkable. No gate is built here because no task asks for one and the build machine has no fuzzel, but the option exists and the flag is the right instrument.
+- **The archive's default is four non-comment lines, all section headers**, so declining Gridline's configuration gives a user plain fuzzel rather than something half-configured. Its appearance is light and does not match the session's bar, which is work the shipped configuration has to do rather than a preference.
+
 ### Each action takes the path that already exists, and that is the whole point
 
 Lock asks logind, the same as `SUPER Escape` and the same as the idle timeout, because `session-manageability` requires lock policy to be one policy. Suspend, restart and power off ask logind too. Ending the session asks the adapter.

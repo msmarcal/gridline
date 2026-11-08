@@ -1,0 +1,142 @@
+#!/bin/sh
+# What a keypress asks the session for.
+#
+# Two things arrive here: the application launcher, which finds an installed
+# application and starts it, and the command menu, which offers the session's
+# own actions. They are one program because they are one binary in two modes,
+# and because everything around that binary - whether to name Gridline's
+# configuration, what to write down, what a session that is not Gridline's
+# gets - is the same question twice.
+#
+# This is not gridline-shell, and the difference is not organisational.
+# gridline-shell ends in exec, deliberately, so that nothing of Gridline's
+# stays in the component's cgroup as a parent. Everything it starts is meant to
+# keep running, and a unit's ExecStopPost is what records the end.
+#
+# Nothing here has a unit. A keypress starts it and it exits a few seconds
+# later, so there is no ExecStopPost, and exec would leave the record saying
+# started forever - which is exactly the defect report-components-that-stop was
+# written to fix, and it would have been reintroduced here by copying the
+# nearest file. So this one waits for the menu and records the end itself.
+
+set -eu
+
+MENU=/usr/bin/fuzzel
+CONFIG=/etc/xdg/gridline/shell/menu.ini
+DESKTOP_NAME=Gridline
+STATE_RECORDER=/usr/libexec/gridline/gridline-component-state
+COMMANDS=/usr/libexec/gridline/gridline-commands
+
+fail() {
+    echo "gridline-menu: $*" >&2
+    exit 64
+}
+
+# The same test gridline-shell makes, for the same reason: XDG_CURRENT_DESKTOP
+# is colon-separated and the session entry puts Gridline first in it.
+gridline_session() {
+    saved_ifs=$IFS
+    IFS=:
+    for name in ${XDG_CURRENT_DESKTOP:-}; do
+        if [ "$name" = "$DESKTOP_NAME" ]; then
+            IFS=$saved_ifs
+            return 0
+        fi
+    done
+    IFS=$saved_ifs
+    return 1
+}
+
+# Has the user configured the menu themselves?
+#
+# Measured on the shipped 1.12.0: it searches $XDG_CONFIG_HOME/fuzzel/fuzzel.ini
+# and then /etc/xdg/fuzzel/fuzzel.ini. Only the first base is checked here,
+# because the package installs the second - so a file there is the archive's
+# default and not anybody's choice. That distinction is not pedantry: the bar
+# shipped with the system path in its search, and Gridline's configuration was
+# unreachable on every machine as a result, because waybar's package occupies
+# it too.
+own_config() {
+    for base in "${XDG_CONFIG_HOME:-}" "${HOME:+$HOME/.config}"; do
+        [ -n "$base" ] || continue
+        [ -r "$base/fuzzel/fuzzel.ini" ] && return 0
+    done
+    return 1
+}
+
+record_state() {
+    [ -x "$STATE_RECORDER" ] || return 0
+    "$STATE_RECORDER" record "$component" "$1" "${2-}" 2>/dev/null || true
+}
+
+role=${1-}
+[ -n "$role" ] || fail "no menu named"
+
+case $role in
+apps) component=app-launcher ;;
+commands) component=command-menu ;;
+*) fail "unknown menu: $role" ;;
+esac
+
+if [ ! -x "$MENU" ]; then
+    record_state absent "$MENU"
+    fail "$role: $MENU is not executable"
+fi
+
+# A session that is not Gridline's gets nothing of Gridline's, including the
+# record. Only Gridline's own compositor configuration binds a key to this, so
+# arriving here from elsewhere means somebody ran it by hand.
+#
+# The application launcher is still a reasonable thing to want there, so it runs
+# with none of this session's opinions on it. The command menu is not: its
+# actions are this session's, and one of them asks a compositor adapter that is
+# not running to end a session that is not this one.
+if ! gridline_session; then
+    case $role in
+    apps) exec "$MENU" ;;
+    commands) fail "the command menu offers a Gridline session's own actions," \
+        "and this is not a Gridline session" ;;
+    esac
+fi
+
+# A shipped default that is not readable degrades rather than blocks:
+# gridline-config can be removed while gridline-session stays, and the menu then
+# runs on its own built-in defaults. The same is true when the user has written
+# their own, which is what desktop-session requires of every component here.
+#
+# The two reasons are not the same and must not look the same. A user who wrote
+# their own configuration got what they asked for and should hear nothing. An
+# installation whose shipped file cannot be read is broken, and the only place
+# that can say so is here - the launcher will start perfectly and look wrong,
+# which is the hardest kind of fault to find from the outside. gridline-shell
+# says it for the same reason.
+set --
+if own_config; then
+    :
+elif [ -r "$CONFIG" ]; then
+    set -- --config "$CONFIG"
+else
+    echo "gridline-menu: $role: $CONFIG is not readable," \
+        "starting without Gridline's configuration" >&2
+fi
+
+case $role in
+apps)
+    # The application launcher starts what it finds and then exits. Nothing is
+    # dispatched here: fuzzel runs the desktop entry itself.
+    #
+    # `|| status=$?` and not `status=$?` on its own line. Cancelling the menu is
+    # the most ordinary thing a user does with it and fuzzel reports it as exit
+    # 2, so under set -e the plain form would end this program before it could
+    # record anything - leaving the record stuck at started, which is the one
+    # outcome this file exists to avoid.
+    record_state started
+    status=0
+    "$MENU" "$@" || status=$?
+    record_state ready
+    exit "$status"
+    ;;
+commands)
+    exec "$COMMANDS" "$@"
+    ;;
+esac

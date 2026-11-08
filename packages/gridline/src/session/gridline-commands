@@ -1,0 +1,168 @@
+#!/bin/sh
+# The session's own actions, offered as a list.
+#
+# Reached from gridline-menu, which has already decided whether to hand the
+# menu Gridline's configuration and passes that decision on as arguments.
+#
+# Every action here is a way of *asking* for something the system already does,
+# never a second implementation of it. Locking goes to logind, the same route
+# the idle timeout and SUPER+Escape take, because session-manageability
+# requires lock policy to be one policy rather than several components
+# configured independently. Suspend, restart and power off go to logind too.
+# Ending the session asks the compositor adapter, because the compositor's own
+# way of leaving is the compositor's vocabulary.
+#
+# Nothing asks twice. Choosing an action performs it, including the two that
+# lose work. The case for confirming is real and the case against it won: a
+# confirmation a user always accepts teaches them to accept without reading,
+# which removes the protection and keeps the cost, and logind already refuses
+# to power off when another session would lose work. If that turns out to be
+# wrong in use, the change that adds confirmation will have a measured reason.
+
+set -eu
+
+MENU=/usr/bin/fuzzel
+ADAPTER_DIR=/usr/libexec/gridline/adapters
+STATE_RECORDER=/usr/libexec/gridline/gridline-component-state
+COMPONENT=command-menu
+
+# The list, in the order it is shown, and the order the index refers to. The
+# labels are what a user reads, so they are plain words rather than commands:
+# nothing here dispatches on the text, so the label is free to be readable.
+#
+# Reversible first, destructive last, and the gap between them is deliberate.
+ACTIONS='Lock the screen
+Log out
+Suspend
+Restart
+Power off'
+
+record_state() {
+    [ -x "$STATE_RECORDER" ] || return 0
+    "$STATE_RECORDER" record "$COMPONENT" "$1" "${2-}" 2>/dev/null || true
+}
+
+# An action that did not happen has to reach the person who asked for it.
+#
+# stderr alone does not. By the time an action fails the menu has closed, and
+# the only reader of this process's stderr is the compositor's log - so a user
+# who chose Log out and stayed logged in would be left to work out from the
+# machine's behaviour whether anything had happened. desktop-session requires
+# the opposite in as many words.
+#
+# So the session's own notification daemon is told, and stderr is written too,
+# because the journal is where somebody debugging this afterwards will look.
+# notify-send is a declared dependency for exactly this reason rather than
+# being used when it happens to be installed: a requirement met only on
+# machines that happen to have a package is not met.
+# Nothing is recorded about the component here, and that is the correction to a
+# first version which recorded it as failed.
+#
+# An action being refused is not this component failing. The menu opened, the
+# user chose, the choice was carried to the thing that performs it, and that
+# thing said no - every part of this component worked. Recording failed left
+# the diagnostic reporting a working command menu as failed for the rest of the
+# session, on the strength of logind declining once, which is the diagnostic
+# claiming more than it knows. That defect has its own archived change; this is
+# the same one, committed inside the fix's own vocabulary a day later.
+#
+# The failure is not lost. The user is told, and the journal has it.
+fail() {
+    echo "gridline-commands: $*" >&2
+    notify-send --app-name=Gridline --urgency=critical \
+        "That did not happen" "$*" 2>/dev/null || true
+    exit 1
+}
+
+# Found the way the launcher and the lock entry point find it, so there is one
+# shape for this and not three that can disagree about which adapter is active.
+find_adapter() {
+    for candidate in "$ADAPTER_DIR"/*/adapter; do
+        [ -x "$candidate" ] || continue
+        printf '%s' "$candidate"
+        return 0
+    done
+    return 1
+}
+
+# gridline-menu checks this before handing over, so in a session this is the
+# second check of the same thing. It is here anyway because of what the first
+# version did without it: record started, then die inside the command
+# substitution below under set -e, leaving the record saying started for a
+# component that never ran. That is the stuck-record defect this project has
+# already fixed twice, and a program that can only be reached one way today is
+# a program that will be reached another way eventually.
+if [ ! -x "$MENU" ]; then
+    record_state absent "$MENU"
+    fail "$MENU is not executable"
+fi
+
+record_state started
+
+# --index, and this is the whole reason the menu is safe to dispatch from.
+#
+# Measured on the shipped 1.12.0: plain --dmenu returns whatever the user typed
+# when it matches no entry, with exit 0. A menu that acted on that string would
+# try to perform an action invented by a mistyping, and two of the five entries
+# here lose work. With --index a chosen entry returns its position, a
+# cancellation returns nothing with exit 2, and text matching nothing returns
+# -1 with exit 0 - a sentinel to test rather than a string to recognise.
+#
+# `|| status=$?` because cancelling is the most ordinary outcome and fuzzel
+# reports it as a failure. Under set -e the plain form would end this program
+# before it recorded anything.
+status=0
+choice=$(printf '%s\n' "$ACTIONS" | "$MENU" --dmenu --index "$@") || status=$?
+
+if [ "$status" -ne 0 ] || [ -z "$choice" ] || [ "$choice" = "-1" ]; then
+    # Cancelled, or typed something that is not an action. Both mean the user
+    # did not choose, and the session does nothing at all.
+    record_state ready
+    exit 0
+fi
+
+case $choice in
+0 | 1 | 2 | 3 | 4) ;;
+*) fail "the menu returned an index that is not in the list: $choice" ;;
+esac
+
+# Recorded before acting, because three of the five actions end this process
+# along with everything else, and a record written afterwards would never be
+# written at all.
+record_state ready
+
+case $choice in
+0)
+    # logind, not a locker. The lock unit is what starts, the same as every
+    # other way of asking for a lock on this system. Measured: asking logind
+    # leaves gridline-lock.service active with the locker in its own cgroup,
+    # which is the whole difference between this and running swaylock here.
+    #
+    # No session is named, and that is correct for every way this is reached:
+    # a key binding runs it as a child of the compositor, which is in the
+    # session, and logind's implicit target resolves to the user's display
+    # session from the user manager too.
+    #
+    # It does not resolve from a process in no session at all, which is what a
+    # test harness driving this machine from outside is. That is a fact about
+    # the harness and not about this program, and it is written down because
+    # the same confusion already cost this project a verification once: the
+    # lock entry point was accused of using the wrong logind alias when the
+    # probe had simply been run from the wrong context. loginctl exits 1 there
+    # rather than pretending, so the failure reaches the user.
+    loginctl lock-session || fail "logind refused to lock the session"
+    ;;
+1)
+    adapter=$(find_adapter) || fail "no executable adapter under $ADAPTER_DIR"
+    "$adapter" shutdown || fail "the compositor adapter could not end the session"
+    ;;
+2)
+    systemctl suspend || fail "logind refused to suspend"
+    ;;
+3)
+    systemctl reboot || fail "logind refused to restart"
+    ;;
+4)
+    systemctl poweroff || fail "logind refused to power off"
+    ;;
+esac

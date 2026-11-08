@@ -5,11 +5,19 @@
 # isolation check treats the path as the boundary, so a compositor name, binary,
 # protocol or configuration format appearing anywhere outside it fails the build.
 #
-# The contract this implements is docs/compositor-adapter.md. Three verbs:
+# The contract this implements is docs/compositor-adapter.md. Five verbs:
 #
-#   capabilities  what installed files establish, before the compositor runs
-#   start         launch the compositor
-#   confirm       what the running compositor establishes
+#   capabilities   what installed files establish, before the compositor runs
+#   start          launch the compositor
+#   confirm        what the running compositor establishes
+#
+#   session-locked is the screen still held locked, client or no client
+#   shutdown       ask the compositor to end the session
+#
+# This list said "Three verbs" while there were four, because session-locked
+# was added and the header was not. A count in a comment is a claim that rots
+# quietly; it is kept here because naming the verbs is worth more than the
+# count, and the count is checked against the case statement below.
 #
 # Why two query verbs: an idle Hyprland answers nothing about which protocols it
 # implements. hyprctl exits non-zero without an instance signature, and the
@@ -196,6 +204,32 @@ session-locked)
         exit 2
         ;;
     esac
+    ;;
+shutdown)
+    # Ask the compositor to end the session.
+    #
+    # Named for the capability this adapter already advertises, which it has
+    # advertised unconditionally since it was written with nothing able to use
+    # the claim. The word is the compositor's shutdown, not the machine's: the
+    # command menu's entry for this reads "Log out", and powering a machine off
+    # is logind's job and never arrives here.
+    #
+    # It exists because the compositor's own exit keyword is this compositor's
+    # vocabulary, and compositor-abstraction keeps that inside this directory.
+    # Until now ending a session was that keyword written straight into the
+    # shipped compositor configuration, which is correct placement for a key
+    # binding and leaves nothing for a program elsewhere to call.
+    #
+    # The alternative was loginctl terminate-session, which is compositor-
+    # neutral and worse: it ends the session from outside rather than asking
+    # the compositor to leave, so whatever the compositor does on its way out
+    # does not happen.
+    wait_for_compositor
+    command -v "$COMPOSITOR_CTL" >/dev/null 2>&1 \
+        || fail "$COMPOSITOR_CTL is not installed"
+    "$COMPOSITOR_CTL" dispatch exit >/dev/null 2>&1 \
+        || fail "$COMPOSITOR_CTL could not ask the compositor to exit"
+    exit 0
     ;;
 confirm)
     wait_for_compositor
