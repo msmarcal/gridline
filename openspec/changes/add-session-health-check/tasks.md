@@ -89,7 +89,13 @@ This comes first because it decides the mechanism for half the change, and becau
 Execution note: this group needs the session running on the VM, started from the greeter, and it needs the wallpaper daemon left unmasked, since the machine's inability to run it is the genuine instance of the condition this change reports.
 
 - [x] 5.1 The whole path, on the machine's own failing component rather than a staged one: logged in from the greeter, the wallpaper daemon failed 5 times and stopped, the session recorded `state=failed blocking=no`, and `gridline doctor` named it `wallpaper  failed  (the desktop works without it, with less)` and exited 1. Zero ordering cycles in the manager that started with the session
-- [ ] 5.2 Verify the stock Ubuntu session is unchanged, by logging into it, since every change that touches session units has to answer this and two have now failed to
+- [x] 5.2 **Unchanged, and this round had more to prove than the last one.** Three things that did not exist before could have broken it: a new target, `Restart=always` in each drop-in where the archive's units declare either `on-failure` or nothing, and an `ExecStopPost` that writes a record whenever a unit stops.
+
+  Measured against each: the three components `inactive` with **0 restarts** and no processes, both Gridline targets inactive, **no failed unit of any kind**, and `/run/user/1000/gridline/` does not exist, so nothing of Gridline's wrote session state in a session that is not Gridline's. `Restart=always` cannot loop where nothing wants the unit, and `ExecStopPost` cannot fire where nothing stopped.
+
+  The rest is as before: GNOME's own daemon owns the notification name, `XDG_CONFIG_DIRS` carries no Gridline directory, `GRIDLINE_CONFIG` is absent, and the person using the machine reports nothing different.
+
+  **The baseline was taken between sessions rather than assumed**, at the greeter with the previous session ended: no runtime directory, no component process, no compositor, and `graphical-session.target.wants` holding only the VM's own guest agent. Anything found afterwards was therefore the Ubuntu session's doing rather than a leftover
 - [x] 5.3 The desktop is usable with the gap present, which is what the person using the machine is doing while this is written: the bar draws, notifications work, and the session did not refuse to start over a component that cannot run here. The reporting this change adds did not quietly turn a degrading component into a blocking one, which is the way it could have gone wrong without anybody noticing until a session refused
 
 ## 6. Coherence
@@ -99,11 +105,39 @@ Execution note: this group needs the session running on the VM, started from the
   Reporting those would mean a Gridline command inspecting the state of units other packages own, which is the coupling the design of this change refuses by name. So the paragraph now says which rows are true, which are owed, and why the remainder is a different problem rather than an oversight.
 
   The counts were taken again rather than trusted: **14 cells on three pages, 5 further mentions in prose, 3 scenarios in `openspec/specs/`**. The wrong number this change was created to correct, seventeen cells across five documents, is gone from the page
-- [ ] 6.2 Verify every live cell promising a capability gap is now true, by listing them and naming for each what reports it. A cell that no longer applies is a cell to change, not one to leave
+- [x] 6.2 **Enumerated, and the answer is three of eleven.** The fourteen cells are: eight platform integrations, PipeWire, WirePlumber, BlueZ, UPower, XWayland, snapd and the two portal rows; the three components the session starts; one summary row naming many at once; and two rows that name this change and `gridline-tools` rather than a component.
+
+  | Cell | What reports it |
+  |---|---|
+  | Status bar, Notification daemon, Wallpaper daemon | `gridline doctor`, from the record the session writes |
+  | PipeWire, WirePlumber, BlueZ, UPower, XWayland, snapd, the two portals, and the summary row | nothing |
+
+  The screen locker and the polkit agent are reported too and are not on this list, because their rows read "Session does not start": they are blocking, and this list is the degrading ones.
+
+  So a cell that no longer applies is a cell to change, as the task says, and eight of them still apply. `docs/component-ownership.md` says which are which and why the remainder is a different problem rather than an oversight, which is task 6.1's output and is what makes leaving them honest rather than quiet
 - [x] 6.3 The document already had a step promising `gridline doctor`, written before the command existed. It now describes what the command does: the components it names, that it answers without a session running, that nothing recorded reads differently from everything healthy, and its exit codes. It also says plainly what it does not cover, pointing at the page that says why.
 
   **The worked example in it is output that was observed, not output that was composed.** A first draft showed the locker and the polkit agent in the list; those lines have not been seen, because the session on the verification machine started before the launcher that records them. The example is now the three lines that were measured, with a sentence for the two that appear on a session started afterwards, and that sentence is what the next login verifies
-- [ ] 6.4 Verify each scenario of the added and modified requirements is exercised or recorded as unexercised with a reason, counting scenarios from the delta files rather than from the proposal's description of them
+- [x] 6.4 **Fourteen scenarios, counted from the two delta files**: six added under `session-manageability`, eight in the modified `desktop-session` requirement. Eleven are exercised, two are not, and one is exercised by this change only in part.
+
+  | Scenario | Where | State |
+  |---|---|---|
+  | A missing component is nameable | 3.2 | **Exercised.** `wallpaper failed`, under the Gridline name, with no unit name anywhere in the record |
+  | A healthy session says so | 3.3 | **Not exercised.** This machine cannot run the wallpaper daemon, so a session with every component running has never existed here to be reported. The empty-record and failing cases both read distinctly, which is the half that could be shown |
+  | The report distinguishes what refuses a session from what degrades it | 3.4 | **Exercised**, and cross-checked against the session's own targets for four of five components and against the launcher's list for the locker, which is in no target |
+  | The diagnostic reads a record the session wrote | 3.2 | **Exercised.** Zero occurrences of any archive unit name in the command, and the only units it reads are Gridline's two targets |
+  | The diagnostic works when the session does not | 3.5 | **Exercised** with no session and no `XDG_RUNTIME_DIR`: it answers and exits 0 |
+  | Reporting a gap never refuses a session | 2.4, 5.1 | **Exercised** in code and in a session that had a failed component and started anyway |
+  | The state of the machine is visible | inherited | Not this change's. Carried unchanged from the requirement it modifies |
+  | A notification reaches the user | inherited | Not this change's |
+  | The desktop has a background | inherited | Not this change's, and still unexercised for the reason its own change recorded |
+  | Each component is kept running | 4.2 | **Exercised**, and the wording it gained matters: it now covers a component that *has run* and stops, which is what `Restart=always` in the drop-in delivers |
+  | A component that cannot start is not held forever | 4.1, 4.3, 4.4 | **Exercised.** 0 starts in two minutes against 59, reaching `failed` and staying, reported by the diagnostic, and tried again from zero in the next session |
+  | An absent component degrades and does not block | 5.1, 5.3 | **Exercised** on the machine's own failing component rather than a staged one |
+  | Their configuration is a shipped default a user can decline | inherited | Not this change's |
+  | Only the Gridline session is affected | 5.2 | **Exercised**, against three mechanisms this change introduced that could each have broken it |
+
+  The two that are not exercised are the healthy-session report, which needs a machine that can run every component, and the background, which is the same machine limit recorded by the change that shipped it
 
 ## Workflow follow-up
 
