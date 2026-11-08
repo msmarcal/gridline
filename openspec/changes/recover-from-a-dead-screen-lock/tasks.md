@@ -6,7 +6,11 @@ Nothing here can be verified against an accident. The first question is whether 
 
 - [ ] 1.1 Kill the locker in a locked session and record what the screen shows, what `loginctl` reports, and what is in the journal. Compare against the incident: the compositor's fallback, `LockedHint=no`, and nothing recorded anywhere. A difference means the deliberate case is not the accidental one and the rest of this change is being verified against the wrong thing
 - [ ] 1.2 Establish whether a locker started afterwards can attach, which the incident suggests and which the whole approach depends on. The shipped compositor defaults set `misc:allow_session_lock_restore = true`; verify that is what makes it possible, by measuring with the setting off as well as on
-- [ ] 1.3 Investigate why the first locker died, as far as the evidence allows, and **write down the limit rather than a guess**. Nothing recorded it on a machine whose `coredumpctl` captures nothing even for a crash systemd reports as dumped, so the first step is making the machine able to record a crash at all
+- [x] 1.3 **The machine could record a crash all along, and the first step of this task was built on a wrong measurement.** `core_pattern` pipes to apport, which holds seventeen crash reports on this VM, one of them written at 01:05 today during a Gridline session. The tool used to ask, `coredumpctl`, is not installed: every reading of "no cores captured" was a command-not-found read as an empty result, by me, repeatedly, including into this change's own design.
+
+  With the right place to look, the evidence points away from a crash: **there is no report for the locker under any user**, nothing in apport's configuration excludes it, and other components of the same session do have reports. A locker that crashed would have left one.
+
+  **So the limit, written down rather than guessed past:** the locker exited rather than crashed, and why it exited is unknown. No journal entry from it, nothing from the lock entry point, which does write its failures, and nothing in the compositor's log. What this rules out is the hypothesis everyone starts with, and that is worth more than the blank it replaces
 
 ## 2. The lock does not die with the thing that scheduled it
 
@@ -15,7 +19,17 @@ Found while mitigating the first incident, and it is the more reproducible of th
 - [ ] 2.0 Reproduce it deliberately: with a session locked, stop `gridline-idle.service` and confirm the locker dies with it. The journal of the first occurrence reads `Stopping gridline-idle.service`, then `swayidle: Terminated`, then the lock entry point's trap firing, which is a locker killed by the unit's cgroup going down rather than by anything about the locker
 - [ ] 2.1 Separate the lock's lifetime from the unit that decides *when* to lock. A daemon that watches for inactivity and a locker that holds the screen have different lifetimes, and today the second lives inside the first's cgroup, so a stop, a package upgrade that restarts the unit, or `Upholds=` reacting to a failure all take the lock down with it
 - [ ] 2.2 Verify the separation against the same three events rather than against the one that was noticed: a deliberate stop, a restart, and the unit failing
-- [ ] 2.3 **`SetLockedHint` is called on an object that does not always resolve.** `gridline-lock` uses `/org/freedesktop/login1/session/auto`, and that failed twice in one session: from a context with no session of its own, and from the entry point's own trap while its unit was shutting down, logged as `could not set LockedHint to false`. The explicit session path works from the same context where `auto` fails, measured. It also succeeded at least once today, so `auto` is conditionally reliable and the condition is not understood: establish it, and resolve the session explicitly if the condition cannot be made dependable
+- [x] 2.3 **The suspicion was wrong, and finding that out is what stopped a change being made for the wrong reason.** The entry point calls `SetLockedHint` on `/org/freedesktop/login1/session/auto`, and that looked unreliable because it failed twice. Measured, the condition is simple and the object is fine:
+
+  | Context | `auto` resolves |
+  |---|---|
+  | Inside the user manager, which is where the entry point runs | **yes**, to the display session |
+  | A process with no session and outside the user manager | no |
+  | A trap firing while its own unit is being stopped | **yes**, reproduced with a transient unit |
+
+  `SetLockedHint` itself also succeeds from the user manager, not just the property read. So one of the two failures was my own invocation from outside any session, which was never a fair test, and the other was something narrower than the object not resolving.
+
+  **What remains unexplained is one failure at one moment**, during the stop of the unit the locker was living inside. The likeliest remaining cause is the same one task 2.1 exists for: the call was made by a process in a cgroup that was being torn down, so the `busctl` it spawned was killed with everything else. If that is it, separating the lock's lifetime fixes this too and no change to the object is needed. **Re-check after 2.1 rather than changing the object now**
 
 ## 3. A dead locker is replaced
 
