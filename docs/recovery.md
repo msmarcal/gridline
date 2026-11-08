@@ -47,14 +47,13 @@ gridline doctor
 Components a Gridline session expects:
 
   bar              running
+  locker           running
   notifications    running
+  polkit-agent     running
   wallpaper        failed  (the desktop works without it, with less)
 
 1 component(s) are not running.
 ```
-
-The screen locker and the polkit agent appear in the same list, named
-`locker` and `polkit-agent`, on a session started after they were recorded.
 
 It reports from what the session wrote down as each component started, stopped
 or failed, so it answers **without a Gridline session running**, which is the
