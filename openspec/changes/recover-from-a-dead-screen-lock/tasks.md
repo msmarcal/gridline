@@ -64,12 +64,27 @@ Found while mitigating the first incident, and it is the more reproducible of th
   **And the diagnostic contradicts it, which is a different defect and is recorded rather than folded in.** While the lock had given up three times, `gridline doctor` reported `locker  running`. The record for that component is written once by the launcher at session start and nothing updates it, because the locker has no unit of Gridline's with an `ExecStopPost` the way the desktop shell components do. The same is true of the polkit agent, which crashed in this very session while the diagnostic reported it running.
 
   That belongs to `report-components-that-stop`, which exists for it. Keeping it out of this change is deliberate: the polkit agent has nothing to do with screen locking, and a fix riding along inside an unrelated change is how this project once carried a false claim in a package description across two changes
-- [ ] 3.4 Verify the safety half still holds: no claim of a lock that no component is maintaining, and a session that stays locked while the compositor holds it. This is the property `platform-integration` already required and which held during the incident, and it is the one most likely to be broken by changing the entry point's exit paths
+- [x] 3.4 **Holds, measured as one sequence rather than as four separate observations**, because the property is about the transitions and not about any single state:
+
+  | | locker | `LockedHint` |
+  |---|---|---|
+  | unlocked | 0 | `no` |
+  | locked | 2 | `yes` |
+  | **lock unit stopped, compositor still holding** | 0 | **`no`** |
+  | recovered | 2 | `yes` |
+
+  The third row is the requirement: with the session locked and no component maintaining the lock, the system does not claim one. That is the direction that leaves the session protected, because something reading the hint concludes unlocked and may lock again, never the reverse.
+
+  This was the property most likely to be broken by moving the entry point into a unit, since the clearing happens on its exit paths and those changed
 
 ## 4. The recovery path is written down
 
-- [ ] 4.1 Add a section to `docs/recovery.md` for a session that locks and will not unlock. It covers a session that does not start and says nothing about this, which is the failure that strands the user rather than returning them to the login screen
-- [ ] 4.2 Name `swaylock` in it, and say plainly that the compositor's own fallback screen names a different program that Gridline does not ship. A user reading that screen is being sent after something not installed, and the project cannot change the screen, only make its own instructions correct
+- [x] 4.1 **`docs/recovery.md` gains a section for it**, as a sibling of the path for a session that does not start rather than a note inside it, because the two failures leave the user in opposite places: one at the login screen, the other at a screen with nothing to type into.
+
+  It explains what they are looking at and why the session stays locked, gives the steps, says why they should not need them now that the lock is a unit that replaces a locker which dies, and ends with terminating the session as the last step rather than the first, naming what that costs
+- [x] 4.2 Named, and **the screen is wrong in a second way that only showed up on reading it again**. It tells the user to press `Ctrl+Alt+F[N]` with the terminal number it prints, and it printed `tty 0` for a session measured on `tty2`: following it sends someone to a terminal that does not exist. So the written path depends on neither claim, and says why: it asks `loginctl list-sessions` for the number instead of trusting the screen, and names `swaylock` rather than the locker the screen suggests.
+
+  Gridline cannot change that screen. What it can do is make its own instructions correct and say plainly which parts of the other ones to ignore
 - [ ] 4.3 Verify the written path by following it from a second machine, exactly as written, against a session in the failed state. A recovery path that has not been walked is a draft
 
 ## 5. Coherence

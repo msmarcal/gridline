@@ -81,6 +81,78 @@ Removing the Gridline packages returns the system to a stock Ubuntu desktop. No 
 
 You can keep using GNOME indefinitely with Gridline still installed. An unselected session costs nothing.
 
+## The screen is locked and the password does nothing
+
+You are looking at a screen that is not Gridline's. It belongs to the
+compositor, and it appears when the program that holds the lock dies: the
+Wayland protocol that locks a session keeps it locked when its client goes
+away, which is correct and is what stops a crash from exposing your desktop.
+There is nothing to type into, because the thing that accepts passwords is the
+part that died.
+
+**Two things on that screen will send you the wrong way, and Gridline cannot
+change what it says.** It names `hyprlock`; Gridline's locker is `swaylock`.
+And it prints the terminal your session is on, which was wrong when this was
+measured: it read `tty 0` for a session that was on `tty2`, so following it
+would have you pressing a key combination for a terminal that does not exist.
+The steps below do not depend on either.
+
+### Getting back in
+
+Switch to another virtual terminal and log in there:
+
+```
+Ctrl+Alt+F3
+```
+
+Start the lock again:
+
+```
+systemctl --user start gridline-lock.service
+```
+
+If it refuses because it has given up after repeated failures, clear that first:
+
+```
+systemctl --user reset-failed gridline-lock.service
+systemctl --user start gridline-lock.service
+```
+
+Switch back to your session and type your password as usual. To find which
+terminal it is on, ask, rather than trusting the number on that screen:
+
+```
+loginctl list-sessions
+```
+
+The graphical session is the one with a seat, and its `TTY` column gives the
+number: `tty2` means `Ctrl+Alt+F2`.
+
+### Why you should not need this
+
+The lock is a systemd unit of its own, and a locker that dies is started again
+without anyone asking. This page exists for the cases that outlive that: a
+locker that cannot start at all, which stops being retried after three attempts
+in a minute rather than looping forever, and anything that stops the unit
+deliberately.
+
+Both leave a record. `journalctl --user -u gridline-lock.service` names what
+happened, including the case where the locker is missing from the machine
+entirely.
+
+### If none of that works
+
+The session is still locked, which means your desktop is not exposed. You can
+end it without logging back into it: from the other terminal,
+
+```
+loginctl terminate-session <id>
+```
+
+with the id from `loginctl list-sessions`. That closes the session and returns
+you to the login screen, losing whatever was unsaved in it. It is the last
+step rather than the first for that reason.
+
 ## Choosing what the login screen offers
 
 On a machine with Gridline installed the login screen offers **Gridline** and
