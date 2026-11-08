@@ -28,9 +28,15 @@ See proposal.md for motivation. What the session already has, because all three 
 
 ## Decisions
 
-### Two Gridline programs, named by the bindings, the way the shell components are
+### One Gridline program with two roles, named by both bindings
 
-`SUPER D` and `SUPER SHIFT D` name Gridline-owned programs, and those programs name the launcher. This is the third use of a shape already in the tree, and it buys the same two things it bought for the bar: the binding keeps working when the launcher changes, and the program is where the decision about Gridline's configuration lives, so it can be absent outside a Gridline session.
+`SUPER D` and `SUPER SHIFT D` both name `gridline-menu`, with the role as its argument, and that program names the launcher. This is the third use of a shape already in the tree - `gridline-shell` dispatches three roles the same way - and it buys the same two things it bought for the bar: the binding keeps working when the launcher changes, and the program is where the decision about Gridline's configuration lives, so it can be absent outside a Gridline session.
+
+**This section first said "two Gridline programs, named by the bindings", one each.** It was written before the code and describes a shape the first measurement ruled out. Keeping the correction visible is worth more than a tidy document: the reason the shape changed is the useful part.
+
+What ruled it out is that `gridline-shell` ends in `exec`, deliberately, so that nothing of Gridline's stays in a component's cgroup as a parent. Everything it starts is meant to keep running and a unit's `ExecStopPost` records the end. Nothing here has a unit - a keypress starts it and it exits seconds later - so `exec` would leave the record saying `started` forever, which is the defect `report-components-that-stop` was written to fix and which copying the nearest file would have reintroduced. So this program waits and records the end itself, and that difference is the same for both roles, which is what makes them one program rather than two.
+
+There are still two programs. `gridline-menu` is what the bindings name; `gridline-commands` is what it hands the `commands` role to, because the action list and the dispatch are a different job from deciding how to start a menu.
 
 The alternative was binding `fuzzel` directly, which is one fewer file. It breaks the rule `defaults.conf` states about itself, and it puts a package name in the file this project most expects users to copy.
 
@@ -46,11 +52,18 @@ The command menu is the same binary in a different mode, reading its entries on 
 
 This also frees the labels. Because dispatch is positional, what the user reads can be plain words - `Power off`, not a command - which is what the spec asks for and would otherwise have been in tension with matching the returned text.
 
+### The configuration is named with `--config`, because the launcher's own package owns the place it would otherwise go
+
+This is a decision and not an observation, and it was buried in a list of measurements until a verification said so.
+
+The launcher searches `$XDG_CONFIG_HOME/fuzzel/fuzzel.ini` and then `/etc/xdg/fuzzel/fuzzel.ini`, and **its own package ships the second one**. So the obvious placement - Gridline's defaults where the component already looks - is not available at any price: it means overwriting a file another package owns, which this project forbids outright. Gridline's file therefore lives under `/etc/xdg/gridline/shell/` and the program names it.
+
+The same fact decides how a user's own configuration is detected. Only the first base is checked, because a file in the second is the archive's default rather than anybody's choice. That distinction is the bar's defect exactly: `waybar` ships `/etc/xdg/waybar/config.jsonc`, the search included the system base, and Gridline's configuration was unreachable on every machine as a result.
+
 ### Measured about the launcher before anything was configured
 
-Four facts that shaped the above, each from the shipped 1.12.0 rather than from documentation:
+Three further facts, each from the shipped 1.12.0 rather than from documentation:
 
-- **Its own package ships `/etc/xdg/fuzzel/fuzzel.ini`.** Gridline cannot put its configuration there without overwriting a file another package owns, which the project forbids. This is the bar's defect exactly - waybar ships `/etc/xdg/waybar/config.jsonc` and made Gridline's unreachable on every machine - and it is why the Gridline program names the path with `--config` instead.
 - **It reads its configuration before connecting to Wayland**, so configuration can be checked without a session.
 - **It rejects an unknown key, an unknown section and an out-of-range value**, naming the file and line. That is the opposite of the wallpaper daemon, which accepts unknown keys in silence. `--check-config` exits 0 or 1 on exactly this question, so the launcher's shipped configuration is machine-checkable. No gate is built here because no task asks for one and the build machine has no fuzzel, but the option exists and the flag is the right instrument.
 - **The archive's default is four non-comment lines, all section headers**, so declining Gridline's configuration gives a user plain fuzzel rather than something half-configured. Its appearance is light and does not match the session's bar, which is work the shipped configuration has to do rather than a preference.

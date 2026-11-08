@@ -51,3 +51,5 @@ None. `desktop-session` is the capability that owns what a session presents, and
 ## Prior measurement
 
 `fuzzel` was chosen over `tofi`, `wofi` and `bemenu`, all four of which are in the archive, so the project's preference for archive packages did not settle it. It is Wayland-native through layer-shell rather than through XWayland, it is maintained, and its `--dmenu` mode means the command menu is the same binary rather than a second dependency. `wofi` is unmaintained since 2022 and pulls GTK into the launcher path; `tofi` ships no application icons.
+
+**What that mode does was then measured, and the obvious reading of it is wrong.** Plain `--dmenu` returns whatever the user typed when it matches no entry, with a success status, so a menu dispatching on the returned text would perform an action a user invented by mistyping - and two of the five actions here lose work. The command menu therefore dispatches on `--index`, where a mistyped entry comes back as `-1`. design.md carries the decision; it is noted here because the sentence above would otherwise read as though choosing the package settled the mechanism, and it did not.
