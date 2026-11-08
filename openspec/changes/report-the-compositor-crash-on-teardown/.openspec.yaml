@@ -1,0 +1,7 @@
+schema: spec-driven
+created: 2026-11-08
+# No spec-level behaviour changes: this change measures a crash that predates
+# every requirement here and writes down what it finds. If the investigation
+# shows Gridline's teardown ordering contributes, the requirement that follows
+# belongs to the change that fixes it rather than to the one that looked.
+skip_specs: true
