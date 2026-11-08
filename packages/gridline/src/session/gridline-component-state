@@ -39,8 +39,9 @@ usage: gridline-component-state record <component> <state> [detail]
        gridline-component-state report <component>
        gridline-component-state list
        gridline-component-state stopped <component>
+       gridline-component-state finished <component>
 
-States: started, stopped, failed, absent.
+States: started, ready, stopped, failed, absent.
 Set GRIDLINE_COMPONENT_BLOCKING=yes for a component whose absence refuses
 a session. It defaults to no.
 EOF
@@ -50,9 +51,18 @@ EOF
 # A component is recorded under its Gridline name, never under the name of the
 # unit or the package that provides it. Someone asking why their bar is missing
 # should not have to know which of those is called waybar.
+#
+# ready exists because not every component the session expects is meant to be
+# running. The bar is: a bar that is not running is a bar that is missing. The
+# screen locker is not: it runs while the screen is locked and is absent from
+# an unlocked desktop that is working perfectly. Recording its clean exit as
+# stopped would make the diagnostic report a blocking component as not running
+# on a healthy machine, which is the confidently wrong answer this whole change
+# exists to stop producing. ready is the word for installed, able to run, and
+# not running now because nothing is asking it to.
 valid_state() {
     case $1 in
-    started | stopped | failed | absent) return 0 ;;
+    started | ready | stopped | failed | absent) return 0 ;;
     esac
     return 1
 }
@@ -85,9 +95,28 @@ record)
     # declare units and this record is keyed on Gridline names, so reading
     # severity from the targets means joining the two through the drop-ins,
     # which is a mapping to get wrong for a fact the writer had in hand.
-    case ${GRIDLINE_COMPONENT_BLOCKING:-no} in
+    # Unset is not no. Severity is a property of the component and the event
+    # that ends it does not know it: the launcher knows which components refuse
+    # a session, and a unit's ExecStopPost knows only that its service stopped.
+    # So an unset variable carries forward whatever the last record said, and
+    # only an explicit value overrides it.
+    #
+    # Defaulting to no instead would have been a defect shipped inside the fix
+    # for another one: the authentication agent is recorded as blocking by the
+    # launcher, and the drop-in added here records every one of its stops. The
+    # diagnostic would have said that losing it merely degrades the desktop,
+    # which is the opposite of true, and it would have said it in the same
+    # breath as finally getting the state right.
+    case ${GRIDLINE_COMPONENT_BLOCKING:-} in
     yes) blocking=yes ;;
-    *) blocking=no ;;
+    no) blocking=no ;;
+    *)
+        # `|| true` because this file does not exist on a component's first
+        # record, and an assignment takes the status of its substitution: under
+        # set -eu a missing record would end this program before it wrote one.
+        blocking=$(sed -n 's/^blocking=//p' "$dir/$component" 2>/dev/null || true)
+        [ -n "$blocking" ] || blocking=no
+        ;;
     esac
 
     # Written whole and moved into place, so a reader never sees half a record.
@@ -113,15 +142,36 @@ record)
 # Called from a unit's ExecStopPost, where systemd says how the service ended.
 # The wrapper cannot answer this: by the time a component fails it has already
 # replaced the wrapper, so the only thing left that knows is systemd.
-stopped)
+#
+# Measured, because the whole approach rests on it: ExecStopPost is reached for
+# a main process that exits zero, one that exits non-zero, one killed with
+# SIGKILL, and a unit whose ExecStart does not exist at all. In every one of
+# those SERVICE_RESULT, EXIT_CODE and EXIT_STATUS were set. The last case is
+# the one that matters most here, because a component that never ran is exactly
+# what a stale record used to report as running.
+stopped | finished)
     component=${1-}
     [ -n "$component" ] || usage
+
+    # stopped and finished differ in one thing only: what a clean exit means.
+    # For a component meant to stay running, exiting is the event. For one that
+    # runs on demand, exiting cleanly is the job being done, and the component
+    # is ready again rather than stopped. Failure means the same for both.
     case "${SERVICE_RESULT:-success}" in
-    success) state=stopped ;;
+    success)
+        if [ "$command" = finished ]; then
+            state=ready
+        else
+            state=stopped
+        fi
+        ;;
     *) state=failed ;;
     esac
+
     detail=${SERVICE_RESULT:-}
-    [ -n "${EXIT_STATUS:-}" ] && detail="$detail ${EXIT_CODE:-exit}/$EXIT_STATUS"
+    if [ -n "${EXIT_STATUS:-}" ]; then
+        detail="$detail ${EXIT_CODE:-exit}/$EXIT_STATUS"
+    fi
     exec "$0" record "$component" "$state" "$detail"
     ;;
 
@@ -133,15 +183,24 @@ report)
     cat "$dir/$component"
     ;;
 
+# Four fields and the fourth is when. A record is a statement about the last
+# event, never about now, and a reader that cannot see its age has no way to
+# tell the two apart. Omitting it is how a record written at login kept being
+# read as the current state of a component that had been dead for an hour.
+#
+# The time is last so that a reader of this output can keep splitting on the
+# first three fields, and so that a record written before this field existed
+# reads as an empty time rather than as a shifted state.
 list)
     dir=$(state_dir) || exit 0
     [ -d "$dir" ] || exit 0
     for record in "$dir"/*; do
         [ -f "$record" ] || continue
         case ${record##*/} in .*) continue ;; esac
-        printf '%s %s %s\n' "${record##*/}" \
+        printf '%s %s %s %s\n' "${record##*/}" \
             "$(sed -n 's/^state=//p' "$record" 2>/dev/null)" \
-            "$(sed -n 's/^blocking=//p' "$record" 2>/dev/null)"
+            "$(sed -n 's/^blocking=//p' "$record" 2>/dev/null)" \
+            "$(sed -n 's/^at=//p' "$record" 2>/dev/null)"
     done
     ;;
 

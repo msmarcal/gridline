@@ -29,6 +29,17 @@ and the polkit agent, which it names as blocking. For those rows the phrase is
 now true, and the session writes down what it knows as each component starts,
 stops or fails.
 
+That last sentence was written before it was true, and the two blocking
+components were the two it was false about. They were recorded once, by the
+launcher, at session start, and nothing wrote again, so `running` meant
+`was installed when the session began`. It cost two wrong answers in one
+session, both measured: the authentication agent aborted five seconds after
+the compositor crashed, and the screen lock gave up after three failed starts,
+and the diagnostic reported both as running for the rest of that session. It is
+left in rather than quietly corrected, because a sentence about a mechanism is
+easy to write one component short, and the only reason this one was caught is
+that somebody read it while the component in it was dead.
+
 **For the platform rows it is still owed**, and deliberately so rather than by
 oversight. NetworkManager, PipeWire, WirePlumber, BlueZ, UPower, XWayland,
 snapd and the two portal rows are components Gridline integrates with and does

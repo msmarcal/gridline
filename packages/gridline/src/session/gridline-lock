@@ -25,6 +25,7 @@ set -u
 
 LOCKER=/usr/bin/swaylock
 ADAPTER_DIR=/usr/libexec/gridline/adapters
+STATE_RECORDER=/usr/libexec/gridline/gridline-component-state
 SESSION_OBJECT=/org/freedesktop/login1/session/auto
 SESSION_IFACE=org.freedesktop.login1.Session
 
@@ -60,7 +61,23 @@ if pgrep -x "$(basename "$LOCKER")" >/dev/null 2>&1; then
     exit 0
 fi
 
+# What the session knows about the locker, written where the diagnostic reads
+# it. A record and never a gate: the recording must not be what decides whether
+# a screen gets locked, so every call tolerates failure.
+#
+# This file records the two things the unit's ExecStopPost cannot see. That the
+# locker is not installed at all, which is a different answer from a locker
+# that failed and sends a reader somewhere else. And that the screen is about
+# to be held, which is the only moment at which running is true of a component
+# that spends most of a session not running.
+record_locker() {
+    [ -x "$STATE_RECORDER" ] || return 0
+    GRIDLINE_COMPONENT_BLOCKING=yes \
+        "$STATE_RECORDER" record locker "$1" "${2-}" 2>/dev/null || true
+}
+
 if [ ! -x "$LOCKER" ]; then
+    record_locker absent "$LOCKER"
     printf 'gridline-lock: %s is not installed\n' "$LOCKER" >&2
     logger -t gridline-lock -p daemon.err "locker missing at $LOCKER" 2>/dev/null
     exit 1
@@ -79,6 +96,7 @@ fi
 trap 'set_locked_hint false' EXIT INT TERM
 
 set_locked_hint true
+record_locker started
 "$LOCKER"
 locker_status=$?
 

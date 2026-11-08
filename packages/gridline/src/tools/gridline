@@ -34,9 +34,11 @@ describe() {
     name=$1
     state=$2
     blocking=$3
+    at=$4
 
     case $state in
     started) verdict="running" ;;
+    ready) verdict="ready" ;;
     stopped) verdict="stopped" ;;
     failed) verdict="failed" ;;
     absent) verdict="not installed" ;;
@@ -45,7 +47,12 @@ describe() {
 
     # Severity is said rather than implied. A reader should not have to know
     # which components are fail-safe to know whether to worry.
-    if [ "$state" = started ]; then
+    #
+    # ready and started are both healthy and for different reasons: started is
+    # a component that is running, ready is one that is installed and runs when
+    # something asks, which is the screen locker's whole life. Neither gets a
+    # consequence, because there is no consequence to report.
+    if [ "$state" = started ] || [ "$state" = ready ]; then
         consequence=""
     elif [ "$blocking" = yes ]; then
         consequence="  (a session will not start without it)"
@@ -53,7 +60,57 @@ describe() {
         consequence="  (the desktop works without it, with less)"
     fi
 
-    printf '  %-16s %s%s\n' "$name" "$verdict" "$consequence"
+    # The time is part of the answer and not a detail. Every line here is a
+    # last-known state, and a reader who cannot see when it was last known has
+    # no way to tell a component that is running from one that was running when
+    # they logged in. That difference is not hypothetical: this command
+    # reported a dead authentication agent and a given-up screen lock as
+    # running, for the whole of the sessions in which they died, because the
+    # record was written once and the report said nothing about when.
+    printf '  %-16s %-14s %s%s\n' "$name" "$verdict" "$(at_phrase "$at")" \
+        "$consequence"
+}
+
+# The record's own timestamp, in words a reader can use. UTC is what the record
+# carries, and converting it is the whole point: nobody reads their own
+# afternoon as 15:42Z.
+#
+# An unreadable or missing time is said plainly rather than hidden or guessed
+# at. A record from before this field existed has none, and silently printing
+# the current time for it would be the exact failure this is here to end.
+#
+# The date is shown whenever the record is not from today, and that is not
+# tidiness. A first version printed the hour and minute only, and a record from
+# the previous day read as "as of 04:00", which a reader takes for four o'clock
+# this morning. The same version rendered a record stamped in the year 2099 as
+# "as of 00:00", which reads as the most ordinary line on the page. Both were
+# this command presenting a record it could not vouch for as a current one,
+# which is the defect it exists to stop making.
+at_phrase() {
+    [ -n "${1-}" ] || {
+        printf 'at an unrecorded time'
+        return 0
+    }
+
+    stamp=$(date -d "$1" '+%Y-%m-%d %H:%M' 2>/dev/null || true)
+    if [ -z "$stamp" ]; then
+        printf 'at %s, which is not a time this can read' "$1"
+        return 0
+    fi
+
+    # A record from later than now is a clock that moved, not a component that
+    # will report in. Saying so is the only honest option: the state may be
+    # true, and how long it has been true is unknown.
+    recorded_at=$(date -d "$1" '+%s' 2>/dev/null || true)
+    if [ -n "$recorded_at" ] && [ "$recorded_at" -gt "$(date '+%s')" ]; then
+        printf 'stamped %s, which is in the future' "$stamp"
+        return 0
+    fi
+
+    case $stamp in
+    "$(date '+%Y-%m-%d') "*) printf 'as of %s' "${stamp#* }" ;;
+    *) printf 'as of %s' "$stamp" ;;
+    esac
 }
 
 doctor() {
@@ -76,24 +133,51 @@ doctor() {
         return 0
     fi
 
-    echo "Components a Gridline session expects:"
+    # Whether these records describe now or a session that has ended. Gridline's
+    # own target answers it, and no unit another package owns is read: a
+    # diagnostic whose correctness depends on a third party's unit internals is
+    # one that breaks when that party changes its mind.
+    #
+    # This is said before the components and not after, because it changes how
+    # every line below should be read. A record from a session that is over is
+    # not wrong, it is history, and the reader is the one who needs to know
+    # which they are looking at.
+    if systemctl --user is-active --quiet "$SESSION_TARGET" 2>/dev/null; then
+        echo "A Gridline session is running. Components it expects:"
+    else
+        echo "No Gridline session is running now. What the last one recorded:"
+    fi
     echo
 
     unhealthy=0
-    while read -r name state blocking; do
+    while read -r name state blocking at; do
         [ -n "$name" ] || continue
-        describe "$name" "$state" "${blocking:-no}"
-        [ "$state" = started ] || unhealthy=$((unhealthy + 1))
+        describe "$name" "$state" "${blocking:-no}" "${at:-}"
+        case $state in
+        started | ready) ;;
+        *) unhealthy=$((unhealthy + 1)) ;;
+        esac
     done <<EOF
 $records
 EOF
 
     echo
+
+    # Said once, in the footer, rather than as a qualification on every line. A
+    # report that hedges each component is as useless as one that is
+    # confidently wrong: a reader scanning five hedged lines learns nothing and
+    # stops reading, which is the same outcome as being lied to.
+    echo "Each line is the last thing the session recorded about that"
+    echo "component, at the time shown. Nothing here polls: a component is"
+    echo "recorded when it starts, and again when it stops or fails."
+
     if [ "$unhealthy" -eq 0 ]; then
-        echo "Every component this session expects is running."
+        echo
+        echo "Every component this session expects is accounted for."
         return 0
     fi
 
+    echo
     printf '%s component(s) are not running.\n' "$unhealthy"
     echo "A component that is not installed can be installed; one that failed"
     echo "has its reason in the journal: journalctl --user -u <unit>"

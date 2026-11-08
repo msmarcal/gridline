@@ -40,4 +40,18 @@ ExecStart=/usr/libexec/gridline/gridline-lock
 Restart=on-failure
 RestartSec=1
 
+# How the lock ended, written where the diagnostic reads it. This is the half
+# the record was missing: the entry point records that the screen is about to
+# be held, because it is the only thing that knows that, and this records the
+# end, because it is the only thing that knows there was one. A lock unit that
+# gave up after its start limit was reported as a running locker for the rest
+# of the session, which is the defect this line closes.
+#
+# finished and not stopped, and the difference is the whole reason there are
+# two verbs. A locker that exits cleanly was dismissed by someone who
+# authenticated, which is the screen being unlocked and not a component being
+# lost. stopped here would have the diagnostic announce a missing blocking
+# component on every working desktop.
+ExecStopPost=-/usr/libexec/gridline/gridline-component-state finished locker
+
 Slice=session.slice

@@ -34,6 +34,8 @@ Gridline SHALL report the components a session expects but does not have. A user
 #### Scenario: Reporting a gap never refuses a session
 
 - **WHEN** a component is reported as a capability gap
+- **THEN** the session's startup decision is unchanged by the reporting, and a component that is not blocking does not become blocking by being observable
+
 #### Scenario: A component that stops after the session started is no longer reported as running
 
 - **WHEN** a component the session expects is running when the session starts and then stops, fails or is given up on

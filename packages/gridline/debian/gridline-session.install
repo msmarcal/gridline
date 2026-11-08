@@ -11,3 +11,4 @@ src/session/gridline-shell.target usr/lib/systemd/user/
 src/session/dropins/waybar.service.d/gridline.conf usr/lib/systemd/user/waybar.service.d/
 src/session/dropins/mako.service.d/gridline.conf usr/lib/systemd/user/mako.service.d/
 src/session/dropins/hyprpaper.service.d/gridline.conf usr/lib/systemd/user/hyprpaper.service.d/
+src/session/dropins/hyprpolkitagent.service.d/gridline.conf usr/lib/systemd/user/hyprpolkitagent.service.d/

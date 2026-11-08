@@ -44,25 +44,45 @@ gridline doctor
 ```
 
 ```
-Components a Gridline session expects:
+A Gridline session is running. Components it expects:
 
-  bar              running
-  locker           running
-  notifications    running
-  polkit-agent     running
-  wallpaper        failed  (the desktop works without it, with less)
+  bar              running        as of 09:14
+  locker           ready          as of 09:14
+  notifications    running        as of 09:14
+  polkit-agent     running        as of 09:14
+  wallpaper        failed         as of 09:16  (the desktop works without it, with less)
+
+Each line is the last thing the session recorded about that
+component, at the time shown. Nothing here polls: a component is
+recorded when it starts, and again when it stops or fails.
 
 1 component(s) are not running.
 ```
 
+Read the times. Every line is the last thing the session recorded, not a check
+made when you ran the command: nothing here watches anything. A component that
+stopped an hour ago carries an hour-old time, and that is the difference
+between this report and a lie. An earlier version of this command printed no
+times and had no way to learn that a component had stopped, so it reported a
+dead authentication agent and a given-up screen lock as running for the rest of
+the sessions they died in. Both were read here, in this document's own worked
+example, and believed.
+
+`ready` is not a hedge. The screen locker runs only while the screen is locked,
+so on a working desktop it is installed and not running, which is neither
+`running` nor a problem. Everything else here is expected to be running.
+
 It reports from what the session wrote down as each component started, stopped
 or failed, so it answers **without a Gridline session running**, which is the
-case you are most likely to be in. With no session recorded at all it says so
-in those words rather than printing an empty list, because silence and health
-must not look alike.
+case you are most likely to be in. The first line says which of those you are
+looking at: a report from a session that has ended is history rather than
+status, and it should not be read as if the machine were in that state now.
+With no session recorded at all it says so in those words rather than printing
+an empty list, because silence and health must not look alike.
 
-It exits 0 when every component is running, 1 when one is not, and 64 if you
-mistype the command, so it is usable from a script as well as read by a person.
+It exits 0 when every component is accounted for, 1 when one is not, and 64 if
+you mistype the command, so it is usable from a script as well as read by a
+person.
 
 **What it does not cover** is the components Gridline integrates with rather
 than starts: the network, audio, Bluetooth, battery, XWayland and the portals.
