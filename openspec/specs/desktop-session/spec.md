@@ -250,8 +250,13 @@ A Gridline session SHALL show the state of the machine, deliver the notification
 
 #### Scenario: Each component is kept running
 
-- **WHEN** one of these components exits during a session, for any reason
+- **WHEN** one of these components has reached a working state during a session and then exits, for any reason
 - **THEN** it is started again without the user intervening, and the session continues through the gap rather than ending
+
+#### Scenario: A component that cannot start is not held forever
+
+- **WHEN** one of these components fails to start repeatedly, rather than exiting after having run
+- **THEN** the session stops starting it again, and the condition is reported as a capability gap rather than left as a component that is restarted for as long as the session lasts
 
 #### Scenario: An absent component degrades the desktop and does not block the session
 
