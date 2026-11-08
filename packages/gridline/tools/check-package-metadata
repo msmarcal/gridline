@@ -1,0 +1,108 @@
+#!/bin/sh
+# What each package contains and declares, checked against itself.
+#
+# Three questions, and each one is a defect this project has actually shipped
+# or come close to shipping.
+#
+#   Does the resolved metadata still carry an unresolved substitution? A
+#   package whose Depends reads ${source:Version} literally installs and
+#   declares nonsense. Nothing in a build fails on it.
+#
+#   Is every file under /etc registered as a conffile, and does every
+#   registered conffile exist? An unregistered one is overwritten on upgrade
+#   with the user's edits in it. One registered but absent is a promise about
+#   a file nobody ships.
+#
+#   Does the package contain anything? Three of this project's descriptions
+#   said "no content yet" while shipping nine files and a command, and the
+#   page that compared descriptions to packages asserted both were accurate.
+#   A package that ships only its own changelog and copyright is either a
+#   placeholder or a manifest that stopped matching, and neither should be
+#   silent.
+#
+# This reads the staging trees rather than the .deb files, because the staging
+# tree is what exists at the anchor the checks run from, and by that point
+# dh_gencontrol has resolved the metadata and dh_installdeb has written the
+# conffiles. Reading the archives instead would mean checking the build after
+# it finished, which is a different and later thing.
+
+set -eu
+
+root=$(dirname "$0")/..
+cd "$root"
+
+staging_root=${1:-debian}
+
+report=$(mktemp)
+trap 'rm -f "$report"' EXIT INT TERM
+
+packages=0
+
+for pkgdir in "$staging_root"/gridline-*/; do
+    [ -d "$pkgdir" ] || continue
+    pkgdir=${pkgdir%/}
+    pkg=$(basename "$pkgdir")
+    control=$pkgdir/DEBIAN/control
+    conffiles=$pkgdir/DEBIAN/conffiles
+
+    [ -r "$control" ] || {
+        printf 'package metadata: %s has no readable DEBIAN/control\n' \
+            "$pkg" >> "$report"
+        continue
+    }
+
+    packages=$((packages + 1))
+
+    # An unresolved substitution survives into the installed package, where it
+    # is read as a literal. grep -F so the dollar and brace are themselves and
+    # not a pattern.
+    if grep -Fq '${' "$control"; then
+        printf 'package metadata: %s carries an unresolved substitution: %s\n' \
+            "$pkg" "$(grep -Fn '${' "$control" | head -1)" >> "$report"
+    fi
+
+    # Every file under /etc has to be registered, or dpkg replaces it on
+    # upgrade and takes the administrator's edits with it.
+    etc_files=$(cd "$pkgdir" && find etc -type f 2>/dev/null | sed 's|^|/|' | sort)
+    registered=$(sort "$conffiles" 2>/dev/null || true)
+
+    for f in $etc_files; do
+        printf '%s\n' "$registered" | grep -Fxq "$f" || {
+            printf 'package metadata: %s ships %s under /etc and does not register it as a conffile\n' \
+                "$pkg" "$f" >> "$report"
+        }
+    done
+
+    for f in $registered; do
+        [ -n "$f" ] || continue
+        [ -e "$pkgdir$f" ] || {
+            printf 'package metadata: %s registers %s as a conffile and ships no such file\n' \
+                "$pkg" "$f" >> "$report"
+        }
+    done
+
+    # Documentation is what dh_installdocs adds to every package by policy, so
+    # a package carrying only that carries nothing of its own.
+    own=$(cd "$pkgdir" && find . -mindepth 1 -path ./DEBIAN -prune -o \
+        -path ./usr/share/doc -prune -o \( -type f -o -type l \) -print 2>/dev/null | wc -l)
+    [ "$own" -gt 0 ] || {
+        printf 'package metadata: %s ships nothing but its own documentation\n' \
+            "$pkg" >> "$report"
+    }
+done
+
+[ "$packages" -gt 0 ] || {
+    printf 'package metadata: no staging trees under %s/\n' "$staging_root" >&2
+    printf 'package metadata: nothing was checked\n' >&2
+    exit 1
+}
+
+hits=$(wc -l < "$report")
+[ "$hits" -eq 0 ] || cat "$report" >&2
+
+printf 'package metadata: %s packages checked, %s problems\n' "$packages" "$hits"
+
+[ "$hits" -eq 0 ] || {
+    printf 'package metadata: a package must declare what it ships and ship what it declares\n' >&2
+    exit 1
+}
