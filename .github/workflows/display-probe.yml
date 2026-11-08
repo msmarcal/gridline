@@ -1,0 +1,77 @@
+# Can a compositor be given a display on a hosted runner, and at what cost?
+#
+# This answers one question and then should be deleted. It is not part of the
+# checks: it runs only when somebody asks it to, because its whole purpose is
+# to turn an open question into a recorded fact.
+#
+# What is already known, by measurement rather than by reading:
+#
+#   The cheap route is disqualified. A compositor started with its headless
+#   backend on this project's own VM failed with "Cannot open backend: no
+#   allocator available" - it wants a GPU allocator, not merely the absence of
+#   a monitor.
+#
+#   The known answer elsewhere is a virtual KMS device, which is a kernel
+#   module. Loading one needs a privileged modprobe and a kernel built with
+#   it, which is why projects that do this run a VM with their own kernel
+#   rather than loading a module on a runner. Whether a GitHub runner permits
+#   it is the question, and nobody here has asked the machine.
+#
+# The steps below are deliberately tolerant: each records what happened and
+# the job does not fail. A probe that goes red teaches nothing beyond "no",
+# while one that reports what it found distinguishes "the module is absent"
+# from "the module exists and loading it is refused", and those two have
+# different answers.
+
+name: display probe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: What kernel and what privileges
+        run: |
+          echo "kernel: $(uname -r)"
+          echo "virt:   $(systemd-detect-virt || true)"
+          echo "root:   $(sudo -n true 2>/dev/null && echo 'passwordless sudo' || echo 'no')"
+          echo "/dev/dri:"
+          ls -la /dev/dri 2>&1 || echo "  absent"
+          echo "/dev/kvm: $([ -e /dev/kvm ] && echo present || echo absent)"
+
+      - name: Is a virtual KMS module available at all
+        run: |
+          # Present in the kernel's module tree is a different answer from
+          # loadable, and both differ from "built in".
+          modinfo vkms 2>&1 | head -5 || echo "modinfo: no vkms module in this kernel's tree"
+          grep -c vkms /lib/modules/"$(uname -r)"/modules.builtin 2>/dev/null \
+            | sed 's/^/builtin matches: /' || true
+
+      - name: Try to load it
+        run: |
+          if sudo modprobe vkms 2>&1; then
+            echo "loaded"
+          else
+            echo "modprobe refused or failed, status $?"
+          fi
+          echo "/dev/dri after:"
+          ls -la /dev/dri 2>&1 || echo "  still absent"
+
+      - name: If there is a card, try the compositor on it
+        run: |
+          if [ ! -e /dev/dri/card0 ]; then
+            echo "no card, so the compositor was not attempted"
+            exit 0
+          fi
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends hyprland
+          export XDG_RUNTIME_DIR=/run/user/$(id -u)
+          sudo loginctl enable-linger "$USER"
+          sleep 3
+          # Fifteen seconds is enough to reach a Wayland socket or to fail
+          # trying, and the failure message is the thing worth keeping.
+          timeout 15 Hyprland 2>&1 | head -30 || true
+          echo "wayland sockets: $(ls "$XDG_RUNTIME_DIR" 2>/dev/null | grep -c '^wayland-' || echo 0)"

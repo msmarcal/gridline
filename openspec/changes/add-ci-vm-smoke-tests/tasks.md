@@ -87,20 +87,70 @@ exactly what was asked.
 
 ## 5. Running it where a runner exists
 
-- [ ] 5.1 Add the workflow to the GitHub replica and verify it runs on a push, reporting a failure in a way that reaches whoever would merge
-- [ ] 5.2 Verify the failure report names the check and what it found, not just that something exited non-zero. A red mark with no name sends a contributor to read the whole log
+- [x] 5.1 Add the workflow to the GitHub replica and verify it runs on a push, reporting a failure in a way that reaches whoever would merge
+- [x] 5.2 Verify the failure report names the check and what it found, not just that something exited non-zero. A red mark with no name sends a contributor to read the whole log
 - [x] 5.3 Record in the project's documentation that verification happens on the replica and not on the self-hosted remote, including the delay that implies, where a contributor reads it rather than where a maintainer does
 
 ## 6. What nobody is checking
 
-- [ ] 6.1 Write down what the automated run does not cover and why, naming each: the compositor starting, the bar drawing, a notification appearing, the wallpaper, the lock screen, and the judgements that need a person, such as whether a value on screen is current rather than merely present
+- [x] 6.1 Write down what the automated run does not cover and why, naming each: the compositor starting, the bar drawing, a notification appearing, the wallpaper, the lock screen, and the judgements that need a person, such as whether a value on screen is current rather than merely present
 - [ ] 6.2 Establish whether a compositor can be started on a hosted runner at all, and at what cost. The cheap route is disqualified by measurement already: a headless backend failed with `Cannot open backend: no allocator available`. Produce either a working display or the reason there cannot be one, and record which
 - [x] 6.3 Correct `docs/packaging.md`, whose table promises the gate is re-run in CI, and the three other live documents that name this change. Verify by grep that no live document still describes this as planned
 
 ## 7. Coherence
 
-- [ ] 7.1 Verify each scenario of the added requirement is exercised or recorded as unexercised with a reason, counting scenarios from the delta file rather than from the proposal's description of them
+- [x] 7.1 Verify each scenario of the added requirement is exercised or recorded as unexercised with a reason, counting scenarios from the delta file rather than from the proposal's description of them
 - [x] 7.2 Verify the entry point is itself covered: a check that fails to run is indistinguishable from a check that passes, unless the run says how many checks it executed
+
+## Scenario accounting
+
+Four scenarios in the added requirement, counted from
+`specs/package-delivery/spec.md`. All four were exercised, and two of them by
+the automated run itself rather than by a person deciding it had worked.
+
+1. **A change that breaks a gate is reported without anyone running the gate** -
+   the first run on the replica failed and named what it found:
+   `unmet build dependencies: build-essential:native`, with the failing step
+   titled and the steps after it shown as not run. Nobody ran anything.
+2. **What runs automatically and what a person runs are the same checks** -
+   `tools/run-checks` is the only list. `debian/rules` names no gate and nor
+   does the workflow; both call the entry point, and the successful run shows
+   `6 checks passed` twice, once through the build and once through the
+   workflow's own step. Verified by grep that no second list exists anywhere.
+3. **A check that cannot run automatically is named rather than omitted** -
+   `run-checks` prints the two machine-level checks it does not run, with
+   their flags; it reports a check that could not answer as skipped rather
+   than ok and counts it separately; and the session-layer check printed three
+   things the runner could not answer. README.md carries the longer list of
+   what a green run does not mean.
+4. **The automated run proves it can fail** - a defect was planted for every
+   one of the six build-time checks and for five of the session-layer checks,
+   each caught with a message naming the file and the problem. Planting
+   `StartLimitBurst` in `[Service]` is correctly *not* caught, because systemd
+   honours it there; `StartLimitIntervalSec` is the one it ignores.
+
+## What the first runs established
+
+Three things nobody here had asked a hosted runner, each of which decided
+whether half of this change was worth writing:
+
+- **A user manager exists after `loginctl enable-linger`**, and
+  `/run/user/<uid>` with it. Without that there is no session layer to check
+  at all, because a job runs as a user with no login session.
+- **`strace` works**, so the start program's decisions are read from the
+  `execve` it makes rather than from a process that exits too fast to catch.
+  The session check names it as unchecked when it is unavailable, and that
+  note did not appear.
+- **The whole run takes about a minute**, installing 131 packages rather than
+  the 297 a clean container needed, because the runner already carries much of
+  it. That number is what makes running this on every push an easy decision
+  rather than a trade.
+
+And one thing the dev machine was hiding: **`build-essential` and `fakeroot`
+were being assumed.** Every source package implicitly build-depends on the
+first, `debhelper` pulls neither, and `dpkg-buildpackage` defaults to the
+second as its root command. A machine somebody has been working on for weeks
+has both and never mentions it. The first clean run did.
 
 ## Workflow follow-up
 

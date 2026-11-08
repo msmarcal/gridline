@@ -188,3 +188,34 @@ ok and is counted separately, and the automated run passes `--require-all` so
 that for it a skipped check is a failure. That distinction exists because one
 of the checks reads the trees a build produces, and outside a build it finds
 nothing, examines nothing, and would otherwise report success.
+
+### What a green run does not mean
+
+The automated run has no screen. Every one of these is unchecked, and a change
+that breaks any of them passes CI:
+
+- **The compositor starting.** Nothing confirms a session reaches a desktop.
+- **The bar drawing, a notification appearing, the wallpaper.** Their units
+  are checked, their configuration is checked for syntax, and whether anything
+  arrives on screen is not.
+- **The lock screen.** Whether the screen is actually covered, whether a
+  password is accepted, and whether a dismissed locker leaves the session
+  unlocked are all out of reach. The lock path also runs through a logind
+  session, which a job does not have: `loginctl lock-session` fails there with
+  `Unknown object`.
+- **A component killed and coming back with its configuration.** The
+  components exit at once with no display, so there is nothing to kill.
+- **Anything needing judgement.** Whether a value on the bar is *current*
+  rather than merely present, whether a colour is legible, whether a layout is
+  usable. A machine can see that a field has a value; it cannot see that the
+  value is stale.
+
+The session-layer check prints what it could not answer on the machine it ran
+on, so a reader of the log sees the gap rather than inferring it from silence.
+Covering the graphical half needs a display on a runner, which has been
+measured as not cheap: a headless compositor backend fails with
+`Cannot open backend: no allocator available`, because it wants a GPU
+allocator rather than merely no monitor.
+
+**So a green run means the packaging and the wiring are intact.** It does not
+mean the desktop works. Someone still has to log in.
