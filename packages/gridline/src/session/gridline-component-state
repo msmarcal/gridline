@@ -153,6 +153,26 @@ stopped | finished)
     component=${1-}
     [ -n "$component" ] || usage
 
+    # A component that is not installed did not fail. It cannot: there was
+    # nothing there to fail. The program that starts it knows that and records
+    # absent, naming the path it looked at, and then this runs a moment later
+    # and systemd reports the only thing it can see, which is a non-zero exit.
+    #
+    # Last writer wins would throw away the better answer. Measured: the locker
+    # was moved aside, the entry point recorded absent with the path, the unit's
+    # ExecStopPost overwrote it with failed, and the diagnostic reported failed
+    # for a component that was not installed. The requirement is explicit that
+    # the report says which of absent and failed it is, so that was the fix for
+    # one defect producing another against the same requirement.
+    #
+    # Nothing gets stuck here. absent is only ever replaced by an explicit
+    # record, which is what the starting program writes the next time the
+    # component is actually there.
+    dir=$(state_dir) || exit 0
+    case $(sed -n 's/^state=//p' "$dir/$component" 2>/dev/null || true) in
+    absent) exit 0 ;;
+    esac
+
     # stopped and finished differ in one thing only: what a clean exit means.
     # For a component meant to stay running, exiting is the event. For one that
     # runs on demand, exiting cleanly is the job being done, and the component

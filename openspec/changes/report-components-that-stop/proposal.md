@@ -19,7 +19,9 @@ This is a defect in `add-session-health-check`, which shipped the diagnostic. It
 - Decides what "running" may mean when nothing is watching. A record written once is honest only if the diagnostic says when it was written and stops claiming more than it knows.
 - Verifies against both of the cases that produced this: a locker that gives up, and an agent that dies mid-session.
 
-**Out of scope.** Why the polkit agent crashed, which is unknown and is a separate question from whether anything noticed. The platform integrations Gridline does not start, which `docs/component-ownership.md` already records as a different problem with no mechanism yet.
+**Out of scope.** Doing anything about why the polkit agent crashed, which is a separate question from whether anything noticed. It was written here as unknown, and it stopped being unknown while this change was being implemented: the crash report is a `SIGABRT` at 16:53:51, five seconds after the compositor aborted at 16:53:46. The agent followed the compositor down rather than failing on its own. Still out of scope, no longer a mystery.
+
+Also out of scope: the platform integrations Gridline does not start, which `docs/component-ownership.md` already records as a different problem with no mechanism yet.
 
 ## Capabilities
 
@@ -33,10 +35,16 @@ None.
 
 ## Impact
 
-- `packages/gridline/src/session/gridline-session`: the launcher, which writes the blocking components' records once.
-- `packages/gridline/src/session/`: whatever follows those components afterwards, which may be a drop-in of Gridline's on the agent's unit, the same shape already used for the shell components.
-- `packages/gridline/src/tools/gridline`: the diagnostic, if a record's age becomes part of what it reports.
-- `packages/gridline/src/session/gridline-lock.service`: the lock unit, which has no record of its own at all today.
+This list was written before the work and came out short in both directions, so it is corrected here rather than left as the plan's version of events.
+
+- `packages/gridline/src/session/gridline-component-state`: the record's one definition, which took the largest part of the change and was not named at all. It gained a `ready` state, a `finished` verb, the time in its `list` output, severity that carries forward instead of defaulting, and the rule that a stop does not overwrite `absent`.
+- `packages/gridline/src/session/gridline-session`: the launcher, which writes the blocking components' records once, and now records which state means healthy for each of them.
+- `packages/gridline/src/session/dropins/hyprpolkitagent.service.d/gridline.conf`: new, and the fourth drop-in of Gridline's on a unit another package owns. The first that changes nothing about how its unit runs.
+- `packages/gridline/src/session/gridline-lock.service` and `gridline-lock`: the lock unit and its entry point, which had no record of their own at all.
+- `packages/gridline/src/tools/gridline`: the diagnostic, which now reports each record's age.
+- `packages/gridline/src/session/dropins/{waybar,mako,hyprpaper}.service.d/gridline.conf`: unplanned. Their `ExecStopPost` lines carried no leading dash, so a failed recording would have failed the unit and `Restart=` would have revived the component because of the record.
+- `packages/gridline/tools/check-dropin-roles`: the build gate, extended because a drop-in that only records does not fit what it expected. Task 2.3 anticipated this.
+- `packages/gridline/debian/gridline-session.install` and `docs/recovery.md`, `docs/component-ownership.md`: the manifest for the new drop-in, and the two documents whose worked example and mechanism description were written as though the record already followed every component.
 - Verification runs on the LXD VM, where both failing cases have happened on their own and where the lock can be made to give up on demand.
 
 ## Prior measurement
