@@ -35,7 +35,16 @@ jobs:
           # reads what the start program decided, because the component it
           # replaces itself with exits too fast on a machine with no display
           # to read a command line from.
-          sudo apt-get install -y --no-install-recommends debhelper strace
+          #
+          # build-essential and fakeroot are here because the first run failed
+          # without them, which is the kind of thing only a clean machine
+          # says. Every source package has an implicit build-dependency on
+          # build-essential and debhelper does not pull it - it depends on
+          # dpkg-dev alone - and dpkg-buildpackage's default root-command is
+          # fakeroot. A development machine has both from some earlier day and
+          # never mentions it.
+          sudo apt-get install -y --no-install-recommends \
+            build-essential fakeroot debhelper strace
 
       - name: Build the packages
         working-directory: packages/gridline
