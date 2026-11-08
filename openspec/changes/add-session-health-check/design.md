@@ -68,5 +68,7 @@ They go under a Gridline-owned `gridline-shell.target` instead, which the sessio
 ## Open Questions
 
 - ~~Whether `Upholds=` leaves a unit alone when its condition fails.~~ **Answered: it does not**, and the answer sent the mechanism somewhere else entirely. The measurement is in the decision above.
-- Where the record lives so that the diagnostic can read it when the session is not running, without it becoming state that outlives the session's own lifetime.
+- ~~Where the record lives so that the diagnostic can read it when the session is not running, without it becoming state that outlives the session's own lifetime.~~ **Answered: `$XDG_RUNTIME_DIR/gridline/`, one file per component.** It is session-scoped by construction rather than by cleanup code, and it exists whenever the user has any session, including a text console opened after a graphical login failed. Measured at the greeter with the previous session ended: the directory is gone, so the record dies with the user manager and a component given up on in one session is tried again in the next without anything being written to expire it. The condition that makes this true is `Linger=no`, which is the default and not a guarantee.
+
+  One file per component rather than one file with a line each, because three components can stop in the same instant and an append race is a defect nobody reproduces on purpose.
 - Whether the diagnostic reports the compositor capabilities the adapter already knows about, which `compositor-abstraction` says are reported in a form the diagnostic commands can surface. That is a third promise of the same kind, and it is not in this change's scope, but the command's shape should not make it awkward to add.
