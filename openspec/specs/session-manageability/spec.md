@@ -137,3 +137,13 @@ Gridline SHALL report the components a session expects but does not have. A user
 
 - **WHEN** a component is reported as a capability gap
 - **THEN** the session's startup decision is unchanged by the reporting, and a component that is not blocking does not become blocking by being observable
+
+#### Scenario: A component that stops after the session started is no longer reported as running
+
+- **WHEN** a component the session expects is running when the session starts and then stops, fails or is given up on
+- **THEN** the diagnostic stops reporting it as running, so that "running" is a statement about now rather than about when the session began
+
+#### Scenario: The report says what it knows and not more
+
+- **WHEN** the diagnostic reports a component whose state it has not been able to observe since it was first recorded
+- **THEN** it says so rather than presenting a stale record as a current one, because a diagnostic that is confidently wrong is worse than one that admits a gap
