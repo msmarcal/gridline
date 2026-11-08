@@ -81,7 +81,7 @@ exactly what was asked.
 - [x] 4.1 Verify the session target's wiring: `Wants=` naming the blocking components and the shell target, `Upholds=` naming the idle daemon, and the launcher's blocking check reading one of them. This is the shape a change can break without any test noticing today
 - [x] 4.2 Verify each component's effective `ExecStart` resolves through Gridline's drop-in to the start program with the right role, read from systemd rather than from the file on disk
 - [x] 4.3 Verify the start program's decisions: no desktop identity gives the bare binary, a Gridline session with nothing of the user's gives Gridline's paths, a planted user configuration gives the bare binary, and an unreadable shipped default gives the bare binary. Four cases, read from the process that replaced it
-- [ ] 4.4 Verify a component killed returns with its configuration, and a component that cannot start stops being started after its limit. Both are behaviour this project changed deliberately and neither has anything watching it
+- [x] 4.4 Verify a component killed returns with its configuration, and a component that cannot start stops being started after its limit. Both are behaviour this project changed deliberately and neither has anything watching it
 - [x] 4.5 Verify the diagnostic answers with no session at all, and that its exit codes are what they claim, measured without a pipe
 - [x] 4.6 Verify everything in this group fails when it should, by planting a defect for each rather than by observing a green run
 
@@ -128,6 +128,27 @@ the automated run itself rather than by a person deciding it had worked.
    each caught with a message naming the file and the problem. Planting
    `StartLimitBurst` in `[Service]` is correctly *not* caught, because systemd
    honours it there; `StartLimitIntervalSec` is the one it ignores.
+
+## The half a container could not answer
+
+Task 4.4 was unreachable on a runner and is answered on the project's VM,
+which has a display. Both halves, measured rather than reasoned:
+
+**A component killed comes back deciding the same.** The bar was killed with
+`SIGKILL`; `Restart=` brought another in its place with `NRestarts: 1`, and
+the argv read from `/proc` is identical to the first - Gridline's
+configuration and style named again. That is the thing nothing was watching:
+the drop-in points at a program that *decides*, and no measurement had ever
+confirmed it decides the same way twice.
+
+**A component that cannot start stops being tried.** With the binary moved
+aside the unit reached `failed exit-code` after five restarts, the journal
+carries one `Start request repeated too quickly`, and it was still failed
+four seconds later rather than cycling.
+
+The session-layer check still names both as unanswerable, and that stays
+correct: it describes the machine it is running on. On a runner there is
+nothing to kill, because the components exit the moment they find no display.
 
 ## Can a compositor be given a display on a hosted runner?
 

@@ -47,9 +47,17 @@ Every check added here is shown failing against a deliberately broken input befo
 
 This is in the delta as a scenario rather than left as a convention, because it is the one practice that separates a check from a decoration.
 
-### What the deferred layer needs before it is decided
+### What the deferred layer needed, and what the measurement said
 
-Not a preference, a measurement: whether a compositor can be brought up on a runner at all. That is one experiment, and it either produces a working display or produces the reason it cannot, and either outcome settles the question. It is a task here and it gates nothing else.
+Not a preference, a measurement: whether a compositor can be brought up on a runner at all. One experiment, settling the question either way.
+
+It ran, and the answer came back in two halves that this section had expected to be one.
+
+**A display device is obtainable, and the cost this project had recorded for it was wrong.** The runner already carries `/dev/dri/card1` before anything is loaded, it has passwordless sudo, and `vkms` ships in the Azure kernel's module tree. `modprobe vkms` loads and `card0` appears. The route written down here as needing a VM with its own kernel needs neither.
+
+**And the compositor aborts on it anyway**, with `CBackend::create() failed!`, a core dump and no Wayland socket. So the headless backend fails for want of an allocator, and a real DRM device fails at backend creation. What a runner cannot give is not a card; it is whatever the backend wants behind one.
+
+The graphical layer therefore stays out, now for a measured reason rather than a presumed cost. `.github/workflows/display-probe.yml` is kept rather than deleted, because an answer this specific can expire: the compositor, the kernel or the runner image could each turn it over, and re-asking is one dispatch.
 
 ## Risks / Trade-offs
 
@@ -59,5 +67,13 @@ Not a preference, a measurement: whether a compositor can be brought up on a run
 
 ## Open Questions
 
-- Whether a compositor can be started on a hosted runner, and at what cost. The cheap route is already disqualified by measurement; the remaining routes are a virtual KMS device inside a VM, or a different compositor for the test than the one shipped, which would be testing something else.
-- Whether the session layer runs in a container with a user manager or needs a VM for `systemd --user` to behave as it does on a real machine. This is measurable before any of it is written, and it decides how much of the second layer is reachable cheaply.
+Both questions this document opened with were answered by measurement and are recorded as decisions above. Neither answer was the one the question expected, which is why they are worth restating here rather than quietly deleted.
+
+The compositor question assumed the remaining route was "a virtual KMS device **inside a VM**". The device loaded directly on the runner, with no VM; what failed was the compositor's backend. The cost was in a different place than the question put it.
+
+The session-layer question asked whether a container suffices or a VM is needed for `systemd --user` to behave. A container suffices, and every behaviour this project depends on was correct there - `Wants=` and `Upholds=` reported apart, the implicit `After=`, `ExecStart` through a drop-in, `Restart=`, a start limit reached. The whole prerequisite is `loginctl enable-linger`, without which there is no user manager and no `XDG_RUNTIME_DIR` at all, because a job runs as a user with no login session.
+
+What is left open is not about this change:
+
+- **Nothing verifies that the build still calls the entry point.** `debian/rules` invokes `run-checks`, and the workflow invokes it separately so that losing one does not lose both. Neither notices if the other stops.
+- **Task 4.4's first half is answerable only where there is a display.** It was measured on the project's VM and cannot be measured on a runner, because the components exit the moment they find no screen. The session-layer check names it as unanswerable on the machine it runs on, which stays correct.
