@@ -87,10 +87,12 @@ printf 'gridline checks\n'
 if [ -d "$STAGING" ] && [ -n "$(find "$STAGING" -maxdepth 1 -name 'gridline-*' -type d -print -quit 2>/dev/null)" ]; then
     run "path ownership" tools/check-path-ownership "$STAGING"
     run "package metadata" tools/check-package-metadata "$STAGING"
+    run "unit syntax" tools/check-unit-syntax "$STAGING"
 else
     report "path ownership" "skipped: no staging tree under $STAGING/"
     report "package metadata" "skipped: no staging tree under $STAGING/"
-    skipped=$((skipped + 2))
+    report "unit syntax" "skipped: no staging tree under $STAGING/"
+    skipped=$((skipped + 3))
 fi
 
 # The remaining three read the source tree and answer anywhere.

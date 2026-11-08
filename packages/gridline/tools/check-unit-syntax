@@ -1,0 +1,149 @@
+#!/bin/sh
+# Every unit and drop-in Gridline ships, through systemd's own parser.
+#
+# This exists because the failure it catches is silent. A directive in the
+# wrong section is accepted, ignored, and changes nothing a build or a start
+# would report - and this project came one commit away from shipping exactly
+# that. Measured, so the example is precise rather than remembered:
+# StartLimitIntervalSec in [Service] is ignored and falls back to the ten
+# second default, while StartLimitBurst in the same section is honoured,
+# because the compatibility covers the old names and not the new one.
+#
+# Three things about the instrument, each measured rather than assumed, and
+# each the reason this is not a one-line wrapper.
+#
+#   Its exit status is useless in both directions. It exits 0 for a unit
+#   carrying an unknown key, and 1 for a unit whose ExecStart names a program
+#   that is not installed here. So the output is read and the status ignored.
+#
+#   It loads the whole unit search path, so it reports problems in units this
+#   project does not own - on the machine this was written on, a warning about
+#   spice-vdagent.service on every single run. Only lines naming the unit under
+#   test are kept.
+#
+#   It cannot read a drop-in at all: given one it answers "Failed to prepare
+#   filename ... Invalid argument", because the name does not end in a unit
+#   suffix. Renaming it to one is worse than useless - a drop-in that adds
+#   ExecStopPost without an ExecStart is then rejected for having no ExecStart,
+#   which is true of the fragment and false of the unit it modifies. So each
+#   drop-in is composed against a synthetic base and verified as the unit it
+#   would become.
+
+set -eu
+
+root=$(dirname "$0")/..
+cd "$root"
+
+staging_root=${1:-debian}
+unit_dir=usr/lib/systemd/user
+
+report=$(mktemp)
+environment=$(mktemp)
+workdir=$(mktemp -d)
+trap 'rm -rf "$report" "$environment" "$workdir"' EXIT INT TERM
+
+checked=0
+
+# Lines about what happens to be installed on this machine rather than about
+# the unit's definition. They are kept and shown, because on a machine where
+# the components are installed they would be real, and dropping them silently
+# is how a check becomes narrower than anybody remembers.
+is_environmental() {
+    case $1 in
+    *'is not executable'*) return 0 ;;
+    *'failed with code'*) return 0 ;;
+    esac
+    return 1
+}
+
+# A composed drop-in is verified from a directory that exists for the length
+# of this check, so every message about it names a path that is gone by the
+# time anybody reads the log. The reported path is rewritten back to the file
+# somebody can actually open. Without this the output of an automated run
+# points at /tmp/tmp.BVoWBsXDAy, which is a correct answer to a question
+# nobody asked.
+rewrite_from=
+rewrite_to=
+
+examine() {
+    name=$1
+    shift
+    checked=$((checked + 1))
+    output=$("$@" 2>&1 || true)
+    if [ -n "$rewrite_from" ]; then
+        output=$(printf '%s\n' "$output" | sed "s|$rewrite_from|$rewrite_to|g")
+    fi
+    printf '%s\n' "$output" | while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        # Keep only what names the unit under test. Two prefixes occur: the
+        # unit name for semantic complaints, and the file path for parse ones.
+        case $line in
+        "$name:"* | *"/$name:"* | *"/$name.d/"*) ;;
+        *) continue ;;
+        esac
+        if is_environmental "$line"; then
+            printf '%s\n' "$line" >> "$environment"
+        else
+            printf '%s\n' "$line" >> "$report"
+        fi
+    done
+}
+
+for pkgdir in "$staging_root"/gridline-*/; do
+    # The glob leaves a trailing slash, which would show up doubled in every
+    # path this reports. check-path-ownership strips it the same way.
+    pkgdir=${pkgdir%/}
+    [ -d "$pkgdir/$unit_dir" ] || continue
+
+    for unit in "$pkgdir/$unit_dir"/*.service "$pkgdir/$unit_dir"/*.target; do
+        [ -f "$unit" ] || continue
+        examine "$(basename "$unit")" systemd-analyze --user verify "$unit"
+    done
+
+    # Each drop-in, composed against a base that exists only for the length of
+    # this check. The trailing colon on SYSTEMD_UNIT_PATH appends to the usual
+    # search path instead of replacing it; without it every composed unit is
+    # reported as unable to find basic.target.
+    for dropin_dir in "$pkgdir/$unit_dir"/*.service.d; do
+        [ -d "$dropin_dir" ] || continue
+        unit_name=$(basename "$dropin_dir" .d)
+        compose=$workdir/$unit_name.d
+        rm -rf "$workdir"/*
+        mkdir -p "$compose"
+        printf '[Unit]\nDescription=synthetic base for checking a drop-in\n[Service]\nExecStart=/bin/true\n' \
+            > "$workdir/$unit_name"
+        cp "$dropin_dir"/*.conf "$compose/" 2>/dev/null || true
+        rewrite_from=$compose
+        rewrite_to=$dropin_dir
+        examine "$unit_name" env SYSTEMD_UNIT_PATH="$workdir:" \
+            systemd-analyze --user verify "$unit_name"
+        rewrite_from=
+        rewrite_to=
+    done
+done
+
+[ "$checked" -gt 0 ] || {
+    printf 'unit syntax: no units found under %s/*/%s\n' "$staging_root" "$unit_dir" >&2
+    printf 'unit syntax: nothing was checked\n' >&2
+    exit 1
+}
+
+# Problems first and notes after, because the order matters more than it
+# looks. The first version printed the notes first, and a planted defect then
+# arrived under six lines about programs not being installed - so the one line
+# worth reading was the one a reader scrolled past.
+hits=$(wc -l < "$report")
+[ "$hits" -eq 0 ] || cat "$report" >&2
+
+env_hits=$(wc -l < "$environment")
+[ "$env_hits" -eq 0 ] || {
+    printf 'unit syntax: %s note(s) about what is installed here, not about the units:\n' "$env_hits"
+    sed 's/^/  /' "$environment"
+}
+
+printf 'unit syntax: %s units and drop-ins checked, %s problems\n' "$checked" "$hits"
+
+[ "$hits" -eq 0 ] || {
+    printf 'unit syntax: systemd accepted these and ignored part of what they say\n' >&2
+    exit 1
+}
