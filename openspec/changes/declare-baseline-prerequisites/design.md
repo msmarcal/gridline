@@ -10,7 +10,11 @@ See proposal.md for motivation. What the measurements settled, because three of 
 
 **Removing Gridline does not reach the Ubuntu desktop.** Simulated: `apt-get autoremove --purge` of all three Gridline packages removes 64 and leaves `ubuntu-desktop`, `gnome-shell`, `gdm3`, `mutter`, the portals and `nautilus` in place. The four dependencies shared with the desktop are each held by something the desktop itself declares.
 
-**The terminal already has a fallback.** `xdg-terminal-exec` does not fail when the entry it is given cannot be resolved; it falls through, and on an Ubuntu desktop it finds `ptyxis`, which `ubuntu-desktop-minimal` brings. This was learned from a probe that hung and had to be killed after opening a terminal nobody asked for.
+**The terminal falls through rather than failing, and what it falls through to is not guaranteed.** `xdg-terminal-exec` does not fail when the entry it is given cannot be resolved. Measured in three states on the verification machine: with the binary gone and the entry still present, with both gone, and with both restored. The first two opened `ptyxis`; the third opened `kitty`.
+
+**`ptyxis` is not the answer, it is this machine's answer.** No list names it for a Gridline session - the desktop-keyed lists that do are keyed on `ubuntu`, `gnome` and `sway`, and Gridline's `XDG_CURRENT_DESKTOP` is `Gridline:Hyprland`. It was reached by the scan, and the scan found it because this machine has exactly two terminals installed and one of them had just been taken away. This project measured the same scan on a machine with three: 114 candidates with terminals at positions 9, 76 and 102.
+
+That reading was first recorded as "it falls through to ptyxis, which ubuntu-desktop-minimal brings", which is true and says nothing about why. The why is what decides whether a second entry is belt-and-braces or load-bearing, and counting the terminals is what settled it.
 
 ## Goals / Non-Goals
 
@@ -44,7 +48,13 @@ This is allowed by the requirement that already exists - a component whose absen
 
 **The second line in the terminal list is not optional and the two cannot ship apart.** `gridline-xdg-terminals.list` holds one entry, and its comment justifies that by the terminal being a dependency: *"a second line would be unreachable."* The moment it stops being a dependency, that sentence is false and the file holds a preference that can fail to resolve. So the list gains `org.gnome.Ptyxis.desktop:new-window`, which is what Ubuntu lists for itself, and the comment is rewritten to say what it now does.
 
-Without that second line the failure is not "no terminal" - it is worse and quieter. `xdg-terminal-exec` falls through to an unordered scan of every installed application, and this project measured that scan once already: 114 candidates with three terminals at positions 9, 76 and 102, so installing an unrelated application could change which terminal a key opens.
+**Without that second line the failure is "no terminal", and it arrives silently.** This was measured rather than argued, and the measurement went further than the argument had.
+
+With two terminals installed and the preferred one removed, the scan reliably found the other, which looked like a safe fallback and is why the first reading was too kind. Then `xterm` was installed - a package with no relationship to Gridline, chosen only to give the scan a third candidate so that it and the list could disagree. One `apt install` added two entries, `debian-xterm` and `debian-uxterm`, and the scan then picked `xterm`, which needs X11 and fails in a Wayland session with `Can't open display`.
+
+So the key did nothing. Not a different terminal: no terminal, no window, and nothing on screen to say why. **Installing an unrelated package took a working binding and broke it**, which is the hazard this project had described in the abstract and had never seen happen.
+
+With Gridline's second entry present and the same three terminals installed, the same removal opened `ptyxis`. The second line is what makes the answer a Gridline decision rather than a property of what else happens to be on the machine.
 
 ### `gridline-tools` declares `gridline-session`
 

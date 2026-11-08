@@ -18,13 +18,30 @@ Depends: ${misc:Depends},
          swayidle,
          hyprpolkitagent,
          xdg-terminal-exec,
-         kitty,
          waybar,
          mako-notifier,
          hyprpaper,
          fuzzel,
          libnotify-bin,
          ubuntu-wallpapers
+# The terminal, and it is the one component here that is a preference rather
+# than a requirement. The session reaches it through xdg-terminal-exec, the
+# freedesktop mechanism for "the terminal this system uses", so the compositor
+# binding names no terminal and a user changes theirs by registering one.
+#
+# As a dependency that was half a lie: removing kitty removed the session. As a
+# recommendation apt still installs it alongside Gridline, and removing it is
+# an ordinary operation. Measured: with kitty gone the session still opens a
+# terminal, because the mechanism falls through rather than failing.
+#
+# What it falls through to is not guaranteed, which is why the terminal list
+# gained a second entry in the same change. Without it the answer comes from an
+# unordered scan of every installed application.
+#
+# The other four components above are dependencies and stay that way: each is
+# handed a Gridline-owned configuration file naming that component, and there
+# is no mechanism to resolve a replacement.
+Recommends: kitty
 Description: Gridline session integration
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
  package owns the session entry the display manager reads, the session
@@ -85,7 +102,21 @@ Description: Gridline configuration defaults and policy input
 
 Package: gridline-tools
 Architecture: all
-Depends: ${misc:Depends}
+# gridline-session, and the direction is one way. The gridline command reads
+# /usr/libexec/gridline/gridline-component-state, which that package ships, so
+# removing the session leaves a command that cannot answer. It declines with a
+# clear message rather than crashing, which is why this went unnoticed, and a
+# relationship that holds only by accident of what people happen to install is
+# not a declared one.
+#
+# The reverse must not be added: a session has no need of the diagnostic, and
+# declaring it would make the command unremovable.
+#
+# source:Version and not binary:Version, because both packages are
+# Architecture: all built from this source. The lock is strict because what
+# crosses between them is a private file format rather than a public interface.
+Depends: ${misc:Depends},
+         gridline-session (= ${source:Version})
 Description: Gridline command-line tools
  Gridline is an optional Wayland tiling desktop session for Ubuntu. This
  package owns the gridline command. Its one subcommand is doctor, which

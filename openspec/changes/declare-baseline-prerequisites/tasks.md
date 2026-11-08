@@ -2,21 +2,21 @@
 
 ## 1. The relationship between Gridline's own packages
 
-- [ ] 1.1 Reproduce the defect first: with both packages installed, remove `gridline-session` on the VM and record what `gridline doctor` then does, so the fix has something to be measured against rather than being verified against its own intention
-- [ ] 1.2 Declare `gridline-session` in `gridline-tools`. Verify from the built package with `dpkg-deb -f gridline-tools Depends`, and verify the direction is one way only by confirming `gridline-session` gained nothing
-- [ ] 1.3 Verify removing `gridline-tools` leaves a working session, and that removing `gridline-session` now takes `gridline-tools` with it rather than leaving a command that cannot answer. Measure with `apt-get remove -s` for both directions
+- [x] 1.1 Reproduce the defect first: with both packages installed, remove `gridline-session` on the VM and record what `gridline doctor` then does, so the fix has something to be measured against rather than being verified against its own intention
+- [x] 1.2 Declare `gridline-session` in `gridline-tools`. Verify from the built package with `dpkg-deb -f gridline-tools Depends`, and verify the direction is one way only by confirming `gridline-session` gained nothing
+- [x] 1.3 Verify removing `gridline-tools` leaves a working session, and that removing `gridline-session` now takes `gridline-tools` with it rather than leaving a command that cannot answer. Measure with `apt-get remove -s` for both directions
 
 ## 2. The terminal becomes a preference
 
 These land together or not at all. The list's comment justifies its single entry by the terminal being a dependency, so changing one without the other leaves the file describing a rule it no longer follows.
 
-- [ ] 2.1 Establish what the session does today with no terminal installed at all, before anything changes: move `kitty` aside, press the binding, and record whether a terminal opens and which. This is the baseline the fallback has to beat
-- [ ] 2.2 Change `Depends: kitty` to `Recommends: kitty` and verify from the built package that `kitty` appears in `Recommends` and not in `Depends`
-- [ ] 2.3 Add the second entry to `gridline-xdg-terminals.list` and rewrite the comment that justifies a single entry, since its reasoning stops being true. Verify the installed file holds both entries in order
-- [ ] 2.4 Verify removing `kitty` no longer removes `gridline-session`, with `apt-get remove -s kitty`, which today lists the session for removal
-- [ ] 2.5 Verify Gridline's preference still wins when `kitty` is present: press the binding in a Gridline session and confirm which terminal opens, and confirm the same machine's non-Gridline session is unaffected
-- [ ] 2.6 Verify the fallback: with `kitty` absent, the binding opens the terminal the second entry names, not an arbitrary one. Compare against what 2.1 recorded
-- [ ] 2.7 Verify an `--no-install-recommends` install is still a usable session, or record precisely what it loses. Measure with `apt-get install -s --no-install-recommends` against the built package rather than reasoning from the field
+- [x] 2.1 Establish what the session does today with no terminal installed at all, before anything changes: move `kitty` aside, press the binding, and record whether a terminal opens and which. This is the baseline the fallback has to beat
+- [x] 2.2 Change `Depends: kitty` to `Recommends: kitty` and verify from the built package that `kitty` appears in `Recommends` and not in `Depends`
+- [x] 2.3 Add the second entry to `gridline-xdg-terminals.list` and rewrite the comment that justifies a single entry, since its reasoning stops being true. Verify the installed file holds both entries in order
+- [x] 2.4 Verify removing `kitty` no longer removes `gridline-session`, with `apt-get remove -s kitty`, which today lists the session for removal
+- [x] 2.5 Verify Gridline's preference still wins when `kitty` is present: press the binding in a Gridline session and confirm which terminal opens, and confirm the same machine's non-Gridline session is unaffected
+- [x] 2.6 Verify the fallback: with `kitty` absent, the binding opens the terminal the second entry names, not an arbitrary one. Compare against what 2.1 recorded
+- [x] 2.7 Verify an `--no-install-recommends` install is still a usable session, or record precisely what it loses. Measure with `apt-get install -s --no-install-recommends` against the built package rather than reasoning from the field
 
 ## 3. What the package says it assumes
 

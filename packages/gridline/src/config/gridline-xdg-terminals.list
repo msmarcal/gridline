@@ -1,18 +1,47 @@
 # The terminal a Gridline session opens.
 #
-# Without this the choice is arbitrary. The launcher walks every application on
+# Without this the choice is arbitrary. The resolver walks every application on
 # the machine in the order the directory scan produced and takes the first
 # carrying the TerminalEmulator category. Measured on the baseline: 114
 # candidates, with three terminals at positions 9, 76 and 102. Installing or
 # removing any unrelated application can change which one a Gridline keybinding
 # opens.
 #
-# The filename is keyed on Gridline's desktop name, which is how the launcher
+# The filename is keyed on Gridline's desktop name, which is how the resolver
 # finds it, and it is why this preference applies in a Gridline session and in
 # no other. A machine's own terminal choice is left alone, which is the
 # difference between expressing a preference and taking one.
 #
-# One entry and no fallback: the terminal named here is a dependency of
-# gridline-session, so a machine without it has no Gridline session to express
-# a preference for, and a second line would be unreachable.
+# Two entries, and the second is not decoration.
+#
+# This file held one, and said so for a reason that has stopped being true:
+# "the terminal named here is a dependency of gridline-session, so a machine
+# without it has no Gridline session to express a preference for, and a second
+# line would be unreachable." The terminal is a recommendation now, so a
+# Gridline session can perfectly well run on a machine where the first entry
+# resolves to nothing, and the second line is exactly the case that used to be
+# unreachable.
+#
+# What happens without it was measured rather than assumed, and the first
+# reading was too kind. With the preferred terminal removed the session still
+# opened one, which looked like a safe fallback; it was the directory scan, and
+# the scan was right only because that machine had two terminals installed and
+# one had just been taken away. Nothing names a terminal for a Gridline
+# session: the desktop-keyed lists the resolver ships are keyed on other
+# desktops, and the first element of this session's desktop identity is
+# Gridline, which none of them matches.
+#
+# Installing xterm settled it. That package has nothing to do with this
+# project; it was installed only so the scan would have a third candidate and
+# could disagree with this file. It brought two entries, and the scan then
+# picked one that needs X11 and fails in a Wayland session. The key opened
+# nothing at all - no window and no message - and the cause was an unrelated
+# apt install. With the second entry below present, the same removal opened the
+# terminal named here.
+#
+# So the second entry is the project's answer rather than the scan's. It names
+# what Ubuntu lists for itself, which is the right second choice on the desktop
+# Gridline is built for, and it carries the same :new-window argument Ubuntu
+# uses so that opening a terminal does not reuse an existing window.
 kitty.desktop
+org.gnome.Ptyxis.desktop:new-window
