@@ -1,0 +1,134 @@
+#!/bin/sh
+# The Gridline command.
+#
+# package-delivery assigns this to gridline-tools, which until now shipped a
+# directory and nothing to run. `doctor` is its first subcommand and the shape
+# is meant to be the shape of the rest: the project has already said it will
+# report policy that is not in effect and compositor capabilities that are
+# unavailable, and both are the same kind of answer as this one.
+#
+# What this does not do is observe anything. It answers a question when asked,
+# from what the session wrote down. Watching components over time, acting on
+# what it finds, and alerting are all deliberately absent.
+
+set -eu
+
+STATE_RECORDER=/usr/libexec/gridline/gridline-component-state
+SESSION_TARGET=gridline-session.target
+SHELL_TARGET=gridline-shell.target
+
+usage() {
+    cat >&2 <<'EOF'
+usage: gridline <command>
+
+  doctor    report the components a Gridline session expects and their state
+
+EOF
+    exit 64
+}
+
+# A component's line reads as a sentence about the component, not as a dump of
+# a record. Someone running this because their bar is missing should find the
+# word bar.
+describe() {
+    name=$1
+    state=$2
+    blocking=$3
+
+    case $state in
+    started) verdict="running" ;;
+    stopped) verdict="stopped" ;;
+    failed) verdict="failed" ;;
+    absent) verdict="not installed" ;;
+    *) verdict="unknown ($state)" ;;
+    esac
+
+    # Severity is said rather than implied. A reader should not have to know
+    # which components are fail-safe to know whether to worry.
+    if [ "$state" = started ]; then
+        consequence=""
+    elif [ "$blocking" = yes ]; then
+        consequence="  (a session will not start without it)"
+    else
+        consequence="  (the desktop works without it, with less)"
+    fi
+
+    printf '  %-16s %s%s\n' "$name" "$verdict" "$consequence"
+}
+
+doctor() {
+    if [ ! -x "$STATE_RECORDER" ]; then
+        echo "gridline doctor: $STATE_RECORDER is not installed," \
+            "so there is nothing recording what the session knows" >&2
+        return 1
+    fi
+
+    records=$("$STATE_RECORDER" list 2>/dev/null || true)
+
+    # Silence and health are different answers and must read differently. An
+    # empty record means no Gridline session has run for this user since they
+    # logged in, which is a fact about the machine rather than a failure of
+    # this command.
+    if [ -z "$records" ]; then
+        echo "No Gridline session has recorded anything for this user."
+        echo "This is what you see before a first login, and after logging out"
+        echo "of every session, because the record lives and dies with them."
+        return 0
+    fi
+
+    echo "Components a Gridline session expects:"
+    echo
+
+    unhealthy=0
+    while read -r name state blocking; do
+        [ -n "$name" ] || continue
+        describe "$name" "$state" "${blocking:-no}"
+        [ "$state" = started ] || unhealthy=$((unhealthy + 1))
+    done <<EOF
+$records
+EOF
+
+    echo
+    if [ "$unhealthy" -eq 0 ]; then
+        echo "Every component this session expects is running."
+        return 0
+    fi
+
+    printf '%s component(s) are not running.\n' "$unhealthy"
+    echo "A component that is not installed can be installed; one that failed"
+    echo "has its reason in the journal: journalctl --user -u <unit>"
+    return 1
+}
+
+# The record is the answer, and the targets are what the record is about. This
+# reads Gridline's own units to say what the session is wired to expect, and
+# never reads a unit another package owns: a diagnostic whose correctness
+# depends on the internals of a third party's unit is a diagnostic that breaks
+# when that party changes its mind.
+wiring() {
+    for target in "$SESSION_TARGET" "$SHELL_TARGET"; do
+        printf '%s wants: %s\n' "$target" \
+            "$(systemctl --user show -p Wants --value "$target" 2>/dev/null)"
+    done
+}
+
+command=${1-}
+[ -n "$command" ] || usage
+shift
+
+case $command in
+doctor)
+    [ $# -eq 0 ] || usage
+    doctor
+    ;;
+doctor-wiring)
+    # Not advertised in the usage: this exists so that a verification can
+    # compare what the record claims about severity against what the session's
+    # own targets declare, without that comparison living inside doctor as a
+    # second source of the same fact.
+    wiring
+    ;;
+*)
+    usage
+    ;;
+esac

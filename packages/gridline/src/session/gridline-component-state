@@ -41,6 +41,8 @@ usage: gridline-component-state record <component> <state> [detail]
        gridline-component-state stopped <component>
 
 States: started, stopped, failed, absent.
+Set GRIDLINE_COMPONENT_BLOCKING=yes for a component whose absence refuses
+a session. It defaults to no.
 EOF
     exit 64
 }
@@ -73,6 +75,21 @@ record)
     dir=$(state_dir) || exit 0
     mkdir -p "$dir" 2>/dev/null || exit 0
 
+    # Whether a component's absence refuses a session is written here by
+    # whoever records, because whoever records knows: the launcher checks the
+    # blocking ones and the starting program handles the rest.
+    #
+    # An earlier version left this out, on the reasoning that the session's
+    # targets already declare it and a second copy is the one that drifts. That
+    # reasoning was right about duplication and wrong about cost: the targets
+    # declare units and this record is keyed on Gridline names, so reading
+    # severity from the targets means joining the two through the drop-ins,
+    # which is a mapping to get wrong for a fact the writer had in hand.
+    case ${GRIDLINE_COMPONENT_BLOCKING:-no} in
+    yes) blocking=yes ;;
+    *) blocking=no ;;
+    esac
+
     # Written whole and moved into place, so a reader never sees half a record.
     #
     # The detail line is written with if and not with a trailing && test. As the
@@ -84,6 +101,7 @@ record)
     tmp=$dir/.$component.$$
     {
         printf 'state=%s\n' "$state"
+        printf 'blocking=%s\n' "$blocking"
         printf 'at=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
         if [ -n "$detail" ]; then
             printf 'detail=%s\n' "$detail"
@@ -121,8 +139,9 @@ list)
     for record in "$dir"/*; do
         [ -f "$record" ] || continue
         case ${record##*/} in .*) continue ;; esac
-        printf '%s %s\n' "${record##*/}" \
-            "$(sed -n 's/^state=//p' "$record" 2>/dev/null)"
+        printf '%s %s %s\n' "${record##*/}" \
+            "$(sed -n 's/^state=//p' "$record" 2>/dev/null)" \
+            "$(sed -n 's/^blocking=//p' "$record" 2>/dev/null)"
     done
     ;;
 

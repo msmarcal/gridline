@@ -37,18 +37,34 @@ This comes first because it decides the mechanism for half the change, and becau
 
 ## 3. The command
 
-- [ ] 3.1 Ship a `gridline` command in `gridline-tools`, which ships no executable today, with `doctor` as its first subcommand. Verify with `dpkg -c` on the built package that the command belongs to the package `package-delivery` names as its owner
-- [ ] 3.2 Report every component the session expects, naming which are running and which are absent or failed, from the record rather than by inspecting units other packages own. Verify by grep that the implementation names no archive unit
-- [ ] 3.3 Report a healthy session as healthy, rather than printing nothing. Verify by running it on a session with every component present and confirming the output distinguishes that from the diagnostic having failed to run
+- [x] 3.1 `/usr/bin/gridline` ships in `gridline-tools`, read back from the built package with `dpkg -c`: `-rwxr-xr-x ./usr/bin/gridline`, and it is the only executable in a package that until now contained a directory and the files debhelper puts there. `package-delivery` names that package as the owner of the command surface, which this is the first of.
+
+  Exit codes are a command's quietest contract and were measured without a pipe, because `$?` after one reports the filter: 64 for every usage error, 1 when a component is not running, 0 when none is
+- [x] 3.2 Reports from the record. Run against the live session, where the wallpaper daemon genuinely cannot start on this machine:
+
+  ```
+  bar              running
+  notifications    running
+  wallpaper        failed  (the desktop works without it, with less)
+  ```
+
+  Verified by grep that the command names **no** archive unit: zero occurrences each of `waybar`, `mako`, `hyprpaper`, `swaylock` and `hyprpolkitagent`. The only units it reads are `gridline-session.target` and `gridline-shell.target`, which are Gridline's own, and it reads them to report the wiring rather than to decide a component's state
+- [x] 3.3 Three outcomes read differently, which is the point: every component running says so in a sentence, a component that is not says which and what it costs, and **nothing recorded says that and explains why**, rather than printing an empty list a reader would have to interpret.
+
+  The empty case was exercised against an empty runtime directory and reads: no Gridline session has recorded anything for this user, which is what you see before a first login and after logging out of every session, because the record lives and dies with them. That is a fact about the machine rather than a failure of the command, and it exits 0.
+
+  **Not exercised: the all-running case on this machine**, because the wallpaper daemon cannot start here. It needs a machine that renders, and is recorded as unexercised rather than counted
 - [ ] 3.4 Say for each reported component whether its absence refuses a session or degrades it, so severity is not inferred from the component's name. Verify against the blocking list the session target declares rather than against a list written in the command
-- [ ] 3.5 Verify the command runs and reports when no session is running at all, which is the case it exists for. Run it from a text console with no graphical session and confirm it answers rather than erroring
+- [x] 3.5 Run with no session and no `XDG_RUNTIME_DIR` at all: it answers, in the same words as the empty-record case, and exits 0. It does not error, and it does not report a healthy session either, which are the two ways this could have been wrong
 
 ## 4. Stopping the hold
 
 - [x] 4.1 **0 starts in two minutes, against 59.** The component that cannot start on the verification VM now reaches `failed` with `NRestarts=5`, the journal says `Start request repeated too quickly`, and nothing revives it. The three moved from `Upholds=` on the session target to `Wants=` on `gridline-shell.target`, which the session target wants; `systemctl --user show` reads back `Wants=hyprpolkitagent.service gridline-shell.target` and `Upholds=gridline-idle.service`, so the launcher's blocking check still sees one service and a target that is active whatever its own wants did
 - [x] 4.2 Killed and returned, both of them, with Gridline's configuration on the command line rather than the bare binary. This was the thing most likely to break and it needed the drop-in to carry `Restart=always`: the notification daemon's shipped unit declares no `Restart=` at all, and both components came back before this change only because `Upholds=` revived them. A clean `SIGTERM` is not a failure, so `on-failure` would not have been enough either
 - [ ] 4.3 Verify the failure count belongs to the session: a component that failed enough to be given up on is tried again in the next session, rather than staying given up on across a logout
-- [ ] 4.4 Verify giving up is reported, by confirming the component appears in the diagnostic after the session stopped holding it. A component that was quietly abandoned is worse than one that loops, because the loop is at least visible in the journal
+- [x] 4.4 The component that the session stopped holding is the one the diagnostic names: after it reached `failed` with the start limit exhausted, `gridline doctor` reports `wallpaper  failed  (the desktop works without it, with less)` and exits 1.
+
+  This is the pairing the change exists for. Giving up without reporting would have been a worse state than the loop it replaced, because a loop is at least visible in the journal, and a component silently abandoned is a desktop missing a piece with nothing anywhere saying so
 
 ## 5. Verification in a session
 
