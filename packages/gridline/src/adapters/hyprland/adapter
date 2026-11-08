@@ -162,21 +162,39 @@ session-locked)
     # without a timeout chosen out of the air.
     #
     # Exit status is the answer, because a caller in a trap wants a test and not
-    # a string: zero means still locked, one means not. A compositor that cannot
-    # be reached answers neither, and says so with a third status rather than
-    # letting a caller read "cannot ask" as "not locked", which is the direction
-    # that would leave a stranded session unattended.
+    # a string: zero means still locked, one means not, and two means the
+    # question could not be asked.
+    #
+    # Three and not two on purpose. The adapter's `fail` exits 1, which would
+    # make "cannot ask" indistinguishable from "not locked", and a caller acting
+    # on that reads an unreachable compositor as an unlocked session. That is
+    # tolerable when a session is ending and wrong when `hyprctl` fails for a
+    # moment while the screen is genuinely locked, which is the case that would
+    # leave somebody stranded.
     # One look rather than the twenty-second wait the other verbs want. They are
     # asked while a session is starting, when a compositor that is not there yet
     # is worth waiting for. This one is asked when a locker has just exited,
     # including at the end of a session, where the compositor being gone is the
     # answer and not a reason to block the unit for twenty seconds.
-    READY_TIMEOUT=1
-    wait_for_compositor
+    # The instance is located here rather than through wait_for_compositor,
+    # and the reason is the status above. That helper waits, which this verb
+    # must not do, and it ends in `fail`, which exits 1 and would arrive at the
+    # caller as "not locked". A compositor that is not there is this verb's
+    # third answer, not its failure.
+    signature=$(ls -1t "${XDG_RUNTIME_DIR:-}/hypr" 2>/dev/null | head -1)
+    [ -n "$signature" ] || exit 2
+    [ -S "${XDG_RUNTIME_DIR:-}/hypr/$signature/.socket.sock" ] || exit 2
+    HYPRLAND_INSTANCE_SIGNATURE=$signature
+    export HYPRLAND_INSTANCE_SIGNATURE
+
     case "$("$COMPOSITOR_CTL" locked 2>/dev/null)" in
     true) exit 0 ;;
     false) exit 1 ;;
-    *) fail "$COMPOSITOR_CTL did not report whether the session is locked" ;;
+    *)
+        printf 'gridline adapter (%s): %s did not report whether the session is locked\n' \
+            "$COMPOSITOR" "$COMPOSITOR_CTL" >&2
+        exit 2
+        ;;
     esac
     ;;
 confirm)

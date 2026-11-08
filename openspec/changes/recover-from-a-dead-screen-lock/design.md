@@ -40,6 +40,37 @@ A daemon that decides *when* to lock and a program that *holds* the screen have 
 
 What that means mechanically is open. The lock could be its own unit that the idle daemon starts rather than runs, or the entry point could detach from the cgroup it was invoked in. The first is more systemd-shaped and makes the lock startable by anything, which is the same concern the restart decision below raises.
 
+### What the restart policy decides on, which is not the locker's exit code
+
+This design assumed a locker that **dies**, and the measurement that closed the
+investigation says otherwise: the locker exits with **success**, both when
+somebody authenticates and when it leaves on its own. `ExecMainStatus=0`,
+`Result=success`, measured on one that went away with nobody touching the
+machine. That is why nothing ever noticed: apport wrote no report because
+nothing crashed, the journal said nothing because a clean exit says nothing,
+and `Restart=on-failure` did not fire because zero is not a failure.
+
+So the locker's status cannot decide, and nothing about timing was going to
+decide honestly either: a threshold for "too fast to be a person typing" is a
+number chosen out of the air, and in the lock path it would re-lock a screen
+somebody had just unlocked.
+
+**The compositor can decide, and it turned out willing to say so.** It holds
+the session lock and keeps holding it when its client goes away, so asking it
+whether the screen is still locked separates the two cases without knowing
+which of them happened. The adapter gains a `session-locked` verb, the lock
+entry point asks it after its locker returns, and still-locked means that was
+not an unlock whatever the exit code said: the entry point exits non-zero and
+`Restart=on-failure` brings another locker.
+
+Three statuses rather than two, because the adapter's usual `fail` exits 1 and
+would make "cannot ask" arrive as "not locked", which reads an unreachable
+compositor as an unlocked session.
+
+It is asked through the adapter rather than by running the compositor's tool,
+because `compositor-abstraction` confines that vocabulary and the entry point
+is not adapter content.
+
 ### Replacing the locker, not supervising it
 
 The entry point runs one locker and exits when it does. The smallest change that meets the requirement is for it to stay and start another, with a bound: a locker that cannot start at all must not become the loop this project just removed from somewhere else.
@@ -70,5 +101,9 @@ This is the same shape as every other place the project writes down what the bas
 
 ## Open Questions
 
-- Why the locker died. Investigated as a task; its answer does not gate the rest of this change.
-- Whether a deliberately killed locker produces exactly the state the incident produced, which decides whether the recovery path can be verified at all without waiting for a second accident.
+- ~~Why the locker died.~~ **Partly answered, and the part that was answered changed the mechanism.** It did not die: it exits with success. What is still unknown is the condition, because it is not every time: eight lockers started in sequence all survived, seven of them restoring a lock the compositor already held, so the restore path is not it. The remaining candidates are something dismissing the locker without a person, or a person dismissing it and the compositor not releasing, and telling them apart is not needed by the fix above, which is why the fix does not wait for it.
+- ~~Whether a deliberately killed locker produces exactly the state the incident produced.~~ **Answered: stopping the unit does, killing the locker no longer does.** Stopping the unit with the session locked leaves the compositor holding and nothing to type into, which is the incident. Killing the locker now brings a replacement, which is this change working.
+
+Still open:
+
+- Whether asking the compositor can race a genuine unlock, re-locking a screen somebody just unlocked. Observed once not to: a real unlock exited with `success` and `NRestarts=0`, so the compositor had released before the question was asked. One observation is not a characterisation, and the symptom if it ever bites is the worst this design can produce.
