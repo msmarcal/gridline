@@ -54,8 +54,16 @@ Found while mitigating the first incident, and it is the more reproducible of th
 - [x] 3.1 **Killed with `SIGKILL` and replaced**: PID 1166806 became 1166831, the unit reports `NRestarts=1`, and `LockedHint` stayed `yes` throughout. Where this session showed the compositor's fallback earlier today, with nothing to type into, a password prompt comes back on its own.
 
   The clean-exit path was measured in the same run and behaves the other way, which is the distinction `Restart=on-failure` exists for: after the user authenticated, the unit went inactive with `Result=success` and `NRestarts=0`, and nothing locked the screen they had just unlocked
-- [ ] 3.2 Bound it, and verify the bound by making the locker impossible to start rather than by reading the code: the failure this must not produce is an invisible loop in the lock path
-- [ ] 3.3 Verify that giving up is visible. A session that stops trying to lock itself, with nothing on screen and nothing in the journal, is the worst outcome available here and is worse than the loop
+- [x] 3.2 **Bounded, verified by making the locker impossible to start rather than by reading `StartLimitBurst`.** With the locker moved aside: `NRestarts=3`, the unit reached `failed` with `Result=exit-code`, and stopped. No loop.
+
+  The test was safe and that is a property of the design rather than luck: the entry point checks the locker before locking, so an unstartable locker never takes the screen. `LockedHint=no` and zero lockers throughout, and the session stayed usable while its own lock was failing three times.
+
+  Restored afterwards and checked three ways: checksum equal to the one taken before, mode `755 root:root`, and `dpkg --verify` clean
+- [x] 3.3 **Visible in the journal, which is the bar this task sets**, and it names the reason rather than only the failure: `gridline-lock: /usr/bin/swaylock is not installed`, then the unit failing, then `Failed to start gridline-lock.service`. The outcome this task guards against, nothing on screen and nothing in the journal, does not happen.
+
+  **And the diagnostic contradicts it, which is a different defect and is recorded rather than folded in.** While the lock had given up three times, `gridline doctor` reported `locker  running`. The record for that component is written once by the launcher at session start and nothing updates it, because the locker has no unit of Gridline's with an `ExecStopPost` the way the desktop shell components do. The same is true of the polkit agent, which crashed in this very session while the diagnostic reported it running.
+
+  That belongs to `report-components-that-stop`, which exists for it. Keeping it out of this change is deliberate: the polkit agent has nothing to do with screen locking, and a fix riding along inside an unrelated change is how this project once carried a false claim in a package description across two changes
 - [ ] 3.4 Verify the safety half still holds: no claim of a lock that no component is maintaining, and a session that stays locked while the compositor holds it. This is the property `platform-integration` already required and which held during the incident, and it is the one most likely to be broken by changing the entry point's exit paths
 
 ## 4. The recovery path is written down
