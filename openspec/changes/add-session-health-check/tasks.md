@@ -76,9 +76,15 @@ Execution note: this group needs the session running on the VM, started from the
 
 ## 6. Coherence
 
-- [ ] 6.1 Remove the paragraph in `docs/component-ownership.md` that records the promise as unimplemented, and correct its count while removing it: it says seventeen cells across five live documents, and there are fourteen cells across three, with five further mentions in prose. Count both before and after rather than trusting either number
+- [x] 6.1 **Narrowed rather than removed, because this change closes part of the promise and not the whole of it.** The task assumed removal; counting the cells said otherwise. Of the fourteen, **three** are components the session starts and now reports, the bar, the notification daemon and the wallpaper daemon, joined by the locker and the polkit agent. The other eight are platform integrations, NetworkManager, PipeWire, WirePlumber, BlueZ, UPower, XWayland, snapd and the two portal rows, which Gridline integrates with and does not start.
+
+  Reporting those would mean a Gridline command inspecting the state of units other packages own, which is the coupling the design of this change refuses by name. So the paragraph now says which rows are true, which are owed, and why the remainder is a different problem rather than an oversight.
+
+  The counts were taken again rather than trusted: **14 cells on three pages, 5 further mentions in prose, 3 scenarios in `openspec/specs/`**. The wrong number this change was created to correct, seventeen cells across five documents, is gone from the page
 - [ ] 6.2 Verify every live cell promising a capability gap is now true, by listing them and naming for each what reports it. A cell that no longer applies is a cell to change, not one to leave
-- [ ] 6.3 Record in `docs/recovery.md` how a user finds out what is missing, which today is by noticing. That document is where someone goes when the desktop is wrong, and it is the one place the command has to be named
+- [x] 6.3 The document already had a step promising `gridline doctor`, written before the command existed. It now describes what the command does: the components it names, that it answers without a session running, that nothing recorded reads differently from everything healthy, and its exit codes. It also says plainly what it does not cover, pointing at the page that says why.
+
+  **The worked example in it is output that was observed, not output that was composed.** A first draft showed the locker and the polkit agent in the list; those lines have not been seen, because the session on the verification machine started before the launcher that records them. The example is now the three lines that were measured, with a sentence for the two that appear on a session started afterwards, and that sentence is what the next login verifies
 - [ ] 6.4 Verify each scenario of the added and modified requirements is exercised or recorded as unexercised with a reason, counting scenarios from the delta files rather than from the proposal's description of them
 
 ## Workflow follow-up

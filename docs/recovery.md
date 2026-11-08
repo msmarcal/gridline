@@ -36,13 +36,45 @@ If the failure was a missing compositor capability, the record names the capabil
 
 ### 4. Optional: ask the diagnostics
 
-If `gridline-tools` is installed, `gridline doctor` reports capability gaps in a readable form, and it runs without a Gridline session running:
+If `gridline-tools` is installed, `gridline doctor` names each component the
+session expects, whether it is running, and what its absence costs:
 
 ```
 gridline doctor
 ```
 
-This step is a convenience, not a dependency. Everything needed to diagnose a failed session is available from step 3 with stock tools, because a diagnostic command that only runs inside a working session would be useless exactly when it is needed.
+```
+Components a Gridline session expects:
+
+  bar              running
+  notifications    running
+  wallpaper        failed  (the desktop works without it, with less)
+
+1 component(s) are not running.
+```
+
+The screen locker and the polkit agent appear in the same list, named
+`locker` and `polkit-agent`, on a session started after they were recorded.
+
+It reports from what the session wrote down as each component started, stopped
+or failed, so it answers **without a Gridline session running**, which is the
+case you are most likely to be in. With no session recorded at all it says so
+in those words rather than printing an empty list, because silence and health
+must not look alike.
+
+It exits 0 when every component is running, 1 when one is not, and 64 if you
+mistype the command, so it is usable from a script as well as read by a person.
+
+**What it does not cover** is the components Gridline integrates with rather
+than starts: the network, audio, Bluetooth, battery, XWayland and the portals.
+Those degrade a session too and nothing reports them yet;
+[component-ownership.md](component-ownership.md) says which rows are which and
+why that is a different problem rather than an oversight.
+
+This step is a convenience, not a dependency. Everything needed to diagnose a
+failed session is available from step 3 with stock tools, because a diagnostic
+command that only runs inside a working session would be useless exactly when
+it is needed.
 
 ### 5. If you want Gridline gone
 
