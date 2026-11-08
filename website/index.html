@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gridline Desktop</title>
+<meta name="description" content="An optional Wayland tiling session for Ubuntu LTS, delivered as Debian packages. GNOME stays installed, selectable, and supported.">
+<meta property="og:title" content="Gridline Desktop">
+<meta property="og:description" content="A tiling session that is just a package away. Debian packages on the Ubuntu you already run, with GNOME intact beside it.">
+<meta property="og:url" content="https://gridline-desktop.org/">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='1' width='8' height='14' rx='1' fill='%230a7a5c'/%3E%3Crect x='10' y='1' width='5' height='6.5' rx='1' fill='%230a7a5c'/%3E%3Crect x='10' y='8.5' width='5' height='6.5' rx='1' fill='%230a7a5c'/%3E%3C/svg%3E">
+</head>
+<body>
+<div class="sheet">
+<nav>
+  <a class="brand" href="index.html">gridline</a>
+  <a href="install.html">install</a>
+  <a href="https://github.com/msmarcal/gridline/tree/main/docs">docs</a>
+  <a class="push" href="https://github.com/msmarcal/gridline">source</a>
+</nav>
+<main>
+  <header class="hero">
+    <p class="hero-tag">Ubuntu LTS &middot; Wayland &middot; apt only</p>
+    <h1>A tiling session that is just a package away.</h1>
+    <p class="lede">
+      Gridline is an optional Wayland tiling desktop for Ubuntu LTS, inspired
+      by Omarchy and Regolith, delivered exclusively as Debian packages.
+      Install it, pick it at the login screen, and your stock GNOME session
+      stays installed, selectable, and supported as the fallback.
+    </p>
+    <pre class="cmd"><span class="ps1">$</span> sudo apt install gridline-desktop</pre>
+    <p class="cmd-note">
+      That one-liner is the target, not the present: the packages are not in
+      a PPA yet, and this site does not pretend otherwise. Today the honest
+      path is <a href="install.html">building the source package</a>, which
+      takes minutes on Ubuntu 26.04.
+    </p>
+    <svg class="mockup" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Schematic of the Gridline desktop: a status bar across the top and three tiled windows below it">
+      <rect x="0" y="0" width="720" height="400" fill="var(--cmd-bg)"/>
+      <!-- status bar -->
+      <rect x="10" y="10" width="700" height="26" rx="4" fill="var(--bg-inset)" opacity="0.18"/>
+      <rect x="20" y="19" width="10" height="8" rx="1" fill="var(--accent)"/>
+      <rect x="36" y="19" width="10" height="8" rx="1" fill="var(--cmd-ink)" opacity="0.35"/>
+      <rect x="52" y="19" width="10" height="8" rx="1" fill="var(--cmd-ink)" opacity="0.35"/>
+      <rect x="610" y="19" width="40" height="8" rx="1" fill="var(--cmd-ink)" opacity="0.35"/>
+      <rect x="660" y="19" width="40" height="8" rx="1" fill="var(--cmd-ink)" opacity="0.35"/>
+      <!-- main tile: terminal -->
+      <rect x="10" y="46" width="462" height="344" rx="6" fill="none" stroke="var(--accent)" stroke-width="2"/>
+      <text x="30" y="84" font-family="ui-monospace, Menlo, monospace" font-size="15" fill="var(--cmd-prompt)">$ apt policy gridline-session</text>
+      <rect x="30" y="100" width="300" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.30"/>
+      <rect x="30" y="118" width="360" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
+      <rect x="30" y="136" width="260" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
+      <text x="30" y="178" font-family="ui-monospace, Menlo, monospace" font-size="15" fill="var(--cmd-prompt)">$ journalctl -t gridline</text>
+      <rect x="30" y="194" width="330" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
+      <rect x="30" y="212" width="290" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
+      <!-- right top tile -->
+      <rect x="482" y="46" width="228" height="167" rx="6" fill="none" stroke="var(--cmd-ink)" stroke-opacity="0.35" stroke-width="2"/>
+      <rect x="498" y="66" width="150" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.30"/>
+      <rect x="498" y="84" width="190" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
+      <rect x="498" y="102" width="170" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
+      <rect x="498" y="120" width="120" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
+      <!-- right bottom tile -->
+      <rect x="482" y="223" width="228" height="167" rx="6" fill="none" stroke="var(--cmd-ink)" stroke-opacity="0.35" stroke-width="2"/>
+      <rect x="498" y="243" width="180" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.30"/>
+      <rect x="498" y="261" width="140" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
+      <rect x="498" y="279" width="190" height="9" rx="2" fill="var(--cmd-ink)" opacity="0.22"/>
+    </svg>
+    <p class="mockup-caption">waybar on top. hyprland tiles below. all of it from the Ubuntu archive.</p>
+  </header>
+
+  <h2 id="why-it-exists">Why it exists</h2>
+  <p>
+    You already use Ubuntu and you like using it. You work in the terminal.
+    You saw Omarchy and wanted that. Today your choices are to leave Ubuntu
+    for a rolling base, or to assemble the stack by hand and maintain it
+    yourself forever. Gridline is the third option: the Omarchy-like
+    experience as apt packages on the Ubuntu you already run, with the
+    Ubuntu session sitting intact beside it in case you want out.
+  </p>
+  <p>
+    It is a personal project with a small audience by design, the way
+    Omarchy's is. That is the nature of the thing rather than a problem to
+    solve.
+  </p>
+
+  <h2 id="design-rules">Design rules</h2>
+  <p>
+    These are constraints the project holds itself to, not aspirations.
+    They exist because you are going to run this on the machine you work
+    on, and an experimental desktop should not be able to leave you without
+    a computer on a Tuesday morning.
+  </p>
+  <div class="tiles">
+    <div class="tile">
+      <h3>debs only</h3>
+      <p>No install script, no post-install download, no manual file
+      copying. If it cannot ship in a package, it does not ship.</p>
+    </div>
+    <div class="tile">
+      <h3>GNOME stays</h3>
+      <p>Installed, selectable, and supported. Gridline is additive and
+      removable, and no change may replace or remove the Ubuntu session.</p>
+    </div>
+    <div class="tile">
+      <h3>no edits to others' files</h3>
+      <p>GDM, PAM, NetworkManager, PipeWire, and polkit are influenced only
+      through named drop-ins under paths Gridline owns.</p>
+    </div>
+    <div class="tile">
+      <h3>archive packages first</h3>
+      <p>Preferred over third-party sources, so what is installed is what
+      Ubuntu ships.</p>
+    </div>
+    <div class="tile">
+      <h3>one compositor, one boundary</h3>
+      <p>Hyprland sits behind an adapter in a single location, and a build
+      gate fails the build if a compositor name escapes it.</p>
+    </div>
+  </div>
+
+  <h2 id="how-it-works">How it works</h2>
+  <p>
+    Everything Gridline ships is a Debian package. When you pick Gridline
+    at the login screen, a small launcher starts the compositor and then
+    checks, against the running session, that every piece the desktop
+    promises is actually there: locking, idle detection, output management,
+    screen sharing.
+  </p>
+  <p>
+    If a piece is missing, the session says so. The launcher writes which
+    piece failed to the system journal and returns you to the login screen,
+    where your usual Ubuntu session is still one click away. Gridline would
+    rather not start than start as a broken desktop you cannot explain.
+  </p>
+
+  <h2 id="make-it-yours">Make it yours</h2>
+  <p>
+    The shipped defaults live under <code>/etc/xdg/gridline/</code>, and
+    anything you write in <code>~/.config</code> wins over them. That is
+    verified behavior, not a promise: the session was measured preferring a
+    user's own configuration over what the packages ship.
+  </p>
+  <p>
+    The shell is stock archive software: the bar is waybar, the
+    notifications are mako, the wallpaper is hyprpaper. Every upstream
+    document and every dotfile the community has written for them applies
+    to Gridline unchanged. Configuration resolution, including where the
+    compositor's own file is searched, is written down in
+    <a href="https://github.com/msmarcal/gridline/blob/main/docs/configuration.md">configuration.md</a>.
+  </p>
+
+  <h2 id="the-support-gap-stated-plainly">The support gap, stated plainly</h2>
+  <div class="callout">
+    <p>
+      Every piece of the compositor stack Gridline depends on (Hyprland,
+      its portal backend, the Wayland tools) comes from Ubuntu's
+      <code>universe</code> component. Canonical does not commit to
+      security updates for <code>universe</code>; it does for
+      <code>main</code>. So a Gridline install inherits no CVE-response
+      commitment for its compositor, locker, or portal backend.
+    </p>
+    <p>
+      Patching those is your responsibility, the way it already is for
+      anything tiling you would install by hand today. A
+      Gridline-maintained PPA tracking upstream CVEs is recorded as a
+      future goal, not a promise. This gap is a design fact of the project,
+      recorded in its
+      <a href="https://github.com/msmarcal/gridline/blob/main/docs/security-and-manageability.md">documentation</a>,
+      and this site does not hide it.
+    </p>
+  </div>
+
+  <h2 id="status">Status</h2>
+  <p>
+    Early development, in the open. Verified end to end in a VM, including
+    the failure path:
+  </p>
+  <ul class="status-list">
+    <li class="done">GDM session entry, launcher, and capability gate</li>
+    <li class="done">Hyprland adapter behind the compositor boundary</li>
+    <li class="done">Status bar: workspaces, clock, and network, read off the
+    screen and matched against the system's own view</li>
+    <li class="done">Styled notifications; critical ones stay until
+    dismissed</li>
+    <li class="done">Wallpaper anchored to the release's own image</li>
+    <li class="done">Application launcher on SUPER&nbsp;D, command menu on
+    SUPER&nbsp;SHIFT&nbsp;D; the menu dispatches on entries, not typed text,
+    so a free-typed word that matches nothing cannot fire a destructive
+    action</li>
+    <li class="done">Fail-safe screen lock: a locker that exits without an
+    unlock is replaced, so a crashed locker never leaves the session
+    unlocked</li>
+    <li class="done">Session hygiene: shell components start only in a
+    Gridline session, and the stock Ubuntu session was measured
+    untouched</li>
+    <li class="next">Portal integration</li>
+    <li class="next">Full configuration defaults</li>
+  </ul>
+  <p>
+    Everything is planned as tracked changes, not vapor.
+  </p>
+
+  <h2 id="follow-along">Follow along</h2>
+  <p>
+    The <a href="https://github.com/msmarcal/gridline">source
+    repository</a> holds the code, the OpenSpec change history, and the
+    design documents. The design is written down before it is built, so the
+    repository reads as a record of decisions, not just commits. The
+    canonical development home is a self-hosted Forgejo mirror that
+    receives the same history; GitHub is where the project is visible.
+  </p>
+</main>
+<footer>
+  <p>
+    Project Gridline is a personal project. It is not a Canonical product,
+    is not endorsed by Canonical or the Ubuntu project, and speaks for
+    nobody but its author. Ubuntu is a registered trademark of Canonical Ltd.
+  </p>
+  <p>
+    This site is two pages of static HTML with no JavaScript, no analytics,
+    and no external requests. It practices what the packages preach.
+  </p>
+</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install - Gridline Desktop</title>
+<meta name="description" content="Install Gridline on Ubuntu 26.04 LTS by building the source package. Removal returns the machine to its prior state.">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='1' width='8' height='14' rx='1' fill='%230a7a5c'/%3E%3Crect x='10' y='1' width='5' height='6.5' rx='1' fill='%230a7a5c'/%3E%3Crect x='10' y='8.5' width='5' height='6.5' rx='1' fill='%230a7a5c'/%3E%3C/svg%3E">
+</head>
+<body>
+<div class="sheet">
+<nav>
+  <a class="brand" href="index.html">gridline</a>
+  <a href="install.html" aria-current="page">install</a>
+  <a href="https://github.com/msmarcal/gridline/tree/main/docs">docs</a>
+  <a class="push" href="https://github.com/msmarcal/gridline">source</a>
+</nav>
+<main>
+  <header class="hero">
+    <p class="hero-tag">Ubuntu 26.04 LTS &middot; x86_64 &middot; GDM</p>
+    <h1>Install</h1>
+    <p class="lede">
+      The packages are not yet published to a PPA or the Ubuntu archive.
+      Until then, the install is a source-package build on the target
+      machine: a few minutes, and everything it produces is a plain Debian
+      package that apt can remove again.
+    </p>
+  </header>
+
+  <section class="step">
+    <h2>Build the packages</h2>
+    <pre class="cmd"><span class="ps1">$</span> sudo apt install build-essential debhelper
+<span class="ps1">$</span> git clone https://github.com/msmarcal/gridline.git
+<span class="ps1">$</span> cd gridline/packages/gridline
+<span class="ps1">$</span> dpkg-buildpackage -us -uc -b</pre>
+  </section>
+
+  <section class="step">
+    <h2>Install them</h2>
+    <pre class="cmd"><span class="ps1">$</span> sudo apt install ../gridline-*.deb</pre>
+    <p>
+      The build leaves three packages one directory up:
+      <code>gridline-session</code>, <code>gridline-config</code>, and
+      <code>gridline-tools</code>. Installing them through apt resolves
+      their dependencies from the Ubuntu archive automatically: the
+      compositor stack (Hyprland, its portal backend, wayland-utils) from
+      <code>universe</code>, and the desktop shell (the status bar, the
+      notification daemon, the wallpaper tool) alongside it.
+    </p>
+    <div class="callout">
+      <p>
+        Be aware of what <code>universe</code> means: Canonical does not
+        commit to security updates for <code>universe</code> packages, so
+        patching the compositor stack is your responsibility, as it is for
+        anything tiling you install by hand today. See
+        <a href="index.html#the-support-gap-stated-plainly">the support
+        gap, stated plainly</a>.
+      </p>
+    </div>
+  </section>
+
+  <section class="step">
+    <h2>Log in to Gridline</h2>
+    <p>
+      Log out. Gridline appears as a session option at the login screen,
+      next to Ubuntu and a bare Hyprland entry. Pick Gridline. Your
+      previous session choice stays one click away.
+    </p>
+    <p>
+      If the session refuses to start, that is the capability gate doing
+      its job: the launcher found a promised piece missing, wrote which one
+      to the system journal, and returned you to the login screen rather
+      than start a broken desktop. Read the reason with:
+    </p>
+    <pre class="cmd"><span class="ps1">$</span> journalctl -t gridline -b</pre>
+  </section>
+
+  <section class="step">
+    <h2>Remove, if you want out</h2>
+    <pre class="cmd"><span class="ps1">$</span> sudo apt remove --purge gridline-session</pre>
+    <p>
+      GNOME was never touched. What the packages installed is what
+      removing them takes away.
+    </p>
+  </section>
+</main>
+<footer>
+  <p>
+    Project Gridline is a personal project. It is not a Canonical product,
+    is not endorsed by Canonical or the Ubuntu project, and speaks for
+    nobody but its author. Ubuntu is a registered trademark of Canonical Ltd.
+  </p>
+</footer>
+</div>
+</body>
+</html>
