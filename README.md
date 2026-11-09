@@ -6,12 +6,15 @@ packages and installed on top of a stock Ubuntu system.
 Select Gridline at the login screen to get a tiling desktop. Select Ubuntu to
 get GNOME. Remove the packages and the machine is exactly as it was.
 
-> **Status: early development, in the open.**
-> The GDM session entry, the launcher with its capability gate, and the
-> Hyprland adapter exist and run against a real compositor in a VM, including
-> the failure path. What does not exist yet is the desktop around them:
-> configuration, theming, and the command menu. See
-> [Project status](#project-status) for the sequence.
+> **Status: early development, in the open, and not yet tried on real
+> hardware.**
+> Gridline starts from GDM as its own session and runs against a real
+> compositor in a VM. Around the compositor there is a bar, notifications, a
+> screen lock, a polkit agent, an application launcher, a command menu, hardware
+> key bindings, a way into the system settings, and a `gridline doctor` command
+> that says which of them is running. Configuration defaults are in place and
+> can be overridden. What does not exist yet is theming. See
+> [Project status](#project-status) for what is verified and what is open.
 
 Project site: [gridline-desktop.org](https://gridline-desktop.org)
 
@@ -86,16 +89,28 @@ The full inventory, including what the baseline cannot reach, is in
 
 Development is specification-first using [OpenSpec](https://openspec.dev).
 Changes land as proposals with requirements and scenarios, get applied, and are
-archived into the durable baseline, which today holds five capabilities: session
-registration, package delivery, platform integration, session manageability,
-and the desktop session. The sequence, including what is archived and what is
-next, lives in [architecture.md](docs/architecture.md).
+archived into the durable baseline, which today holds five capabilities:
+compositor abstraction, package delivery, platform integration, session
+manageability, and the desktop session. The sequence, including what is
+archived and what is next, lives in [architecture.md](docs/architecture.md).
 
 Working now, in a VM on the Ubuntu 26.04 baseline: the session entry appears
 in GDM, the launcher gates startup on what the adapter confirms from the
 running compositor, and a failed launch names its cause in the journal and
-returns the seat to the login screen. Next in the sequence: portal
-integration, configuration defaults, session lifecycle, and the command menu.
+returns the seat to the login screen. Inside the session, `SUPER D` opens the
+application launcher, `SUPER SHIFT D` the command menu (lock, log out, suspend,
+restart, power off), the volume, brightness and media keys act even while the
+screen is locked, and Settings, Wi-Fi, Bluetooth and Network open from the
+launcher. A component that stops is reported by `gridline doctor` and not
+hidden, and removing the packages restores the machine.
+
+Known and open: nothing has been run on real hardware; the wallpaper daemon
+does not start in the VM, which has no 3D; the compositor crashes as a session
+ends, which is a bug in the Ubuntu package fixed upstream and not Gridline's
+(see [recovery.md](docs/recovery.md)); two of the hardware-key checks, mute by a
+person and a media key reaching a player, are not done; several Settings panels
+write settings that nothing in this session applies; and theming is not
+started.
 
 The packages are not published to a PPA yet. To try the current state, build
 the source package on Ubuntu 26.04:
@@ -103,7 +118,7 @@ the source package on Ubuntu 26.04:
 ```
 sudo apt install build-essential debhelper
 dpkg-buildpackage -us -uc -b
-sudo dpkg -i ../gridline-session_*.deb
+sudo apt install ../gridline-*.deb
 ```
 
 Validate the specifications with:
