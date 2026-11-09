@@ -2,7 +2,7 @@
 
 ## Why
 
-Settings, Wi-Fi and Bluetooth do nothing when chosen from the application launcher. The launcher lists 29 entries that run `gnome-control-center`, and the program refuses to start: `Running gnome-control-center is only supported under GNOME and Unity, exiting`, exit 1. The person who picked "Wi-Fi" sees the launcher close and nothing open, with no message.
+Settings does nothing when chosen from the application launcher, and Wi-Fi and Bluetooth cannot be chosen there at all. 29 desktop entries run `gnome-control-center`, but 28 are `NoDisplay=true` and only "Settings" is listed. The program refuses to start: `Running gnome-control-center is only supported under GNOME and Unity, exiting`, exit 1. The person who picks "Settings" sees the launcher close and nothing open, with no message; typing "Wi-Fi" shows an empty list.
 
 Connecting to a network is the first thing anybody does on a new machine. This is the one program on the system with that refusal, found by searching every binary under `/usr/bin` and `/usr/libexec` for the message, so the problem is narrow even though the symptom is not.
 
@@ -48,3 +48,5 @@ Four facts settled before writing, each changing what gets built.
 **Hiding the broken entries was considered and rejected.** The launcher can filter entries by the `OnlyShowIn` key, and all five sampled panel entries say `GNOME`, so filtering would remove the 29 broken entries. It would also remove the panel, which is the thing the person asked for, and any other application that carries the key and works fine.
 
 **The only way to be sure the whole path works is to drive it.** The workaround was tried by hand and opened `org.gnome.Settings`. Whether it opens from the launcher, as the person would reach it, is the first task.
+
+**Only one of the 29 entries is visible (found while applying, task 1.1).** 28 carry `NoDisplay=true`, so the launcher never lists them: the person can reach "Settings" and nothing named Wi-Fi, Bluetooth or Network. The first draft of this proposal and of the delta spec assumed those could be chosen, from the entry count alone and without opening the launcher. Whether this change also adds visible entries for them is an open scope decision, recorded in design.md.

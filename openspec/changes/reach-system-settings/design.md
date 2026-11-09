@@ -28,7 +28,7 @@ See proposal.md for the measurements. What shapes the design is that the refusal
 
 ### A stand-in with the application's name, ahead on the launcher's PATH only
 
-A small Gridline-owned program named `gnome-control-center`, in a directory of Gridline's own, runs the real application with `GNOME` appended to its identity. `gridline-menu apps` puts that directory ahead on `PATH` for the launcher it starts, so every desktop entry whose `Exec` names the application by name reaches the stand-in. That is 29 entries today and it covers the ones GNOME adds later, which is why this was chosen over listing them.
+A small Gridline-owned program named `gnome-control-center`, in a directory of Gridline's own, runs the real application with `GNOME` appended to its identity. `gridline-menu apps` puts that directory ahead on `PATH` for the launcher it starts, so every desktop entry whose `Exec` names the application by name reaches the stand-in. That is 29 entries today, 28 of them hidden from the launcher, and it covers the ones GNOME adds later, which is why this was chosen over listing them. It also covers any entry Gridline adds for itself (see the first open question).
 
 **Appended, not replaced.** The check was measured to accept the session's own list with `GNOME` added, so the process sees `Gridline:Hyprland:GNOME`. Gridline stays first, and the one program that needed a different answer is the only thing that gets one.
 
@@ -62,5 +62,6 @@ Programs started from the compositor's own key bindings, and from a terminal, do
 
 ## Open Questions
 
-- Which panels do nothing under this session. Measured in the first group, and the answer may justify a follow-up that either applies those settings or says plainly that they are not applied.
+- **Whether Gridline ships its own visible entries for Wi-Fi, Bluetooth and Network.** Measured: only "Settings" is listed, and typing Wi-Fi finds nothing. Fixing the stand-in alone makes "Settings" open, and the person then navigates inside it. Gridline-owned entries (`OnlyShowIn=Gridline;`, `Exec=gnome-control-center wifi`, resolved through the stand-in) would make the three directly reachable, at the cost of three files and a wider requirement. Undecided; the delta's first scenario names all four and is not yet true of the design.
+- Which panels do nothing under this session. Measured in task 1.4 (see tasks.md); the follow-up is to apply those settings or say plainly that they are not applied.
 - Whether to extend the `PATH` to the whole session once a second refusing program turns up. One does not exist today.

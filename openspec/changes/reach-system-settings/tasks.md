@@ -4,10 +4,21 @@
 
 Every earlier component here was measured before it was configured, and each time the measurement changed what got built. The workaround was only tried by hand, with a window opened and closed. The design rests on two claims that nobody has driven.
 
-- [ ] 1.1 Record the failure as a person meets it, with the session unlocked: open the launcher, type Wi-Fi, choose it, and read the compositor's client list and the program's own stderr. This is the baseline that task 3.1 is the opposite of
-- [ ] 1.2 Establish that the launcher hands its own `PATH` to what it starts: put a probe ahead on `PATH` for one launcher only, start an entry whose `Exec` names it, and confirm the probe ran and not the system's file. The whole design rests on this
-- [ ] 1.3 Measure what the real application does at launch: how fast it refuses, with what status, and that it stays up when it is accepted. Those numbers set the failure window and are not to be guessed
-- [ ] 1.4 Open every top-level panel of the settings application in turn with the workaround applied by hand, capture each, and classify it: opens with content, opens empty or with an error, or writes a setting nothing here applies. Record the list, and for each panel in the third class the process that would normally apply it and that it is not running
+- [x] 1.1 Record the failure as a person meets it, with the session unlocked: open the launcher, type Wi-Fi, choose it, and read the compositor's client list and the program's own stderr. This is the baseline that task 3.1 is the opposite of
+- [x] 1.2 Establish that the launcher hands its own `PATH` to what it starts: put a probe ahead on `PATH` for one launcher only, start an entry whose `Exec` names it, and confirm the probe ran and not the system's file. The whole design rests on this
+- [x] 1.3 Measure what the real application does at launch: how fast it refuses, with what status, and that it stays up when it is accepted. Those numbers set the failure window and are not to be guessed
+- [x] 1.4 Open every top-level panel of the settings application in turn with the workaround applied by hand, capture each, and classify it: opens with content, opens empty or with an error, or writes a setting nothing here applies. Record the list, and for each panel in the third class the process that would normally apply it and that it is not running
+
+Findings, measured on the VM with the session unlocked:
+
+- **1.1** Opening the real launcher and typing Wi-Fi shows an empty list, so nothing can be chosen. 28 of the 29 entries are `NoDisplay=true`; only "Settings" (`org.gnome.Settings`, `OnlyShowIn=GNOME;`) is listed. The baseline for Wi-Fi is therefore "not offered", not "offered and silent". This falsified the proposal's premise, which is why it is corrected there and the scope decision is open in design.md.
+- **1.2** A probe on a PATH prefix given to one launcher ran when chosen from that launcher, and did not run from the control launcher. Programs started from the launcher inherit its PATH, so the stand-in design holds.
+- **1.3** Refused with the Gridline identity: status 1 in about 150 to 180 ms. Accepted with `Gridline:Hyprland:GNOME`: the window appears in about 1.1 s and the process is alive 6 s later. A success never exits, so the failure window only has to be well above the 180 ms refusal; a few seconds is enough.
+- **1.4** All 24 panels opened a window and stayed alive (`sharing` is not a panel of this version and falls back to Search). Classified from the captures, by reading them:
+  - *Opens with content:* applications, background (Appearance), keyboard, network, notifications, online-accounts, privacy, search, sound, system, ubuntu (same as system), universal-access, wellbeing.
+  - *Opens, and says why it is empty (no hardware in the VM):* bluetooth (No Bluetooth Found), wifi (No Wi-Fi Adapter Found), wwan, wacom, color (No Devices), printers (No Printers, and "some settings cannot be unlocked").
+  - *Writes a setting nothing here applies (hypothesis, no applying process runs):* display (empty monitor preview, Night Light), power (Automatic Screen Blank), multitasking (Hot Corner, Window Resize), mouse (scroll direction, acceleration), background (accent color and dark style), keyboard (input sources). `gnome-shell`, `mutter` and the `gsd-*` daemons are not running (process list, with a known-good control). Whether each setting is applied by something else was not measured per panel.
+  - Wi-Fi, Bluetooth and Network all open and are usable once reached; Network showed the VM's wired link with real addresses.
 
 ## 2. The stand-in
 
