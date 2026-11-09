@@ -7,8 +7,13 @@ The design rests on claims taken from one log on one laptop and on how this comp
 - [ ] 1.1 Create a headless output on the VM's running compositor to stand in for an external screen, disable and re-enable it with the compositor's own output keyword, and read the monitor list after each. Record the keyword forms that work, including the one that returns an output to its preferred mode, position and scale
 - [ ] 1.2 With two outputs and a window on the one that is then disabled, read where the window and its workspace are afterwards. The design expects the compositor to move them; this reads it
 - [ ] 1.3 Disable an output, then make the compositor reload its configuration, and read whether the output is back. The design expects it not to survive; this reads it
-- [ ] 1.4 Confirm on the VM that the connector names in `/sys/class/drm` and the compositor's output names are the same strings, and read what the VM's one output is called, so the naming claim is checked somewhere other than the laptop it came from
+- [x] 1.4 Confirm on the VM that the connector names in `/sys/class/drm` and the compositor's output names are the same strings, and read what the VM's one output is called, so the naming claim is checked somewhere other than the laptop it came from
 - [ ] 1.5 Load the two lid-switch bindings into the running compositor and read its configuration errors and its binding list, so a syntax the compositor refuses is found before it is shipped
+
+Findings so far:
+
+- **1.4** On the VM, `/sys/class/drm` has `card1-Virtual-1` (connected) and the bar, which reads output names from the compositor, logged `Virtual-1` in all 22 sessions it ran. On the laptop the kernel connector is `card1-eDP-1` and the compositor's own log says `Connector gets name eDP-1`. The same strings in both places on both machines.
+- **Attempted and not possible without a login:** a headless compositor with no session, to stand in for outputs. `AQ_BACKENDS=headless` is not read by this aquamarine (its only `AQ_` variables are for DRM), and `HYPRLAND_HEADLESS_ONLY` is not in the binary; both runs ended in `CBackend::create() failed!`, the same failure the hosted runner showed. So 1.1 to 1.3 and 1.5 need a running Gridline session on the VM, from which `hyprctl output create headless` can add the second output. A person logs in for it.
 
 ## 2. The decision and the action
 
