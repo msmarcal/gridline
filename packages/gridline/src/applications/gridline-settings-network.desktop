@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Network
+GenericName=Network Settings
+Comment=Wired, VPN and proxy settings
+Exec=gnome-control-center network
+Icon=network-wired
+Terminal=false
+Categories=Settings;
+Keywords=network;ethernet;wired;vpn;proxy;internet;
+OnlyShowIn=Gridline;

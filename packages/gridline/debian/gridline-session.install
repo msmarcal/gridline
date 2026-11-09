@@ -15,3 +15,7 @@ src/session/dropins/waybar.service.d/gridline.conf usr/lib/systemd/user/waybar.s
 src/session/dropins/mako.service.d/gridline.conf usr/lib/systemd/user/mako.service.d/
 src/session/dropins/hyprpaper.service.d/gridline.conf usr/lib/systemd/user/hyprpaper.service.d/
 src/session/dropins/hyprpolkitagent.service.d/gridline.conf usr/lib/systemd/user/hyprpolkitagent.service.d/
+src/session/shims/gnome-control-center usr/libexec/gridline/shims/
+src/applications/gridline-settings-wifi.desktop usr/share/applications/
+src/applications/gridline-settings-bluetooth.desktop usr/share/applications/
+src/applications/gridline-settings-network.desktop usr/share/applications/

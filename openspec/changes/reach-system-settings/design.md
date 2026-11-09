@@ -40,6 +40,14 @@ A small Gridline-owned program named `gnome-control-center`, in a directory of G
 - *Hide the broken entries.* Removes the panel the person asked for, and any other application whose entry carries the same key and works.
 - *Patch the application or its entries.* They belong to another package, and the project does not edit those.
 
+### Three Gridline-owned entries make Wi-Fi, Bluetooth and Network choosable
+
+Measured: the archive's entries for these panels are `NoDisplay=true`, so the launcher lists only "Settings". Gridline ships `gridline-settings-wifi.desktop`, `gridline-settings-bluetooth.desktop` and `gridline-settings-network.desktop` under `/usr/share/applications/`, each with `OnlyShowIn=Gridline;` and `Exec=gnome-control-center <panel>`, which the stand-in resolves. They are Gridline-named files in a Gridline-installed package, so no other package's file is touched, and outside a Gridline session the launcher does not list them. The key is the entry's own, not a filter in the launcher.
+
+**Measured limits of that key.** GLib's `should_show` honors it in both directions (shown under `Gridline:Hyprland`, hidden under `GNOME`), so GNOME's own launchers will not list the entries. fuzzel does not honor it at all: under the Gridline identity it already lists `org.gnome.Settings`, whose entry says `OnlyShowIn=GNOME;`, and run by hand under `GNOME` it lists Bluetooth. So the guarantee is made by the key and by the launchers that read it, and `gridline-menu apps` run by hand in another session still shows the entries. `desktop-file-validate` rejects `Gridline` as an unregistered value, because the specification asks for an `X-` prefix; an `X-Gridline` value would match nothing in the session's identity, so the key is kept and the validator's complaint is accepted.
+
+**Alternative rejected:** fixing only "Settings" and leaving the person to navigate inside. It leaves the first thing anybody does on a new machine two steps away, and the requirement names these three.
+
 ### The stand-in finds the real program by absolute path
 
 It must not look the application up by name, which would find itself. The absolute path is the Debian one, and if it is not there the stand-in says so rather than looping.
@@ -62,6 +70,6 @@ Programs started from the compositor's own key bindings, and from a terminal, do
 
 ## Open Questions
 
-- **Whether Gridline ships its own visible entries for Wi-Fi, Bluetooth and Network.** Measured: only "Settings" is listed, and typing Wi-Fi finds nothing. Fixing the stand-in alone makes "Settings" open, and the person then navigates inside it. Gridline-owned entries (`OnlyShowIn=Gridline;`, `Exec=gnome-control-center wifi`, resolved through the stand-in) would make the three directly reachable, at the cost of three files and a wider requirement. Undecided; the delta's first scenario names all four and is not yet true of the design.
+- *(Resolved, see Decisions.)* Whether Gridline ships its own visible entries for Wi-Fi, Bluetooth and Network.
 - Which panels do nothing under this session. Measured in task 1.4 (see tasks.md); the follow-up is to apply those settings or say plainly that they are not applied.
 - Whether to extend the `PATH` to the whole session once a second refusing program turns up. One does not exist today.

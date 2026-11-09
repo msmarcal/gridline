@@ -11,6 +11,7 @@ Connecting to a network is the first thing anybody does on a new machine. This i
 **This change ships implementation.**
 
 - Makes the settings panel start from the launcher, by running it with a desktop identity it accepts. That identity is given to the one program's own environment and to nothing else: the session, the launcher and every other program keep naming Gridline.
+- Adds three launcher entries owned by Gridline, Wi-Fi, Bluetooth and Network, shown in Gridline sessions only, because the archive's own entries for them are hidden from the launcher. Each opens its panel through the same program.
 - Tells the person when the panel could not be started, instead of leaving them to wonder whether the launcher or the machine is broken.
 - Records which panels of the settings application do something under this session and which write a setting nothing here reads. Measuring that is a task, and what it finds is recorded rather than hidden.
 
@@ -33,6 +34,7 @@ None.
 ## Impact
 
 - `packages/gridline/src/session/gridline-menu`: the launcher role, which gains the one place the identity workaround is made visible to launched programs.
+- `packages/gridline/src/applications/`: three desktop entries, Gridline-named, shown only where Gridline is the session.
 - `packages/gridline/src/session/`: a small Gridline-owned program standing in for the settings application's name, in a directory of Gridline's own.
 - `docs/user-experience.md` and `docs/component-ownership.md`: neither mentions settings at all.
 - Verification runs on the LXD VM with the session unlocked, because it drives the real launcher and reads which window appears.
@@ -49,4 +51,4 @@ Four facts settled before writing, each changing what gets built.
 
 **The only way to be sure the whole path works is to drive it.** The workaround was tried by hand and opened `org.gnome.Settings`. Whether it opens from the launcher, as the person would reach it, is the first task.
 
-**Only one of the 29 entries is visible (found while applying, task 1.1).** 28 carry `NoDisplay=true`, so the launcher never lists them: the person can reach "Settings" and nothing named Wi-Fi, Bluetooth or Network. The first draft of this proposal and of the delta spec assumed those could be chosen, from the entry count alone and without opening the launcher. Whether this change also adds visible entries for them is an open scope decision, recorded in design.md.
+**Only one of the 29 entries is visible (found while applying, task 1.1).** 28 carry `NoDisplay=true`, so the launcher never lists them: the person can reach "Settings" and nothing named Wi-Fi, Bluetooth or Network. The first draft of this proposal and of the delta spec assumed those could be chosen, from the entry count alone and without opening the launcher. Decided: this change adds visible entries for the three, owned by Gridline (design.md).

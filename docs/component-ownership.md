@@ -95,6 +95,7 @@ These three draw the desktop continuously. They are separated from the rows abov
 | Wallpaper daemon | Hyprland | `hyprpaper` 0.8.3-1 | **universe** | Selection and configuration | Session starts and the desktop shows whatever the compositor leaves when nothing has drawn. Reported as a capability gap |
 | Application launcher | dnkl | `fuzzel` 1.12.0+ds-1build1 | **universe** | Selection and configuration, named with `--config` by a Gridline program the key binding runs. Its own package owns `/etc/xdg/fuzzel/`, so Gridline places nothing there | Session starts and a program can be opened only from a terminal. Reported as a capability gap. It is the one gap a user meets by pressing a key and getting nothing, which makes it the easiest of them to diagnose |
 | Command menu | dnkl | `fuzzel` 1.12.0+ds-1build1 | **universe** | The same binary in dmenu mode, with the action list and the dispatch owned by Gridline | Session starts and every action it offers stays reachable by the key binding or command that existed before it. Reported as a capability gap |
+| Settings application | GNOME | `gnome-control-center` 1:50.3-0ubuntu0.2 | **main** | Not selected or configured: it arrives with the Ubuntu desktop and is assumed. Gridline owns a stand-in program of the same name under `/usr/libexec/gridline/shims/`, put first on `PATH` for the launcher only, and three launcher entries named `gridline-settings-*` | Session starts, the launcher works, and a notification says settings did not open. Not reported as a component, because nothing the session needs depends on it |
 | Desktop notifications for a failed action | GNOME | `libnotify-bin` 0.8.8-1 | **main** | Integration only: the command menu tells the user when an action it was asked for did not happen | An action that fails says so only in the journal, which the person who asked is not reading. Required rather than optional for that reason |
 
 **What decided each, measured from the archive packages rather than from reputation.** All three are the Omarchy 3.x components, which is the experience [user-experience.md](user-experience.md) records Gridline as targeting, and all three are the only candidate in the archive for their role once the ones absent from it are set aside. What the measurements settled is narrower and is recorded because it is what a later change would otherwise re-litigate:
@@ -236,10 +237,11 @@ The degrading components carry no declaration, which is a different situation ag
 
 ## Components Gridline owns outright
 
-Four entries above are Gridline's own, and the rest are integration only:
+Five entries above are Gridline's own, and the rest are integration only:
 
 - the compositor adapter and the session launcher, in `gridline-session`
 - the portal interface-to-backend mapping, `gridline-portals.conf`, and the shipped defaults, in `gridline-config`
+- the settings stand-in and the three Wi-Fi, Bluetooth and Network launcher entries, in `gridline-session`
 - the diagnostic command surface, in `gridline-tools`
 - the reserved `gridline-desktop` metapackage boundary, with no implementation
 

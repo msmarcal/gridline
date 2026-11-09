@@ -1,0 +1,50 @@
+#!/bin/sh
+# Stands in for the settings application's name, for programs started from
+# Gridline's application launcher and from nothing else.
+#
+# The real program refuses to run unless XDG_CURRENT_DESKTOP names GNOME
+# anywhere in its colon-separated list (measured: it refuses in about 150 to
+# 180 ms with status 1, and the same list with GNOME appended opens a window in
+# about 1.1 s). The session's identity is Gridline's on purpose and portal
+# backend selection reads it, so the answer is changed here, for this one
+# process, and appended so that Gridline stays first.
+#
+# gridline-menu puts this directory ahead on PATH for the launcher it starts in
+# a Gridline session. The directory holds this one file and nothing else is to
+# go in it.
+
+set -eu
+
+REAL=/usr/bin/gnome-control-center
+# The real program is long-running, so its exit status says nothing about a
+# launch unless it comes soon. A refusal arrives well inside a second; a
+# non-zero exit after this many seconds is a crash the person already saw.
+START_WINDOW=5
+
+notify() {
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -a Gridline -u normal "Settings did not open" "$1" || true
+    fi
+}
+
+if [ ! -x "$REAL" ]; then
+    echo "gnome-control-center: $REAL is not executable" >&2
+    notify "$REAL is not installed."
+    exit 127
+fi
+
+case ":${XDG_CURRENT_DESKTOP:-}:" in
+*:GNOME:*) ;;
+*) XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:+$XDG_CURRENT_DESKTOP:}GNOME" ;;
+esac
+export XDG_CURRENT_DESKTOP
+
+started=$(date +%s)
+status=0
+"$REAL" "$@" || status=$?
+elapsed=$(($(date +%s) - started))
+
+if [ "$status" -ne 0 ] && [ "$elapsed" -lt "$START_WINDOW" ]; then
+    notify "The settings application exited with status $status."
+fi
+exit "$status"

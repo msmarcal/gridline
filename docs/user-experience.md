@@ -83,6 +83,7 @@ target table whose rows all say delivered stops being a target table.
 | A status bar with workspaces, clock, tray, battery and media | the archive bar | **Partly.** Workspaces, clock, network and battery. No tray and no media |
 | An application launcher with fuzzy matching | the archive's application launcher | **Delivered**, on `SUPER D`. Fuzzy matching is the launcher's own default and Gridline does not override it. It was held back until the command menu could be designed with it, which is why both arrived together |
 | A polkit authentication agent inside the session | the archive agent | **Delivered** |
+| Reaching the machine's settings, Wi-Fi and Bluetooth | the archive's settings application, started by a Gridline stand-in; three Gridline-owned launcher entries | **Delivered**, from the launcher on `SUPER D`. See [Settings](#settings) for what each panel does under this session |
 | Opinionated terminal, editor and system monitor defaults | component configuration | Not started. Deliberately out: a terminal is declared and named, which is not the same as configuring one |
 
 ### Gridline-authored integration
@@ -132,6 +133,21 @@ Neither binding names the program it runs. Both name a Gridline program, which
 is the rule the shipped compositor configuration states about itself, and it is
 why replacing the launcher is a change to one Gridline file rather than to
 anybody's keybindings.
+
+### Settings
+
+The archive's settings application refuses to run unless the desktop's name includes GNOME, and Gridline's session is not named that on purpose: portals choose their backend by it. So the launcher gives that one program a name it accepts, with GNOME added after Gridline's own, and gives it to nothing else. The launcher, every other program it starts, the user manager and the compositor were read and all still name Gridline only.
+
+The archive hides the Wi-Fi, Bluetooth and Network entries from every launcher (`NoDisplay`), so Gridline ships three entries of its own for them. Choosing any of the four from the launcher was driven for real and opens the panel named. If the program fails within five seconds of starting, a notification says it did not open; if it is not installed, the same.
+
+What it does not cover: typing `gnome-control-center` in a terminal still fails, because only the launcher is covered. And `fuzzel` does not read the key that confines the three entries to Gridline sessions, so `gridline-menu apps` run by hand in another session lists them.
+
+Every panel opened under this session with the identity applied (24 of 24 start and stay up). Some write a setting that nothing in this session applies, because the programs that normally apply it, `gnome-shell`, `mutter` and the `gsd-*` daemons, are not running:
+
+| Panel | Does something here |
+| --- | --- |
+| Network, Wi-Fi, Bluetooth, Sound, Notifications, Online Accounts, Apps, Search, Privacy, System, Accessibility, Wellbeing | Shows live content. Wi-Fi and Bluetooth say no adapter was found where there is none |
+| Display, Power (screen blank), Multitasking, Mouse and Touchpad, Appearance, Keyboard (input sources) | Opens, and the controls are likely not applied. Not measured one setting at a time. Making them apply, or saying plainly that they do not, is a follow-up |
 
 ### The keys printed on the machine
 

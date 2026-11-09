@@ -8,8 +8,13 @@ A Gridline session SHALL let a person open the machine's settings, including its
 
 #### Scenario: Choosing a settings entry opens it
 
-- **WHEN** a person chooses Settings, Wi-Fi, Bluetooth or Network in the application launcher during a Gridline session
+- **WHEN** a person finds and chooses Settings, Wi-Fi, Bluetooth or Network in the application launcher during a Gridline session
 - **THEN** the corresponding panel appears, rather than the launcher closing and nothing opening
+
+#### Scenario: The entries are marked for Gridline sessions only
+
+- **WHEN** a launcher that honors the desktop entry's `OnlyShowIn` key is asked, in a Gridline session and in a session of another desktop, which of Wi-Fi, Bluetooth and Network to show
+- **THEN** it shows them in the first and none of them in the second
 
 #### Scenario: The session's identity is not changed to make it work
 

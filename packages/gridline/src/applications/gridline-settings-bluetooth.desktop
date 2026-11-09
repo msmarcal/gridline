@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Bluetooth
+GenericName=Bluetooth Devices
+Comment=Pair and manage Bluetooth devices
+Exec=gnome-control-center bluetooth
+Icon=bluetooth
+Terminal=false
+Categories=Settings;
+Keywords=bluetooth;pair;headphones;devices;
+OnlyShowIn=Gridline;

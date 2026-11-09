@@ -201,6 +201,35 @@ gridline nonsense >/dev/null 2>&1 && bad_status=0 || bad_status=$?
 
 note "diagnostic: exit $doctor_status with no session, usage errors exit $usage_status"
 
+# ---- the stand-ins still match what they stand in for --------------------
+#
+# A stand-in is found by its name, so if the archive renames the program it is
+# silently dead code and the entries break the way they did before it existed.
+# Each file in the shims directory must name a program the owning package still
+# ships, and must run it at the path that package ships it at.
+shims=/usr/libexec/gridline/shims
+shim_owner() {
+    case $1 in
+    gnome-control-center) echo gnome-control-center ;;
+    esac
+}
+if [ -d "$shims" ]; then
+    for shim in "$shims"/*; do
+        [ -f "$shim" ] || continue
+        name=${shim##*/}
+        owner=$(shim_owner "$name")
+        [ -n "$owner" ] || { problem "the stand-in $name has no package declared as its owner in this check"; continue; }
+        if ! dpkg -s "$owner" >/dev/null 2>&1; then
+            cannot "whether the stand-in $name matches its program: $owner is not installed here"
+            continue
+        fi
+        dpkg -L "$owner" | grep -qx "/usr/bin/$name" ||
+            problem "the stand-in $name names a program $owner no longer ships at /usr/bin/$name"
+        grep -qx "REAL=/usr/bin/$name" "$shim" ||
+            problem "the stand-in $name does not run /usr/bin/$name"
+    done
+fi
+
 # ---- what this machine cannot answer -------------------------------------
 cannot "a component killed and returning with its configuration: the components exit at once with no display, so there is nothing to kill"
 cannot "a component reaching its start limit through Gridline's drop-in: it does reach one here, but because no display exists rather than because of anything Gridline arranged"

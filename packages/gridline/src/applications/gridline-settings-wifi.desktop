@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Wi-Fi
+GenericName=Wireless Network
+Comment=Connect to a wireless network
+Exec=gnome-control-center wifi
+Icon=network-wireless
+Terminal=false
+Categories=Settings;
+Keywords=wifi;wireless;wlan;network;internet;
+OnlyShowIn=Gridline;

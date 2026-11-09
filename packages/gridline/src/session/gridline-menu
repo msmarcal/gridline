@@ -26,6 +26,7 @@ CONFIG=/etc/xdg/gridline/shell/menu.ini
 DESKTOP_NAME=Gridline
 STATE_RECORDER=/usr/libexec/gridline/gridline-component-state
 COMMANDS=/usr/libexec/gridline/gridline-commands
+SHIMS=/usr/libexec/gridline/shims
 
 fail() {
     echo "gridline-menu: $*" >&2
@@ -131,6 +132,12 @@ apps)
     # record anything - leaving the record stuck at started, which is the one
     # outcome this file exists to avoid.
     record_state started
+    # Programs the launcher starts inherit its PATH (measured), which is how the
+    # stand-in for the settings application is reached by name and by nothing
+    # else. Only here, and only in a Gridline session: the branch above has
+    # already returned for any other.
+    PATH="$SHIMS:$PATH"
+    export PATH
     status=0
     "$MENU" "$@" || status=$?
     record_state ready
