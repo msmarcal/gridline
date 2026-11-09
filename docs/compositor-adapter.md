@@ -191,30 +191,30 @@ is `compositor-abstraction`'s territory and reconciling it with an existing
 requirement is larger than removing a banner.
 
 
-## Open finding: the session does not end cleanly either
+## Resolved finding: the compositor crashes as it exits
 
-`gdm-wayland-session` segfaults on every Gridline logout. Counted rather than
-noticed: six occurrences in one boot and four in an earlier one, the same
-process each time, across package states that differ in what Gridline had
-installed. It is not caused by anything Gridline ships that has been changed
-recently, and it predates the work that found it.
+Every Gridline logout on the verification VM ended with a segfault, and the
+first record of it here named the wrong process: it said `gdm-wayland-session`,
+and the process that crashes is `Hyprland`. That was read off a count and not off
+a backtrace, which is the thing this section said it needed.
 
-**It was happening while a change recorded the opposite.** One occurrence falls
-on the exact logout that `add-session-lifecycle-integration` recorded as leaving
-no session residue. That measurement was true as far as it went, and it went
-only as far as `pgrep`: nothing was left running. The teardown itself was never
-read, so a crash in it went unseen under the word "clean".
+`report-the-compositor-crash-on-teardown` read all 42 occurrences across six
+boots and took a backtrace. The crash is in the archive's `libaquamarine` 0.10.0:
+while the process exits, the DRM backend's destructor logs through a logger that
+has already been released (`CLogger::log` with a null `this`). Upstream fixed it
+in `hyprwm/aquamarine` commit `a43bedc`, contained in 0.11.0 and later; Ubuntu
+26.04 ships 0.10.0. Others have the same trace on real hardware, so the VM's
+missing 3D is not the cause either.
 
-What attributing this needs, and none of it is a count:
+It is not Gridline's. 29 of the 42 crashed before the launcher had stopped
+anything, 11 happened in sessions that never reached Gridline's target (four
+under the archive's own `start-hyprland`), and the two where Gridline stopped
+the session first have the same trace. The launcher's `wait` and teardown run
+after the compositor is gone, as designed. The cost is a crash report on disk and
+nothing else that was observed. The evidence is in that change's `tasks.md`, and
+the report that could be filed with Ubuntu is its `report.md`.
 
-- a backtrace, which means a core pattern that keeps one and a debug build
-- whether the crash is before or after the launcher's own teardown runs, since
-  the launcher stops the session target and unsets the environment after the
-  compositor exits
-- whether a plain Hyprland session logs out the same way, which separates a
-  Gridline fault from one in the display manager's wrapper
-
-**Owner:** unattributed until there is a backtrace. It belongs with the question
-above rather than with configuration defaults: both are about how the session
-and the compositor hand control to each other, one at the start and one at the
-end.
+The earlier version of this section, kept in the history of this file, also
+asked whether the crash comes before or after the launcher's teardown. The
+answer is before in 29 of the 31 sessions that reached the target, and in the
+other two Gridline stopped the session first and the trace is the same.

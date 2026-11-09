@@ -274,18 +274,19 @@
   <div class="callout">
     <p>
       <strong>The compositor crashes when a session ends.</strong> On the test
-      machine it happened 25 times across 27 sessions, always the same
-      signature in the compositor's graphics backend library, always within a
-      minute of the session closing. It predates the desktop shell. The test
-      machine has no 3D acceleration, so whether it happens on hardware is not
-      known, and finding out is the first thing the open change on it does.
-      The cost to you is probably a crash report on the next login. Nothing
-      has been observed to be lost, and nothing has been looked for yet.
+      machine it happened 42 times, always the same signature, in the
+      compositor's graphics backend library. It is a known bug in the version
+      Ubuntu 26.04 ships, fixed upstream in the next release, and others have
+      reported the same crash on real hardware. It is not caused by Gridline: it
+      also happens in a Hyprland session started without it. The cost to you is
+      a crash report on the next login. Nothing else has been observed to be
+      lost.
     </p>
     <p>
-      The change is
-      <a href="https://github.com/msmarcal/gridline/tree/main/openspec/changes/report-the-compositor-crash-on-teardown">in
-      the repository</a>, with the measurement that opened it.
+      The details are in
+      <a href="https://github.com/msmarcal/gridline/blob/main/docs/recovery.md#a-crash-report-appears-after-you-log-out">the
+      recovery guide</a>. Gridline does not patch the compositor, so this goes
+      away when Ubuntu picks up the fix.
     </p>
   </div>
   <p>

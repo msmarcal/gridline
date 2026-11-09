@@ -57,5 +57,9 @@ A crash at exit may cost nothing: the session was ending, the process was going 
 
 ## Open Questions
 
-- Whether any of the 25 came through the `stop_session` error path rather than the normal exit. The journal around each crash can say which path ran, and nobody has read it that way.
-- Whether the crash leaves the display in a state the next session has to recover from. Nothing has been observed, and nothing has been looked for.
+Both answered by the investigation, kept here so the next reader sees what was asked.
+
+- Whether any of the 25 came through the `stop_session` error path rather than the normal exit. Of 42 (the 25 was one boot), two did, both on 2026-10-29 during the ordering-cycle defect, and they have the same backtrace as the rest. 29 came through the normal path and 11 never reached Gridline's target.
+- Whether the crash leaves the display in a state the next session has to recover from. The display manager came back after every one, and no later session was affected. Not compared against a crash-free teardown, so the errors that follow are not attributed to it.
+
+**What the design guessed and the measurement changed.** The design listed the machine's graphics as the first suspect and the library's own exit as the second. It was the library's own exit: a null logger in `~SDRMConnector` during `__cxa_finalize`, fixed upstream by `a43bedc`, and reported on real hardware too. The cheap discriminator named first, a machine with 3D, turned out to be unnecessary because somebody else had already run it.

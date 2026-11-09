@@ -4,6 +4,8 @@ What to do when a Gridline session will not start.
 
 The short version: **select Ubuntu at the login screen.** Nothing on this page requires a working Gridline desktop, a Gridline command, or a terminal inside a Gridline session. That is the point of it.
 
+Found a crash report after logging out, and the session worked? That is a [known fault in the compositor](#a-crash-report-appears-after-you-log-out), not a failure to recover from.
+
 ## The recovery path
 
 ### 1. You are already back at the login screen
@@ -100,6 +102,16 @@ it is needed.
 Removing the Gridline packages returns the system to a stock Ubuntu desktop. No session entry remains, GNOME works, and nothing Gridline owned is left behind apart from configuration files you edited yourself.
 
 You can keep using GNOME indefinitely with Gridline still installed. An unselected session costs nothing.
+
+## A crash report appears after you log out
+
+If, after logging out of a Gridline session, the next login offers to report a problem with `Hyprland` (or `/var/crash` holds a `_usr_bin_Hyprland` file), the compositor crashed as it exited.
+
+**It cost nothing that was observed.** The crash is in the last moments of the compositor's own exit, after it has done its work. Across 42 occurrences the display manager came back every time and no later session was affected. What accumulates is one report per user in `/var/crash`, which is overwritten rather than stacked.
+
+**It is not Gridline's.** It is a defect in the Ubuntu 26.04 package `libaquamarine9` 0.10.0, already fixed upstream in 0.11.0, and it happens in a Hyprland session started without Gridline as well. Do not look for the cause in Gridline's files. The details and a report that can be filed are in `openspec/changes/archive/` under `report-the-compositor-crash-on-teardown`, and [compositor-adapter.md](compositor-adapter.md) has the summary.
+
+Reporting it through the dialog is fine and harmless. Gridline does not suppress these reports, because hiding a symptom is not a fix.
 
 ## The screen is locked and the password does nothing
 
