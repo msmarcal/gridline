@@ -74,6 +74,7 @@ target table whose rows all say delivered stops being a target table.
 | --- | --- | --- |
 | Tiling, workspaces, focus and swap, resize, fullscreen, grouping, scratchpad | compositor settings | **Partly.** Grouping and the scratchpad have no bindings at all, counted in the shipped defaults; the rest are there |
 | A Super-centric keymap covering navigation, windows and launching | compositor key bindings | **Delivered** |
+| The keys printed on the machine: volume, mute, microphone, brightness, media | compositor key bindings that name a Gridline program, which asks the audio stack, logind and the player | **Partly.** Bound and measured, see below. No on-screen indicator, and brightness and the microphone are unverified on this project's test machine |
 | Unified copy and paste that behaves the same in the terminal and elsewhere | key bindings plus terminal configuration | Not started |
 | Screenshot of region or window, screen recording, colour picker | archive capture tools bound to keys | Not started. Deliberately out of the desktop shell change, which recorded them as keybindings over three small packages with no styling or lifecycle question |
 | Idle detection and screen lock | the idle daemon and lock screen, retained from the 3.x stack | **Delivered** |
@@ -131,6 +132,36 @@ Neither binding names the program it runs. Both name a Gridline program, which
 is the rule the shipped compositor configuration states about itself, and it is
 why replacing the launcher is a change to one Gridline file rather than to
 anybody's keybindings.
+
+### The keys printed on the machine
+
+Volume up and down, mute, microphone mute, brightness up and down, and play,
+previous and next all act, with no configuration. Each key names a Gridline
+program rather than a tool, for the reason the terminal and lock bindings do.
+
+**What a key press does not show you.** Nothing appears on screen. The volume
+changes and the only evidence is that the sound did. An indicator exists in
+the archive, `swayosd`, and it is a daemon with a system service and a udev
+rule, which is the shape of a desktop shell component and not of a key
+binding. It is a change of its own, and until then the first question a new
+user asks - did it work - is answered by their ears.
+
+**Volume stops at 100 percent.** Bare `wpctl` does not: `5%+` from a volume of
+1.0 gives 1.05, so the limit is set explicitly.
+
+**Brightness asks logind rather than writing the backlight.** The archive's
+`brightnessctl` writes `/sys/class/backlight` directly and would need the user
+in the `video` group, which is a system change outside the paths this project
+owns. logind exposes `SetBrightness` and hands the privilege to the active
+session, as the screen lock already relies on it to. On a machine with no
+backlight the key does nothing and says so in the journal.
+
+**What has not been measured.** Brightness has never been exercised against a
+real backlight: the test machine has none. The microphone key is verified to
+act on whatever the default source is, and on the test machine the default
+source and the default sink are the same dummy device, so a bug that muted the
+speakers instead would not have shown. Both close on the first machine with
+real hardware.
 
 ### Not reachable on this baseline
 

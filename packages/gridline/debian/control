@@ -23,6 +23,7 @@ Depends: ${misc:Depends},
          hyprpaper,
          fuzzel,
          libnotify-bin,
+         playerctl,
          ubuntu-wallpapers
 # The terminal, and it is the one component here that is a preference rather
 # than a requirement. The session reaches it through xdg-terminal-exec, the

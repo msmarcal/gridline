@@ -11,6 +11,11 @@ A Gridline session SHALL act on the hardware keys the machine ships with - at mi
 - **WHEN** a user presses the volume up or volume down key during a Gridline session
 - **THEN** the session's audio output volume changes in that direction, and the system's own view of the volume reflects it rather than the change living only in whatever was asked
 
+#### Scenario: A volume key on a muted output makes it audible
+
+- **WHEN** a user presses a volume key while the output is muted
+- **THEN** the output is unmuted as well as adjusted, because a key that moves a number the user cannot hear has not done what pressing a volume key means, and the mute key remains the one way to silence the machine
+
 #### Scenario: Mute is a toggle and is reversible
 
 - **WHEN** a user presses the mute key twice

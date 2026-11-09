@@ -44,6 +44,14 @@ So the program reads the two values, computes the next one, and calls `SetBright
 
 **This also decides what happens on a machine with no backlight**, which is every machine this project can currently test on: there is no device to name, the program says so once and exits without error, and the key does nothing rather than failing loudly at someone who pressed it by accident.
 
+### The volume keys unmute, which nobody asked for and everybody expects
+
+Found by pressing the key rather than by reading the requirement. On a muted output `wpctl set-volume` changes the level and leaves the mute flag alone, measured: 0.30 muted, up gives 0.35 still muted. So the requirement's first scenario - a volume key changes the volume - was satisfied exactly as written by a key that produced no audible result.
+
+Both volume keys therefore clear the mute first. The alternative was leaving the tool's behaviour as it is and documenting it, which is defensible and wrong for this audience: the person this change is for has used another desktop, where this works, and will read a silent key as a broken one rather than as a feature of `wpctl`.
+
+This does not weaken the mute key. It is still a toggle that restores the level the user had, and it is now also the only thing that silences the machine, which is a cleaner division than two keys that sometimes do.
+
 ### Mute restores what was there
 
 `wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle` is the whole implementation, and the reason to name it as a decision is the alternative somebody always writes: setting the volume to zero and back to a remembered number. That version loses the user's level the first time anything else changes it, and the requirement says the restored level is theirs rather than one the session chose.

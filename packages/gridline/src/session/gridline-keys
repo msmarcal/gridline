@@ -1,0 +1,87 @@
+#!/bin/sh
+# What a key printed on the machine asks the session for.
+#
+# One role per key, named by the compositor bindings. Those bindings name
+# this program and never the tool, which is the rule defaults.conf states
+# about itself and keeps for the terminal and the lock.
+#
+# Three mechanisms, each chosen by measurement:
+#
+#   Volume: wpctl, already installed with the audio stack. The -l 1.0 is
+#   not a refinement - measured, 5%+ from 1.0 gives 1.05, so without the
+#   limit a key walks past 100 percent.
+#
+#   Brightness: logind. The archive's brightnessctl ships one binary with no
+#   udev rule, no setuid bit and no reference to logind, so it writes
+#   /sys/class/backlight directly and cannot - this session's user is not in
+#   the video group, and putting them there is a system change outside the
+#   paths this project owns. logind exposes SetBrightness and hands the
+#   privilege to the active session's owner, which is what the lock already
+#   relies on for SetLockedHint.
+#
+#   Media: playerctl, which speaks MPRIS, the interface every player already
+#   advertises. The one dependency this adds.
+#
+# Nothing here reports a failure to the user. A key that does nothing is the
+# right failure for a key somebody may have pressed by accident, and the
+# alternative is a notification for every press on a machine with no
+# backlight.
+
+set -eu
+
+role=${1-}
+[ -n "$role" ] || { echo "gridline-keys: no key named" >&2; exit 64; }
+
+SINK=@DEFAULT_AUDIO_SINK@
+SOURCE=@DEFAULT_AUDIO_SOURCE@
+STEP=5%
+case $role in
+# Both volume keys unmute first. Measured: on a muted output wpctl moves the
+# level and leaves it muted, so the key was pressed, the number changed, and
+# nothing could be heard. Every desktop a person has used before this one
+# treats a volume key as "I want to hear it", and the mute key remains the only
+# way to silence the machine.
+volume-up)   wpctl set-mute "$SINK" 0; exec wpctl set-volume -l 1.0 "$SINK" "$STEP+" ;;
+volume-down) wpctl set-mute "$SINK" 0; exec wpctl set-volume "$SINK" "$STEP-" ;;
+mute)        exec wpctl set-mute "$SINK" toggle ;;
+mic-mute)    exec wpctl set-mute "$SOURCE" toggle ;;
+play-pause)  exec playerctl play-pause ;;
+previous)    exec playerctl previous ;;
+next)        exec playerctl next ;;
+brightness-up | brightness-down) ;;
+*) echo "gridline-keys: unknown key: $role" >&2; exit 64 ;;
+esac
+
+# Brightness. Reading needs no privilege; writing is logind's to grant.
+# No backlight means no device to name, which is every machine this project
+# can test on, and the key then does nothing rather than failing at someone.
+dev=
+for d in /sys/class/backlight/*; do
+    [ -r "$d/max_brightness" ] && { dev=$d; break; }
+done
+if [ -z "$dev" ]; then
+    # One line on stderr, which is the journal and not the screen. Said once per
+    # press and to nobody who pressed it: the design wants the absence recorded
+    # for whoever is debugging, and a notification for it would be noise on
+    # every machine without a backlight, which is most of the ones tested on.
+    echo "gridline-keys: no backlight device, nothing to adjust" >&2
+    exit 0
+fi
+
+max=$(cat "$dev/max_brightness")
+cur=$(cat "$dev/brightness")
+step=$((max / 20))
+[ "$step" -ge 1 ] || step=1
+
+if [ "$role" = brightness-up ]; then
+    new=$((cur + step))
+    [ "$new" -le "$max" ] || new=$max
+else
+    new=$((cur - step))
+    # Never to zero: a black screen with no indicator is a lockout.
+    [ "$new" -ge "$step" ] || new=$step
+fi
+
+exec busctl call org.freedesktop.login1 /org/freedesktop/login1/session/auto \
+    org.freedesktop.login1.Session SetBrightness ssu \
+    backlight "$(basename "$dev")" "$new"
