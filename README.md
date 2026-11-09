@@ -117,9 +117,16 @@ the source package on Ubuntu 26.04:
 
 ```
 sudo apt install build-essential debhelper
+git clone https://github.com/msmarcal/gridline.git
+cd gridline/packages/gridline
 dpkg-buildpackage -us -uc -b
 sudo apt install ../gridline-*.deb
 ```
+
+Run the build from `packages/gridline`, the directory that holds `debian/`.
+Running it from the repository root or from `packages/` fails with
+`cannot open file debian/changelog`. The three packages are left in `packages/`,
+one directory up, which is where the last line reads them.
 
 Validate the specifications with:
 
