@@ -47,6 +47,20 @@ Three of these are required for reasons worth stating, because each is a capabil
 
 **`screencast` is required because the specification makes it active, not optional.** The "Screen sharing works" scenario in `specs/platform-integration/spec.md` is an active requirement: an application requesting screen capture through the portal interface must be prompted and must receive the content. The GTK portal backend does not implement screen capture on Wayland, so this interface can only be served by the compositor's own backend. An adapter without `screencast` produces a session that starts and then fails an active requirement, which is worse than one that does not start.
 
+### What an adapter must do when asked
+
+Besides the questions above, an adapter answers a small set of requests. The ones in use:
+
+| Request | What it does |
+|---|---|
+| `shutdown` | Ask the compositor to end the session |
+| `session-locked` | Say whether the session is still held locked |
+| `output <name> on\|off` | Take one named output out of the session, or put it back. The name is the kernel's connector name, which is also what the compositor calls the output. Fails with a reason, and changes nothing, for a name the compositor does not have, a name that is not a connector name, or a state that is neither word |
+
+`output` is how a closed laptop lid is handled: `gridline-lid`, outside this directory, decides whether the built-in panel should be in the session and asks for the one action. The decision needs no compositor knowledge and the action is all compositor, which is the line this boundary draws. It is part of `output-management`, so no capability was added and a session's start-up gate is unchanged.
+
+Two behaviors of the Hyprland adapter are measured and worth knowing. Turning an output off leaves it listed, and its workspaces move to a remaining output and come back when it returns. A reload of the compositor's configuration puts a turned-off output back, which fails toward the screen being on.
+
 ### Optional capabilities
 
 Absence degrades the session but does not block startup. Each must be reported as unavailable rather than left undefined.

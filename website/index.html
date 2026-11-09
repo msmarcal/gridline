@@ -194,9 +194,11 @@
   <h2 id="status">Status</h2>
   <p>
     Early development, in the open. Verified end to end in a virtual
-    machine with no 3D acceleration, including the failure path, and not
-    yet on hardware. Everything below was measured on that one machine,
-    which is worth knowing before reading the checkmarks:
+    machine with no 3D acceleration, including the failure path. It has
+    been run once on a real laptop, which found a defect with the lid
+    closed (below); that fix is not yet confirmed there. Everything else
+    below was measured on the virtual machine, which is worth knowing
+    before reading the checkmarks:
   </p>
   <ul class="status-list">
     <li class="done">GDM session entry, launcher, and capability gate</li>
@@ -252,6 +254,15 @@
     <li class="done">Desktop portals routed to the compositor's backend, and
     configuration defaults you can override without editing the packaged
     files</li>
+    <li class="partial">A laptop used closed with an external monitor. The
+    first run on real hardware was unusable that way: the closed panel stayed
+    the first screen, so the cursor, the focus and every new window went to a
+    panel nobody could see. A closed lid now takes the built-in panel out when
+    another screen is attached, and an open lid puts it back. It was driven
+    on the virtual machine against a stand-in output in every case, including
+    leaving the panel in use when anything fails; the lid itself, and what
+    happens on unplugging the monitor, are checked on that laptop and not
+    yet done</li>
     <li class="next">Theming: one named theme across the bar, terminal, lock
     screen and wallpaper</li>
     <li class="next">Making the inert settings panels apply, or saying plainly
@@ -303,9 +314,9 @@
     </p>
   </div>
   <p>
-    Everything on this page was measured on one virtual machine. There is no
-    result from a laptop yet, and a laptop is where a person who just
-    installed Ubuntu will be.
+    Almost everything on this page was measured on one virtual machine. The
+    one laptop it has run on is where the lid defect was found, and a laptop
+    is where a person who just installed Ubuntu will be.
   </p>
 
   <h2 id="follow-along">Follow along</h2>

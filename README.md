@@ -6,8 +6,9 @@ packages and installed on top of a stock Ubuntu system.
 Select Gridline at the login screen to get a tiling desktop. Select Ubuntu to
 get GNOME. Remove the packages and the machine is exactly as it was.
 
-> **Status: early development, in the open, and not yet tried on real
-> hardware.**
+> **Status: early development, in the open. Tried on one real laptop, which
+> exposed a defect with a closed lid whose fix is built and not yet confirmed
+> there.**
 > Gridline starts from GDM as its own session and runs against a real
 > compositor in a VM. Around the compositor there is a bar, notifications, a
 > screen lock, a polkit agent, an application launcher, a command menu, hardware
@@ -104,7 +105,7 @@ screen is locked, and Settings, Wi-Fi, Bluetooth and Network open from the
 launcher. A component that stops is reported by `gridline doctor` and not
 hidden, and removing the packages restores the machine.
 
-Known and open: nothing has been run on real hardware; the wallpaper daemon
+Known and open: it has been run on one real laptop, where the session started and a closed lid with an external monitor left the screen unusable; the fix, which takes the built-in panel out in that case, is driven on the VM and waits for that laptop (see [user-experience.md](docs/user-experience.md#the-lid)); the wallpaper daemon
 does not start in the VM, which has no 3D; the compositor crashes as a session
 ends, which is a bug in the Ubuntu package fixed upstream and not Gridline's
 (see [recovery.md](docs/recovery.md)); two of the hardware-key checks, mute by a

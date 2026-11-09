@@ -5,7 +5,7 @@
 # isolation check treats the path as the boundary, so a compositor name, binary,
 # protocol or configuration format appearing anywhere outside it fails the build.
 #
-# The contract this implements is docs/compositor-adapter.md. Five verbs:
+# The contract this implements is docs/compositor-adapter.md. Six verbs:
 #
 #   capabilities   what installed files establish, before the compositor runs
 #   start          launch the compositor
@@ -13,6 +13,7 @@
 #
 #   session-locked is the screen still held locked, client or no client
 #   shutdown       ask the compositor to end the session
+#   output         take one named output out of the session, or put it back
 #
 # This list said "Three verbs" while there were four, because session-locked
 # was added and the header was not. A count in a comment is a claim that rots
@@ -229,6 +230,55 @@ shutdown)
         || fail "$COMPOSITOR_CTL is not installed"
     "$COMPOSITOR_CTL" dispatch exit >/dev/null 2>&1 \
         || fail "$COMPOSITOR_CTL could not ask the compositor to exit"
+    exit 0
+    ;;
+output)
+    # Take one named output out of the session, or put it back.
+    #
+    # The caller names the output and the state and nothing else: how a
+    # compositor stops using a screen is its own business, and the caller that
+    # decides when to do it, gridline-lid, lives outside this directory for that
+    # reason. It stays inside the output-management capability this adapter
+    # already advertises, so nothing is added to what the session requires.
+    #
+    # Measured on the shipped 0.53.3: the keyword form `NAME, disable` takes an
+    # output out and leaves it listed, and `NAME, preferred, auto, auto` returns
+    # it at its own mode, position and scale. Both print ok. A reload of the
+    # configuration puts a disabled output back, which is the failure direction
+    # that matters, so it is accepted rather than defended against.
+    #
+    # The name is checked against the outputs the compositor has. The keyword
+    # accepts a rule for an output that does not exist, stores it, and prints
+    # ok, so without this a mistyped name would succeed and do nothing, which is
+    # exactly the failure this program is called to avoid.
+    name=${2-}
+    state=${3-}
+    [ -n "$name" ] || fail "output: no output named"
+    case $name in
+    *[!A-Za-z0-9_.-]*)
+        fail "output: $name is not a connector name"
+        ;;
+    esac
+    case $state in
+    on | off) ;;
+    *) fail "output: the state must be on or off, not ${state:-nothing}" ;;
+    esac
+    wait_for_compositor
+    command -v "$COMPOSITOR_CTL" >/dev/null 2>&1 \
+        || fail "$COMPOSITOR_CTL is not installed"
+    known=$("$COMPOSITOR_CTL" monitors all 2>/dev/null | sed -n 's/^Monitor \([^ ]*\) .*/\1/p') \
+        || fail "$COMPOSITOR_CTL could not list the outputs"
+    printf '%s\n' "$known" | grep -qxF -- "$name" \
+        || fail "output: the compositor has no output named $name"
+    if [ "$state" = on ]; then
+        rule="$name, preferred, auto, auto"
+    else
+        rule="$name, disable"
+    fi
+    reply=$("$COMPOSITOR_CTL" keyword monitor "$rule" 2>&1) \
+        || fail "output: $COMPOSITOR_CTL refused \"$rule\": $reply"
+    [ "$reply" = ok ] \
+        || fail "output: the compositor answered \"$reply\" to \"$rule\""
     exit 0
     ;;
 confirm)

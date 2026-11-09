@@ -1,0 +1,106 @@
+#!/bin/sh
+# What the laptop lid asks of the screens.
+#
+# Called by the compositor's lid-switch bindings with the way the lid just
+# moved, `closed` or `open`, and also once at the start of a session, because
+# the compositor reports the lid's state then too. Measured on the owner's
+# laptop: its log names the switch and says it fired at startup with the lid
+# closed.
+#
+# The rule: a closed lid takes the laptop's own panel out of the session when
+# another screen is attached, and an open lid, or a closed one with nothing
+# else attached, leaves it in. What goes wrong without it is not subtle. The
+# closed panel stays the first screen, so the pointer, the keyboard focus and
+# every new window go to a panel nobody can see.
+#
+# Deciding is here, and acting is the adapter's `output` verb, because naming a
+# screen and a state is all this program knows and how a compositor turns a
+# screen off is not its business. Nothing here names the compositor.
+#
+# The default is to put the panel back. Every doubt - an argument that is
+# neither word, a connector tree that cannot be read, no adapter, an adapter
+# that refuses - ends there, which is the requirement's own fail-safe: the
+# built-in screen stays in use. The one path to the other branch needs a lid
+# reported closed and an external screen positively read as connected.
+
+set -u
+
+ADAPTER_DIR=/usr/libexec/gridline/adapters
+JOURNAL_IDENTIFIER=gridline-lid
+
+# Where the kernel publishes the connectors. The environment variable exists so
+# a test can put a made-up tree here; nothing sets it in a session.
+DRM_DIR=${GRIDLINE_LID_DRM_DIR:-/sys/class/drm}
+
+# The kernel's names for the connectors of a laptop's own panel. A panel named
+# anything else is treated as external and is never taken out, which is the
+# safe way to be wrong.
+PANEL_PREFIXES="eDP LVDS DSI"
+
+report() {
+    printf '%s: %s\n' "$JOURNAL_IDENTIFIER" "$*" >&2
+    if command -v logger >/dev/null 2>&1; then
+        logger -t "$JOURNAL_IDENTIFIER" -p daemon.warning "$*" || true
+    fi
+}
+
+# Found the way the launcher, the command menu and the lock find it.
+find_adapter() {
+    for candidate in "$ADAPTER_DIR"/*/adapter; do
+        [ -x "$candidate" ] || continue
+        printf '%s' "$candidate"
+        return 0
+    done
+    return 1
+}
+
+# The connector's own name, with the card it hangs off removed: card1-eDP-1
+# is eDP-1, which is also what the compositor calls the output.
+connector_name() {
+    base=${1##*/}
+    printf '%s' "${base#card*-}"
+}
+
+is_panel() {
+    for prefix in $PANEL_PREFIXES; do
+        case $1 in
+        "$prefix"-*) return 0 ;;
+        esac
+    done
+    return 1
+}
+
+panels=
+external=no
+for dir in "$DRM_DIR"/card*-*; do
+    [ -d "$dir" ] || continue
+    name=$(connector_name "$dir")
+    if is_panel "$name"; then
+        panels="$panels $name"
+    elif [ -r "$dir/status" ] && [ "$(cat "$dir/status" 2>/dev/null)" = connected ]; then
+        external=yes
+    fi
+done
+
+state=on
+if [ "${1-}" = closed ] && [ "$external" = yes ]; then
+    state=off
+fi
+
+# Nothing to act on is not a failure: a desktop has no panel, and a session
+# that never had a lid asking is the same session.
+[ -n "$panels" ] || exit 0
+
+adapter=$(find_adapter) || {
+    report "no executable adapter under $ADAPTER_DIR, the panel is left as it is"
+    exit 1
+}
+
+status=0
+for panel in $panels; do
+    "$adapter" output "$panel" "$state" || {
+        report "could not turn $panel $state, it is left as it is"
+        status=1
+    }
+done
+exit "$status"

@@ -8,6 +8,7 @@ src/session/gridline-lock.service usr/lib/systemd/user/
 src/session/gridline-shell usr/libexec/gridline/
 src/session/gridline-menu usr/libexec/gridline/
 src/session/gridline-keys usr/libexec/gridline/
+src/session/gridline-lid usr/libexec/gridline/
 src/session/gridline-commands usr/libexec/gridline/
 src/session/gridline-component-state usr/libexec/gridline/
 src/session/gridline-shell.target usr/lib/systemd/user/

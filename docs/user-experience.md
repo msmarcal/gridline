@@ -84,6 +84,7 @@ target table whose rows all say delivered stops being a target table.
 | An application launcher with fuzzy matching | the archive's application launcher | **Delivered**, on `SUPER D`. Fuzzy matching is the launcher's own default and Gridline does not override it. It was held back until the command menu could be designed with it, which is why both arrived together |
 | A polkit authentication agent inside the session | the archive agent | **Delivered** |
 | Reaching the machine's settings, Wi-Fi and Bluetooth | the archive's settings application, started by a Gridline stand-in; three Gridline-owned launcher entries | **Delivered**, from the launcher on `SUPER D`. See [Settings](#settings) for what each panel does under this session |
+| A laptop that is used closed, with an external screen | a Gridline program and an adapter verb, driven by the lid switch | **Implemented and driven on the VM; not yet seen on the laptop it was found on.** See [The lid](#the-lid) |
 | Opinionated terminal, editor and system monitor defaults | component configuration | Not started. Deliberately out: a terminal is declared and named, which is not the same as configuring one |
 
 ### Gridline-authored integration
@@ -148,6 +149,14 @@ Every panel opened under this session with the identity applied (24 of 24 start 
 | --- | --- |
 | Network, Wi-Fi, Bluetooth, Sound, Notifications, Online Accounts, Apps, Search, Privacy, System, Accessibility, Wellbeing | Shows live content. Wi-Fi and Bluetooth say no adapter was found where there is none |
 | Display, Power (screen blank), Multitasking, Mouse and Touchpad, Appearance, Keyboard (input sources) | Opens, and the controls are likely not applied. Not measured one setting at a time. Making them apply, or saying plainly that they do not, is a follow-up |
+
+### The lid
+
+A laptop used with its lid closed and an external monitor is the way some people use it all day, and it was the first thing real hardware broke. Without handling, the closed panel stays the first screen: the pointer, the keyboard focus and every new window go to a panel nobody can see, and the monitor in front of the person shows a wallpaper and nothing else. GNOME takes the panel out when the lid closes with another screen attached, and Gridline now does the same.
+
+The rule is small. A closed lid with an external screen attached takes the built-in panel out of the session, an open lid puts it back, and a closed lid with nothing else attached leaves it in, so the machine's own lid behavior (suspend, by default) decides. The compositor reports the lid once when the session starts, so a session that begins with the lid closed is handled the same way as one that closes it later, and the binding works at the lock screen without touching the lock. Anything the program cannot read or cannot do leaves the panel in use.
+
+What is and is not known. On the VM, with a headless output standing in for the panel, the program and the adapter were driven in every case: closed takes it out, open brings it back, repeating is harmless, a panel with nothing else attached stays, and a missing adapter leaves it alone. What the VM cannot show is a real lid, so whether the lid-switch event reaches the program on real hardware, and what happens when the external monitor is unplugged with the lid closed, are left to the owner's laptop and are tasks of that change.
 
 ### The keys printed on the machine
 

@@ -113,6 +113,22 @@ If, after logging out of a Gridline session, the next login offers to report a p
 
 Reporting it through the dialog is fine and harmless. Gridline does not suppress these reports, because hiding a symptom is not a fix.
 
+## A screen stays dark with the lid closed
+
+Gridline takes a laptop's built-in panel out of the session when the lid is closed and an external screen is attached, and puts it back when the lid opens. If you are on a laptop and one screen is dark when you expected it to work:
+
+- **Open the lid.** That puts the built-in panel back, and with it a screen you can see.
+- **Closed lid, and the external screen shows nothing?** The built-in panel is taken out whenever an external connector reads connected, which can include a monitor that is switched off or set to another input. Then a closed lid leaves no screen you can see. Wake the monitor or open the lid.
+- **Put the panel back from a text console.** Press `Ctrl+Alt+F3`, log in, and run:
+
+```
+XDG_RUNTIME_DIR=/run/user/$(id -u) /usr/libexec/gridline/gridline-lid open
+```
+
+  That asks the running compositor to use the built-in panel again. It changes nothing else, and logging out and back in does the same.
+
+Reloading the compositor's configuration also puts a turned-off panel back, so a package upgrade under a running session can bring the dark panel to life until the lid next moves. That is by design: when something goes wrong the panel is left on.
+
 ## The screen is locked and the password does nothing
 
 You are looking at a screen that is not Gridline's. It belongs to the
