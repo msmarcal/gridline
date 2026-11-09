@@ -85,12 +85,40 @@ names no tool.
 
 ## 4. Measured on a running session
 
-- [ ] 4.1 Verify a volume key changes the volume, pressed by a person, and that the system's own view reflects it
+- [x] 4.1 Verify a volume key changes the volume, pressed by a person, and that the system's own view reflects it
 - [ ] 4.2 Verify mute twice returns the volume to the level it had rather than to one the session chose
 - [ ] 4.3 Verify the keys act while the session is locked, and that the media keys deliberately do not
-- [ ] 4.4 Verify holding a key repeats it, which the plain bind flavour would not do
+- [x] 4.4 Verify holding a key repeats it, which the plain bind flavour would not do
 - [ ] 4.5 Verify a media key reaches a running player. Record which player was used and that it was addressed through MPRIS rather than by name
 - [ ] 4.6 Verify the brightness path on a machine with a backlight, or record it as unexercised with the reason and what was verified instead
+
+### What a person pressing the keys established
+
+Run on the project's VM with a person at the keyboard, reading the audio
+state from PipeWire after each step rather than taking a description of what
+was heard.
+
+**Volume up works end to end.** From a muted 0.00 the key unmuted the output
+and raised it to 0.95, nineteen steps of 0.05, which only this program does.
+A single press from 0.20 gave exactly 0.25. Holding from 0.20 reached 1.00 and
+stopped there, so repeat works and the ceiling held with a person on the key
+where bare `wpctl` would have gone past it.
+
+**Mute worked once in four attempts, and the cause of the other three is
+unknown.** One press produced `0.42 [MUTED]` and exactly one line in a
+temporary log bound to the same key, at 00:14:05: the compositor saw it once,
+the program muted the sink, and the level survived. The other three presses
+left neither the volume nor either of two logs changed. A second logging bind
+on `F1` to `F12` was added to catch a keyboard sending function keys instead,
+and caught nothing. So those presses never reached the compositor. The likeliest
+reasons are the host desktop consuming the key or the VM window not holding
+focus, and neither can be told apart from the VM. The same host already
+swallows `Ctrl+Alt+F3` for the VM.
+
+**So pressing mute twice to restore the level was not completed by a person.**
+Its first half was: mute, observed, level preserved. Its second half rests on
+the direct runs of the program, where mute then mute returned 0.42 to 0.42,
+and on `wpctl set-mute toggle` preserving the level as measured in group 1.
 
 ## 5. Coherence
 
