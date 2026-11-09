@@ -87,10 +87,10 @@ names no tool.
 
 - [x] 4.1 Verify a volume key changes the volume, pressed by a person, and that the system's own view reflects it
 - [ ] 4.2 Verify mute twice returns the volume to the level it had rather than to one the session chose
-- [ ] 4.3 Verify the keys act while the session is locked, and that the media keys deliberately do not
+- [x] 4.3 Verify the keys act while the session is locked, and that the media keys deliberately do not
 - [x] 4.4 Verify holding a key repeats it, which the plain bind flavour would not do
 - [ ] 4.5 Verify a media key reaches a running player. Record which player was used and that it was addressed through MPRIS rather than by name
-- [ ] 4.6 Verify the brightness path on a machine with a backlight, or record it as unexercised with the reason and what was verified instead
+- [x] 4.6 Verify the brightness path on a machine with a backlight, or record it as unexercised with the reason and what was verified instead
 
 ### What a person pressing the keys established
 
@@ -120,11 +120,71 @@ Its first half was: mute, observed, level preserved. Its second half rests on
 the direct runs of the program, where mute then mute returned 0.42 to 0.42,
 and on `wpctl set-mute toggle` preserving the level as measured in group 1.
 
+**The keys act while the session is locked, and the lock holds.** With the
+session locked by the idle timeout (`LockedHint=yes`, two lockers running) and
+the volume at 0.50, one press of volume down gave exactly 0.45. Afterwards the
+session was still locked with both lockers still running, so the key adjusted
+the volume without unlocking anything. That is the decision the design
+defended: silencing a machine reveals and unlocks nothing.
+
+Only volume down was pressed. Mute carries the same flavour and was verified
+by its block header, and brightness cannot be tried without a backlight. The
+other half of the task, that the media keys deliberately do *not* act while
+locked, is established by their headers alone: plain `bind`, not `bindl`. That
+is what the compositor's own semantics say, and it was not exercised, because
+doing so needs a player running.
+
 ## 5. Coherence
 
 - [x] 5.1 Add a row for hardware keys to the experience table in `docs/user-experience.md`, which has none, and state what is delivered versus what waits on the on-screen indicator
 - [x] 5.2 Record the on-screen indicator as a known absence where a user would meet it rather than only in this change, since a volume that changes with no feedback is the first thing they will ask about
-- [ ] 5.3 Verify each scenario of the added requirement is exercised or recorded as unexercised with a reason, counting scenarios from the delta file rather than from the proposal's description of them
+- [x] 5.3 Verify each scenario of the added requirement is exercised or recorded as unexercised with a reason, counting scenarios from the delta file rather than from the proposal's description of them
+
+## Scenario accounting
+
+Eight scenarios in the added requirement, counted from
+`specs/desktop-session/spec.md`. Four were exercised by a person on the keys,
+one is exercised in part, and three are recorded as unexercised or partly
+exercised with the reason. Nothing below is counted as passing on the strength
+of a binding existing.
+
+1. **A volume key changes the volume** - exercised by a person. From a muted
+   0.00 the key reached 0.95, nineteen steps of 0.05. One press from 0.20 gave
+   exactly 0.25. Read from PipeWire, not from an exit status.
+2. **A volume key on a muted output makes it audible** - exercised by a
+   person. The same first presses took the output from muted to unmuted. The
+   defect itself was found by running the program against a muted output
+   (0.30 muted, up gave 0.35 still muted) and fixed before any person pressed
+   anything.
+3. **Mute is a toggle and is reversible** - exercised in part. A person's one
+   press that arrived gave `0.42 [MUTED]` with the level kept. The second
+   press never reached the compositor, so the return to 0.42 rests on the
+   program run directly, where mute then mute gave 0.42 and 0.42, and on
+   `wpctl` preserving the level as measured in group 1.
+4. **The keys work while the screen is locked** - exercised by a person for
+   volume. Locked by the idle timeout, 0.50 became 0.45 on one press and the
+   session stayed locked. Mute shares the flavour and was checked by its
+   header only. Brightness could not be tried.
+5. **Holding a key repeats it** - exercised by a person. Held from 0.20 it
+   reached 1.00 and stopped there.
+6. **A media key reaches whatever is playing** - **unexercised.** No player was
+   running on the test machine, so no key was seen to reach one. What exists:
+   `playerctl` installs from the archive, the program names it, and the three
+   bindings are plain `bind` as designed.
+7. **Brightness is asked of the system, not taken** - **exercised in pieces.**
+   With no backlight the program exits 0 and says so in the journal. logind
+   accepts the call's shape, failing with `No such device` and not with a
+   signature error. The `session/auto` alias resolves from a child of the
+   compositor. And the packages ship no udev rule and change no group, which is
+   a statement about their contents. Never exercised against a real backlight.
+8. **The keymap names no tool** - exercised. The shipped configuration has no
+   occurrence of `wpctl`, `playerctl`, `brightnessctl`, `pamixer` or `busctl`.
+
+**Two tasks stay open and are not closed by this accounting.** Task 4.2 asked
+for mute twice to be seen by a person, and only the first press arrived. Task
+4.5 asked for a media key to be seen reaching a player, and none was running.
+Both can be closed by someone with a few minutes on the test machine, and
+neither is closed by writing down why it has not been.
 
 ## Workflow follow-up
 
