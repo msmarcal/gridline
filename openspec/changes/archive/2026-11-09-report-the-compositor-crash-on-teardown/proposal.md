@@ -35,7 +35,7 @@ A requirement that a session's teardown leave no crash behind could not be writt
 - `docs/component-ownership.md`: the compositor's row, which describes what its absence costs and says nothing about what its exit does.
 - `docs/recovery.md`: a user who finds a crash report after logging out has nowhere to read that this is known.
 - `packages/gridline/src/session/gridline-session`: unchanged. Its teardown was found not to contribute.
-- Verification runs on the LXD VM, which is where the 25 crashes are, and needs a second reading somewhere with working 3D to separate the two explanations.
+- Verification runs on the LXD VM, which is where the 42 crashes are, and needs a second reading somewhere with working 3D to separate the two explanations.
 
 ## Prior measurement
 

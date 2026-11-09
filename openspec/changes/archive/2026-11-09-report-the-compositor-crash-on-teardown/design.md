@@ -2,6 +2,8 @@
 
 ## Context
 
+Written before the investigation, and kept as it was. The counts here (25) were one boot; it was 42, and the answers to what it says is not known are under Open Questions below.
+
 See proposal.md for the numbers. What the project already knows that narrows the question, because two of the three hypotheses are already weakened by things measured for other reasons.
 
 **Gridline does not touch the compositor until it has exited, on the normal path.** The launcher's main sequence is `wait "$compositor_pid"` and then `systemctl --user stop gridline-session.target`: it waits for the compositor to leave on its own and tears down afterwards. The crash recorded at 03:36:57 on 2026-11-08 came from a logout chosen in the command menu, which asks the adapter, which runs the compositor's own exit dispatcher. Gridline was still in `wait`. Whatever crashed, crashed inside the compositor's own exit, before the launcher did anything.
@@ -28,6 +30,8 @@ There is a second path, `stop_session`, which stops the target first and the com
 - Suppressing the crash report. Hiding a symptom to make a log cleaner is the opposite of what this project does with the things it finds.
 
 ## Decisions
+
+The plan as made. What was run and what was not is in `tasks.md`: the hardware reading came from an upstream report, and 2.2 and 2.3 were answered by sessions already in the journal.
 
 ### Three hypotheses, tested in the order that eliminates the most
 
