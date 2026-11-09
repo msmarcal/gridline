@@ -47,7 +47,17 @@
       their dependencies from the Ubuntu archive automatically: the
       compositor stack (Hyprland, its portal backend, wayland-utils) from
       <code>universe</code>, and the desktop shell (the status bar, the
-      notification daemon, the wallpaper tool) alongside it.
+      notification daemon, the wallpaper tool, the application launcher)
+      alongside it. A terminal is recommended rather than required, so
+      apt installs one by default and removing it later does not remove
+      Gridline; the keybinding asks the system for whichever terminal it
+      uses. The media keys add one more small package.
+    </p>
+    <p>
+      Gridline assumes a display manager and does not install one: its session
+      entry is a file only a display manager reads, so on a machine without one
+      it does nothing rather than breaking anything. A stock Ubuntu desktop
+      has one.
     </p>
     <div class="callout">
       <p>
@@ -67,6 +77,13 @@
       Log out. Gridline appears as a session option at the login screen,
       next to Ubuntu and a bare Hyprland entry. Pick Gridline. Your
       previous session choice stays one click away.
+    </p>
+    <p>
+      One thing you will probably meet when you leave it: the compositor tends
+      to crash as the session ends, and Ubuntu's crash reporter may pick it
+      up. That is a known issue and it is being measured, not something you
+      did. See <a href="index.html#known-issues">known issues</a> for what
+      is and is not understood about it.
     </p>
     <p>
       If the session refuses to start, that is the capability gate doing

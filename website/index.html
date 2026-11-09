@@ -193,8 +193,10 @@
 
   <h2 id="status">Status</h2>
   <p>
-    Early development, in the open. Verified end to end in a VM, including
-    the failure path:
+    Early development, in the open. Verified end to end in a virtual
+    machine with no 3D acceleration, including the failure path, and not
+    yet on hardware. Everything below was measured on that one machine,
+    which is worth knowing before reading the checkmarks:
   </p>
   <ul class="status-list">
     <li class="done">GDM session entry, launcher, and capability gate</li>
@@ -203,7 +205,10 @@
     screen and matched against the system's own view</li>
     <li class="done">Styled notifications; critical ones stay until
     dismissed</li>
-    <li class="done">Wallpaper anchored to the release's own image</li>
+    <li class="partial">Wallpaper anchored to the release's own image. On the
+    test machine the wallpaper daemon crashes, because a graphics buffer
+    allocation is refused without 3D acceleration; it has not been checked
+    on hardware</li>
     <li class="done">Application launcher on <kbd>SUPER</kbd>&nbsp;<kbd>D</kbd>, command menu on
     <kbd>SUPER</kbd>&nbsp;<kbd>SHIFT</kbd>&nbsp;<kbd>D</kbd>; the menu dispatches on entries, not typed text,
     so a free-typed word that matches nothing cannot fire a destructive
@@ -225,6 +230,14 @@
     six gates run, installing and removing is measured against the machine,
     and the session's wiring is verified &mdash; on a clean runner, in about
     a minute</li>
+    <li class="partial">The keys printed on the laptop: volume, mute,
+    microphone, brightness and media are bound. Volume was checked with a
+    person on the key: one press is one step, holding repeats and stops at
+    100 percent, and a volume key unmutes, because a key that moves a number
+    nobody can hear has not done its job. Mute reached the compositor once in
+    four attempts. Brightness, the microphone and the media keys are
+    unexercised: the test machine has no backlight and its speakers and
+    microphone are the same dummy device. No on-screen indicator yet</li>
     <li class="next">Portal integration</li>
     <li class="next">Full configuration defaults</li>
   </ul>
@@ -238,6 +251,43 @@
     unchecked, and someone still has to log in. What it cannot see is
     <a href="https://github.com/msmarcal/gridline#what-a-green-run-does-not-mean">written
     down</a> rather than left for you to discover.
+  </p>
+  <p>
+    Whether the graphical half could be checked automatically was asked of a
+    hosted runner rather than argued about. The expensive part turned out to
+    be free: the runner already has a display device and will load a virtual
+    one on request. The compositor still aborts on it, in its backend, with
+    no Wayland socket to show for it. So that half stays unchecked, for a
+    measured reason, and the question can be asked again with one click when
+    the compositor, the kernel or the runner changes.
+  </p>
+
+  <h2 id="known-issues">Known issues</h2>
+  <p>
+    Stated here because a project that lists only what works is describing a
+    different project.
+  </p>
+  <div class="callout">
+    <p>
+      <strong>The compositor crashes when a session ends.</strong> On the test
+      machine it happened 25 times across 27 sessions, always the same
+      signature in the compositor's graphics backend library, always within a
+      minute of the session closing. It predates the desktop shell. The test
+      machine has no 3D acceleration, so whether it happens on hardware is not
+      known, and finding out is the first thing the open change on it does.
+      The cost to you is probably a crash report on the next login. Nothing
+      has been observed to be lost, and nothing has been looked for yet.
+    </p>
+    <p>
+      The change is
+      <a href="https://github.com/msmarcal/gridline/tree/main/openspec/changes/report-the-compositor-crash-on-teardown">in
+      the repository</a>, with the measurement that opened it.
+    </p>
+  </div>
+  <p>
+    Everything on this page was measured on one virtual machine. There is no
+    result from a laptop yet, and a laptop is where a person who just
+    installed Ubuntu will be.
   </p>
 
   <h2 id="follow-along">Follow along</h2>

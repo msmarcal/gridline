@@ -385,6 +385,10 @@ kbd {
 
 .status-list li.done::before { content: "[✓]"; color: var(--green); }
 .status-list li.next::before { content: "[ ]"; color: var(--ink-soft); }
+/* Built and bound, and only partly verified. The list had two states, done
+   and next, so anything half-measured had to be called one of them; calling
+   it done overstates it and calling it next understates it. */
+.status-list li.partial::before { content: "[~]"; color: var(--yellow); }
 
 .status-list li.next { color: var(--ink-soft); }
 
